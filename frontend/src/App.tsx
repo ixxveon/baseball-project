@@ -3,3 +3,5 @@ function App(): JSX.Element {
 }
 
 export default App;
+
+// CI 체크 이름 검증용 임시 변경
