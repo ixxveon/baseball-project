@@ -75,8 +75,32 @@ winning-pick/
 
 ## 실행 방법
 
-각 모듈의 README를 참고해 개별 실행합니다. (모듈별 보일러플레이트는 추후 추가 예정)
+pull 받은 직후 별도 설정(DB 설치, 환경변수 등) 없이 아래 명령만으로 각 모듈이 바로 뜬다.
 
-- `frontend/`: `npm install && npm run dev`
-- `backend/`: `./gradlew bootRun`
-- `fastapi/`: `pip install -r requirements.txt && uvicorn main:app --reload`
+### frontend (http://localhost:5173)
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### backend (http://localhost:8080, Swagger: /swagger-ui/index.html)
+
+```bash
+cd backend
+./gradlew bootRun
+```
+
+- 로컬 기본값은 H2 인메모리 DB라 별도 DB 설치 없이 바로 기동된다.
+- 실제 PostgreSQL을 붙이고 싶다면 `cp src/main/resources/application-secret.yml.example src/main/resources/application-secret.yml` 후 값 채우면 된다 (이 파일은 git에 올라가지 않음).
+
+### fastapi (http://localhost:8000, docs: /docs)
+
+```bash
+cd fastapi
+python -m venv .venv
+.venv\Scripts\activate   # macOS/Linux: source .venv/bin/activate
+pip install -r requirements-dev.txt
+uvicorn main:app --reload
+```

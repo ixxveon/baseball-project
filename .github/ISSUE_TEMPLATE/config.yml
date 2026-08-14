@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 팀 컨벤션 문서
+    url: https://github.com/ixxveon/baseball-project/blob/main/docs/CONVENTION.md
+    about: 이슈 작성 전 브랜치/커밋/네이밍 컨벤션을 먼저 확인해주세요
