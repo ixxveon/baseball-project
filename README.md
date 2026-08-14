@@ -101,6 +101,21 @@ cd backend
 cd fastapi
 python -m venv .venv
 .venv\Scripts\activate   # macOS/Linux: source .venv/bin/activate
-pip install -r requirements-dev.txt
+pip install -r requirements.txt
 uvicorn main:app --reload
+```
+
+## CI
+
+PR을 `main`/`develop`로 올리면 `.github/workflows/ci.yml`이 파일 변경 범위와 무관하게 항상 3개 체크를 전부 돌린다 (하나만 있으면 나머지 체크가 영원히 대기중으로 남아 브랜치 보호 규칙과 충돌하기 때문).
+
+- `Backend Build & Test`: `./gradlew test` + `bootJar`
+- `Frontend Typecheck & Build`: `npm run typecheck` + `npm run build` + `npm test`
+- `FastAPI Lint & Check`: `ruff check .` + `pytest`
+
+```bash
+# 로컬에서 미리 확인
+cd frontend && npm run typecheck && npm run build && npm test
+cd backend && ./gradlew test bootJar
+cd fastapi && ruff check . && pytest tests --tb=short -q
 ```

@@ -1,4 +1,4 @@
-function App(): JSX.Element {
+function App() {
   return <div>WinningPick</div>;
 }
 
