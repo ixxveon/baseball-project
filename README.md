@@ -119,3 +119,5 @@ cd frontend && npm run typecheck && npm run build && npm test
 cd backend && ./gradlew test bootJar
 cd fastapi && ruff check . && pytest tests --tb=short -q
 ```
+
+<!-- CI 재검증용 -->
