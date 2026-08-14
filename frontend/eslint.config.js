@@ -3,6 +3,7 @@ import tseslint from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
+import globals from 'globals';
 
 export default [
   { ignores: ['dist'] },
@@ -13,6 +14,7 @@ export default [
       parser: tsParser,
       ecmaVersion: 2020,
       sourceType: 'module',
+      globals: globals.browser,
     },
     plugins: {
       '@typescript-eslint': tseslint,
@@ -22,6 +24,8 @@ export default [
     rules: {
       ...tseslint.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
+      // TS 컴파일러가 이미 처리하므로 base no-undef는 타입 전용 참조(JSX 등)에서 오탐 발생 -> 끔
+      'no-undef': 'off',
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-non-null-assertion': 'error',
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
