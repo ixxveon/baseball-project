@@ -1,8 +1,7 @@
 from fastapi import FastAPI
 
-app = FastAPI(title="WinningPick AI Service")
+from api.v1.router import api_router
+from core.config import settings
 
-
-@app.get("/health")
-def health_check() -> dict[str, str]:
-    return {"status": "ok"}
+app = FastAPI(title=settings.app_name)
+app.include_router(api_router, prefix="/api/v1")
