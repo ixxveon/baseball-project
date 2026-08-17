@@ -73,6 +73,10 @@ winning-pick/
 
 전체 컨벤션(네이밍, DTO, API 응답 포맷, ErrorCode 구조, Swagger 등)은 [docs/CONVENTION.md](docs/CONVENTION.md) 참고.
 
+## 도메인 스펙 & 담당
+
+도메인별 기능 명세, DB/API 설계, 담당자는 [docs/DOMAIN_SPEC.md](docs/DOMAIN_SPEC.md) 참고.
+
 ## 실행 방법
 
 pull 받은 직후 별도 설정(DB 설치, 환경변수 등) 없이 아래 명령만으로 각 모듈이 바로 뜬다.
