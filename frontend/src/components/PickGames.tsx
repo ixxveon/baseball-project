@@ -1,7 +1,7 @@
 import React from 'react';
 import GameCard from './GameCard';
 import { gamesData } from '../data/games';
-import type { GamePick } from '../../types';
+import type { GamePick } from '../types';
 
 export default function PickGames(): React.JSX.Element {
     return (

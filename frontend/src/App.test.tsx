@@ -8,6 +8,6 @@ describe('App', () => {
   it('renders the app shell', () => {
     render(<App />);
 
-    expect(screen.getByText('WinningPick')).not.toBeNull();
+    expect(screen.getByText('위닝')).not.toBeNull();
   });
 });

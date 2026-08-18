@@ -1,4 +1,4 @@
-import { GamePick } from '../../types';
+import type { GamePick } from '../types';
 
 export const gamesData: GamePick[] = [
     { id: 1, date: "08.18 (화) 18:30", team1: "LG", team2: "KT", stadium: "잠실야구장", winRate: "75%", score: "82점", tag: "추천", stars: "★★★★☆", selected: false, grade: "A" },
