@@ -1,47 +1,56 @@
-import { MapPin, Star } from "lucide-react";
+export default function GameCard({
+                                     date,
+                                     opponent,
+                                     score,
+                                     grade,
+                                     active,
+                                 }) {
+    const team = opponent.split(" ")[0];
 
-export default function GameCard({ game }) {
     return (
-        <div className={`game-card ${game.selected ? "selected" : ""}`}>
+        <article
+            className={`game-card ${
+                active ? "selected" : ""
+            }`}
+        >
             <div className="game-card-top">
-                <strong>{game.date}</strong>
-                <span className={`grade ${game.color}`}>{game.grade}</span>
+                <strong>{date}</strong>
+
+                <span className={`grade grade-${grade}`}>
+                    {grade}
+                </span>
             </div>
 
-            <div className="matchup">
-                <div className="small-team">
-                    <div className="mini-logo lg">LG</div>
-                </div>
-
-                <b>VS</b>
-
-                <div className="small-team">
-                    <div className={`mini-logo opponent ${game.color}`}>
-                        {game.opponent.split(" ")[0]}
-                    </div>
-                </div>
+            <div className="match">
+                <strong>LG</strong>
+                <span>VS</span>
+                <b>{team}</b>
             </div>
 
-            <div className="location">
-                <MapPin size={15} />
-                잠실야구장
+            <div className="game-place">
+                📍 잠실야구장
             </div>
 
             <div className="game-card-bottom">
-                <strong>{game.score}<small>점</small></strong>
-                <span>{game.label}</span>
-
-                <div className="stars">
-                    {[1, 2, 3, 4, 5].map((n) => (
-                        <Star
-                            key={n}
-                            size={16}
-                            fill={n <= Math.round(game.score / 20) ? "#ffae00" : "none"}
-                            color={n <= Math.round(game.score / 20) ? "#ffae00" : "#aab1bd"}
-                        />
-                    ))}
+                <div>
+                    <strong>{score}</strong>
+                    <small>점</small>
                 </div>
+
+                <span className="recommend">
+                    {grade === "S"
+                        ? "강력 추천"
+                        : grade === "A"
+                            ? "추천"
+                            : grade === "B"
+                                ? "보통"
+                                : "낮음"}
+                </span>
+
+                <span className="stars">
+                    ★★★★★
+                </span>
             </div>
-        </div>
+        </article>
     );
 }

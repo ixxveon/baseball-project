@@ -1,33 +1,30 @@
-import { Bell, ChevronDown } from "lucide-react";
+import React from 'react';
 
-export default function Header() {
+export default function Header({ activeTab, onTabChange }) {
     return (
-        <header className="header">
+        <header className="site-header">
             <div className="header-inner">
-                <div className="logo">
-                    <div className="logo-ball">⚾</div>
-                    <span>PLAYBALL</span>
-                    <b>PICK</b>
+                <div className="brand" onClick={() => onTabChange('home')}>
+                    <span className="brand-main">위닝</span>
+                    <span className="brand-sub">PICK</span>
                 </div>
 
-                <nav>
-                    <a className="active">홈</a>
-                    <a>직관 추천</a>
-                    <a>경기 분석</a>
-                    <a>랭킹</a>
-                    <a>커뮤니티</a>
+                <nav className="tabs">
+                    <button className={`tab ${activeTab === 'home' ? 'active' : ''}`} onClick={() => onTabChange('home')}>홈</button>
+                    <button className={`tab ${activeTab === 'recommend' ? 'active' : ''}`} onClick={() => onTabChange('recommend')}>직관 추천</button>
+                    <button className={`tab ${activeTab === 'analysis' ? 'active' : ''}`} onClick={() => onTabChange('analysis')}>경기 분석</button>
+                    <button className={`tab ${activeTab === 'ranking' ? 'active' : ''}`} onClick={() => onTabChange('ranking')}>랭킹</button>
+                    <button className={`tab ${activeTab === 'community' ? 'active' : ''}`} onClick={() => onTabChange('community')}>커뮤니티</button>
                 </nav>
 
-                <div className="header-right">
-                    <div className="notification">
-                        <Bell size={22} />
-                        <span>3</span>
-                    </div>
-
-                    <div className="profile">
-                        <div className="avatar">👨🏻</div>
-                        <strong>민형님</strong>
-                        <ChevronDown size={16} />
+                <div className="user-area">
+                    <button className="icon-btn">
+                        🔔
+                        <span className="notification-badge">3</span>
+                    </button>
+                    <div className="user-profile">
+                        <span className="profile-img">👤</span>
+                        <span className="user-name">민형님 ▼</span>
                     </div>
                 </div>
             </div>

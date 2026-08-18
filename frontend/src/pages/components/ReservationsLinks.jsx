@@ -1,30 +1,47 @@
-import { ExternalLink } from "lucide-react";
-
 const links = [
-    ["tl", "티켓링크"],
-    ["INT", "인터파크 티켓"],
-    ["TWINS", "LG 트윈스 예매"],
-    ["melon", "멜론티켓"],
+    {
+        name: "티켓링크",
+        logo: "TL",
+        className: "ticketlink",
+    },
+    {
+        name: "인터파크 티켓",
+        logo: "INT",
+        className: "interpark",
+    },
+    {
+        name: "LG 트윈스 예매",
+        logo: "TWINS",
+        className: "twins",
+    },
+    {
+        name: "멜론티켓",
+        logo: "melon",
+        className: "melon",
+    },
 ];
 
-export default function ReservationLinks() {
+export default function ReservationsLinks() {
     return (
-        <div className="white-box reservation">
+        <section className="box reservation-box">
             <h2>예매 바로가기</h2>
 
             <div className="reservation-list">
-                {links.map(([logo, name]) => (
-                    <button key={name}>
-            <span className={`reservation-logo ${logo}`}>
-              {logo}
-            </span>
+                {links.map((link) => (
+                    <button
+                        className="reservation"
+                        key={link.name}
+                    >
+                        <b className={link.className}>
+                            {link.logo}
+                        </b>
 
-                        <span>{name}</span>
+                        <span>{link.name}</span>
 
-                        <ExternalLink size={16} />
+                        <i>↗</i>
                     </button>
                 ))}
             </div>
-        </div>
+        </section>
     );
 }
