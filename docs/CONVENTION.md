@@ -13,21 +13,15 @@
 
 - **`main`**: 최종 배포용 안정 버전. 직접 push 절대 금지, PR을 통해서만 병합
 - **`develop`**: 개발 통합 브랜치. 모든 팀원은 기능 개발 완료 후 이 브랜치로 PR 생성
-- **`feature/[area]-[도메인명]-[세부기능]`**: 개별 기능 개발용 브랜치 (`develop`에서 분기)
+- **`feature/[도메인명]-[세부기능]`**: 개별 기능 개발용 브랜치 (`develop`에서 분기)
 
-영역(`area`) 구분:
+도메인별 풀스택(백엔드+프론트) 오너십이라 브랜치명에 영역(be/fe/ai) 구분을 넣지 않는다.
 
-| 영역 | 코드 |
-|---|---|
-| 백엔드 | `be` |
-| 프론트엔드 | `fe` |
-| AI/파이썬 | `ai` |
-
-| 영역 | 도메인명 | 세부기능 | 최종 브랜치명 | 설명 |
-|---|---|---|---|---|
-| be | member | login | `feature/be-member-login` | 백엔드 회원 로그인 기능 개발 |
-| fe | board | write | `feature/fe-board-write` | 프론트엔드 게시글 작성 페이지 개발 |
-| ai | scraper | job | `feature/ai-scraper-job` | AI 채용 공고 스크래퍼 기능 개발 |
+| 도메인명 | 세부기능 | 최종 브랜치명 | 설명 |
+|---|---|---|---|
+| member | login | `feature/member-login` | 회원 로그인 기능 개발 |
+| community | post-write | `feature/community-post-write` | 게시글 작성 기능 개발 |
+| win-prediction | model | `feature/win-prediction-model` | AI 승률 예측 모델 개발 |
 
 ## 3. 커밋 메시지 컨벤션 (Conventional Commits)
 

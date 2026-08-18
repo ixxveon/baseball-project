@@ -51,9 +51,8 @@ winning-pick/
 
 - `main`: 배포용 안정 버전. 직접 push 금지, PR로만 병합
 - `develop`: 개발 통합 브랜치. 모든 기능 브랜치는 여기로 PR
-- `feature/[area]-[도메인명]-[세부기능]`: 기능 개발 브랜치 (`develop`에서 분기)
-  - `area`: 백엔드 `be` / 프론트엔드 `fe` / AI·파이썬 `ai`
-  - 예: `feature/be-member-login`, `feature/fe-board-write`, `feature/ai-scraper-job`
+- `feature/[도메인명]-[세부기능]`: 기능 개발 브랜치 (`develop`에서 분기, 도메인별 풀스택 오너십이라 영역 구분 없음)
+  - 예: `feature/member-login`, `feature/community-post-write`, `feature/win-prediction-model`
 
 ## 커밋 컨벤션
 
