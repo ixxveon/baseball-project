@@ -1,13 +1,13 @@
 import React from 'react';
 
-export default function Calender() {
+export default function Calender(): React.JSX.Element {
     return (
         <section className="calendar-box">
             <div className="calendar-header-row">
                 <h2>2026년 8월 직관 캘린더</h2>
                 <div className="calendar-view-toggle">
-                    <button className="toggle-btn active">월간 보기</button>
-                    <button className="toggle-btn">목록 보기</button>
+                    <button type="button" className="toggle-btn active">월간 보기</button>
+                    <button type="button" className="toggle-btn">목록 보기</button>
                 </div>
             </div>
 
@@ -20,7 +20,6 @@ export default function Calender() {
                 <div className="calendar-weekday">금</div>
                 <div className="calendar-weekday sat">토</div>
 
-                {/* 이전달 잔여 */}
                 <div className="calendar-day other-month"><span className="day-number">26</span></div>
                 <div className="calendar-day other-month"><span className="day-number">27</span></div>
                 <div className="calendar-day other-month"><span className="day-number">28</span></div>
@@ -29,7 +28,6 @@ export default function Calender() {
                 <div className="calendar-day other-month"><span className="day-number">31</span></div>
                 <div className="calendar-day"><span className="day-number">1</span></div>
 
-                {/* 1주차 */}
                 <div className="calendar-day"><span className="day-number">2</span></div>
                 <div className="calendar-day"><span className="day-number">3</span></div>
                 <div className="calendar-day">
@@ -44,7 +42,6 @@ export default function Calender() {
                     <span className="day-event badge-gray">vs 키움</span>
                 </div>
 
-                {/* 2주차 */}
                 <div className="calendar-day"><span className="day-number">9</span></div>
                 <div className="calendar-day"><span className="day-number">10</span></div>
                 <div className="calendar-day"><span className="day-number">11</span></div>
@@ -53,7 +50,6 @@ export default function Calender() {
                 <div className="calendar-day"><span className="day-number">14</span></div>
                 <div className="calendar-day"><span className="day-number">15</span></div>
 
-                {/* 3주차 */}
                 <div className="calendar-day"><span className="day-number">16</span></div>
                 <div className="calendar-day today highlight-s">
                     <span className="day-number">17</span>
@@ -71,7 +67,6 @@ export default function Calender() {
                 </div>
                 <div className="calendar-day"><span className="day-number">22</span></div>
 
-                {/* 4주차 */}
                 <div className="calendar-day"><span className="day-number">23</span></div>
                 <div className="calendar-day"><span className="day-number">24</span></div>
                 <div className="calendar-day highlight-b">
@@ -86,7 +81,6 @@ export default function Calender() {
                 </div>
                 <div className="calendar-day"><span className="day-number">29</span></div>
 
-                {/* 5주차 */}
                 <div className="calendar-day"><span className="day-number">30</span></div>
                 <div className="calendar-day"><span className="day-number">31</span></div>
                 <div className="calendar-day other-month"><span className="day-number">1</span></div>
