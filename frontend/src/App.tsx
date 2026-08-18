@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import './styles/App.css';
 import Header from './components/Header';
 import HomeScreen from './components/HomeScreen';
 import type { TabType } from './types';
