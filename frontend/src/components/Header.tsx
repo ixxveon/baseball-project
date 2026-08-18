@@ -1,5 +1,6 @@
 import React from 'react';
-import type { HeaderProps } from '../../types/index';
+import { Link } from 'react-router-dom';
+import type { HeaderProps } from '../types';
 
 export default function Header({ activeTab, onTabChange }: HeaderProps): React.JSX.Element {
     return (
@@ -23,10 +24,10 @@ export default function Header({ activeTab, onTabChange }: HeaderProps): React.J
                         🔔
                         <span className="notification-badge">3</span>
                     </button>
-                    <button type="button" className="user-profile-btn">
+                    <Link to="/login" className="user-profile-btn">
                         <span>👤</span>
-                        <span>민형님 ▼</span>
-                    </button>
+                        <span>로그인</span>
+                    </Link>
                 </div>
             </div>
         </header>

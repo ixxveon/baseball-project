@@ -1,10 +1,10 @@
 import React from 'react';
-import RecommendedGames from '../components/RecommendedGames';
-import PickGames from '../components/PickGames';
-import Calender from '../components/Calender';
-import RecentSummary from '../components/RecentSummary';
-import ReservationsLinks from '../components/ReservationsLinks';
-import NoticeBoard from '../components/NoticeBoard';
+import RecommendedGames from './RecommendedGames';
+import PickGames from './PickGames';
+import Calendar from './Calendar';
+import RecentSummary from './RecentSummary';
+import ReservationsLinks from './ReservationsLinks';
+import NoticeBoard from './NoticeBoard';
 
 export default function HomeScreen(): React.JSX.Element {
     return (
@@ -35,7 +35,7 @@ export default function HomeScreen(): React.JSX.Element {
 
             <div className="dashboard-grid">
                 <div className="main-content-column">
-                    <Calender />
+                    <Calendar />
                     <RecentSummary />
                 </div>
 
