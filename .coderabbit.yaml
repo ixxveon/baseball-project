@@ -62,8 +62,8 @@ reviews:
     - 형식: `{type}: {summary}` (Conventional Commits) — feat / fix / docs / style / refactor / test / chore
 
     ## 브랜치 네이밍 규칙
-    - `feature/[area]-[도메인명]-[세부기능]` (area: 백엔드 be / 프론트엔드 fe / AI ai)
-    - 예: `feature/be-member-login`, `feature/fe-board-write`, `feature/ai-scraper-job`
+    - `feature/[도메인명]-[세부기능]` (도메인별 풀스택 오너십이라 영역 구분 없음)
+    - 예: `feature/member-login`, `feature/community-post-write`, `feature/win-prediction-model`
 
   path_instructions:
     - path: "backend/**/*.java"
