@@ -1,5 +1,5 @@
 import React from 'react';
-import { GameCardProps } from '../types';
+import { GameCardProps } from '../../types';
 
 export default function GameCard({ game }: GameCardProps): React.JSX.Element {
     return (

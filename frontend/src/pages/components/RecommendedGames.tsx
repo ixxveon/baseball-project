@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function RecommendedGames() {
     return (
         <div className="hero-section-grid">

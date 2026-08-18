@@ -1,5 +1,5 @@
 import React from 'react';
-import type { HeaderProps } from '../../types';
+import type { HeaderProps } from '../../types/index';
 
 export default function Header({ activeTab, onTabChange }: HeaderProps): React.JSX.Element {
     return (
