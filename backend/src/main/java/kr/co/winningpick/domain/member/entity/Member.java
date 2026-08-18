@@ -6,7 +6,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -42,6 +41,9 @@ public class Member {
     @Column(name = "social_id", length = 255)
     private String socialId;
 
+    @Column(length = 255)
+    private String password;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -60,6 +62,10 @@ public class Member {
 
     public void changePushAlarm(boolean enabled) {
         this.pushAlarmEnabled = enabled;
+    }
+
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
     }
 
 }
