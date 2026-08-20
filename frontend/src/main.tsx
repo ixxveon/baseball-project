@@ -7,9 +7,9 @@ import './styles/App.css';
 const rootElement = document.getElementById('root');
 
 if (rootElement) {
-  createRoot(rootElement).render(
-    <StrictMode>
-      <RouterProvider router={router} />
-    </StrictMode>,
-  );
+    createRoot(rootElement).render(
+        <StrictMode>
+            <RouterProvider router={router} />
+        </StrictMode>,
+    );
 }
