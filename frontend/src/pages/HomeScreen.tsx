@@ -1,11 +1,16 @@
 import React from 'react';
 import RecommendedGames from '../components/RecommendedGames';
-import AiSummary from '../components/todayAisummary';
+import AiSummary from '../components/todayAiSummary';
 import RecentSummary from '../components/RecentSummary';
 import ReservationsLinks from '../components/ReservationsLinks';
 import NoticeBoard from '../components/NoticeBoard';
+import type { TabType } from '../types';
 
-export default function HomeScreen(): React.JSX.Element {
+interface HomeScreenProps {
+    onTabChange?: (tab: TabType) => void;
+}
+
+export default function HomeScreen({ onTabChange }: HomeScreenProps): React.JSX.Element {
     return (
         <div className="home-container" style={{
             maxWidth: '1600px',
@@ -23,9 +28,28 @@ export default function HomeScreen(): React.JSX.Element {
                 marginBottom: '32px'
             }}>
                 <div className="welcome-text" style={{ flexShrink: 0 }}>
-                    <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', margin: '0 0 4px 0' }}>
-                        안녕하세요, 민형님! 👋
-                    </h1>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', margin: '0 0 4px 0' }}>
+                            안녕하세요, 민형님! 👋
+                        </h1>
+                        {onTabChange && (
+                            <button
+                                onClick={() => onTabChange('login')}
+                                style={{
+                                    padding: '4px 10px',
+                                    fontSize: '12px',
+                                    fontWeight: '600',
+                                    color: '#2563eb',
+                                    backgroundColor: '#eff6ff',
+                                    border: '1px solid #bfdbfe',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                로그인 / 계정 변경
+                            </button>
+                        )}
+                    </div>
                     <p style={{ margin: 0, color: '#64748b', fontSize: '14px' }}>
                         LG 트윈스의 승리를 위닝PICK이 함께 예측합니다!
                     </p>

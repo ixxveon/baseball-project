@@ -2,22 +2,28 @@ import React, { useState } from 'react';
 import Header from './components/Header';
 import HomeScreen from './pages/HomeScreen';
 import RecommendScreen from './pages/RecommendScreen';
+import LoginPage from './pages/LoginPage';
 import type { TabType } from './types';
 
 export default function App(): React.JSX.Element {
     const [activeTab, setActiveTab] = useState<TabType>('home');
 
     return (
-        <div className="dashboard-container" style={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
-            {/* 상단 헤더 */}
+        <div className="dashboard-container">
             <Header activeTab={activeTab} onTabChange={setActiveTab} />
 
-            {/* 메인 뷰 전환 처리 */}
             <main className="dashboard-main">
-                {activeTab === 'home' && <HomeScreen />}
+                {/* 1. 홈 화면 */}
+                {activeTab === 'home' && <HomeScreen onTabChange={setActiveTab} />}
+
+                {/* 2. 직관추천 화면 */}
                 {activeTab === 'recommend' && <RecommendScreen />}
 
-                {activeTab !== 'home' && activeTab !== 'recommend' && (
+                {/* 3. 로그인 화면 */}
+                {activeTab === 'login' && <LoginPage />}
+
+                {/* 4. 기타 메뉴 준비 중 표시 */}
+                {activeTab !== 'home' && activeTab !== 'recommend' && activeTab !== 'login' && (
                     <div className="tab-placeholder" style={{ padding: '48px', textAlign: 'center', color: '#64748b' }}>
                         <h2>{activeTab} 페이지 준비 중입니다.</h2>
                     </div>
