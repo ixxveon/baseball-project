@@ -617,3 +617,7 @@ button {
 }
 
 .auth-switch-link:hover { text-decoration: underline; }
+
+.ai-summary-card, .ai-list {
+    justify-content: flex-start !important;
+}
