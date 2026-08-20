@@ -1,6 +1,6 @@
 import React from 'react';
 import RecommendedGames from './RecommendedGames';
-import AiSummary from './todayAiSummary';
+import AiSummary from './todayAisummary';
 import RecentSummary from './RecentSummary';
 import ReservationsLinks from './ReservationsLinks';
 import NoticeBoard from './NoticeBoard';
