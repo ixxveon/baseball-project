@@ -14,7 +14,7 @@ export default function App(): React.JSX.Element {
 
             <main className="dashboard-main">
                 {/* 1. 홈 화면 */}
-                {activeTab === 'home' && <HomeScreen onTabChange={setActiveTab} />}
+                {activeTab === 'home' && <HomeScreen />}
 
                 {/* 2. 직관추천 화면 */}
                 {activeTab === 'recommend' && <RecommendScreen />}
