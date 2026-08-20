@@ -1,9 +1,9 @@
 import React from 'react';
-import RecommendedGames from './RecommendedGames';
-import AiSummary from './todayAisummary';
-import RecentSummary from './RecentSummary';
-import ReservationsLinks from './ReservationsLinks';
-import NoticeBoard from './NoticeBoard';
+import RecommendedGames from '../components/RecommendedGames';
+import AiSummary from '../components/todayAisummary';
+import RecentSummary from '../components/RecentSummary';
+import ReservationsLinks from '../components/ReservationsLinks';
+import NoticeBoard from '../components/NoticeBoard';
 
 export default function HomeScreen(): React.JSX.Element {
     return (
