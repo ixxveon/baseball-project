@@ -3,18 +3,14 @@ import GameCard from './GameCard';
 import { gamesData } from '../data/games';
 import type { GamePick } from '../types';
 
-interface PickGamesProps {
-    onMoreClick?: () => void;
-}
 
-export default function PickGames({ onMoreClick }: PickGamesProps): React.JSX.Element {
+
+export default function PickGames(): React.JSX.Element {
     return (
         <section className="pick-section">
             <div className="section-title">
                 <h2>이번 달 직관 추천 경기</h2>
-                <button type="button" className="more-btn" onClick={onMoreClick}>
-                    전체 보기 &rsaquo;
-                </button>
+
             </div>
 
             <div className="game-grid-container">
