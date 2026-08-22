@@ -22,3 +22,24 @@ export interface HeaderProps {
 export interface GameCardProps {
     game: GamePick;
 }
+
+export type PostCategory = 'PREVIEW' | 'CERTIFICATION' | 'ETC';
+
+export interface CommunityPost {
+    id: number;
+    gameId: number;
+    category: PostCategory;
+    title: string;
+    content: string;
+    author: string;
+    createdAt: string;
+    commentCount: number;
+}
+
+export interface PostComment {
+    id: number;
+    postId: number;
+    author: string;
+    content: string;
+    createdAt: string;
+}

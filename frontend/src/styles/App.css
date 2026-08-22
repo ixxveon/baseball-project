@@ -621,3 +621,269 @@ button {
 .ai-summary-card, .ai-list {
     justify-content: flex-start !important;
 }
+
+/* 커뮤니티 게시판 */
+.community-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.community-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.community-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #111;
+}
+
+.write-btn {
+    padding: 10px 18px;
+    background: #e71937;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.community-category-tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.category-tab {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+    background: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+    color: #666;
+}
+
+.category-tab.active {
+    background: #e71937;
+    color: #ffffff;
+    border-color: #e71937;
+}
+
+.post-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.post-card {
+    background: #ffffff;
+    border: 1px solid #eaeaea;
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+}
+
+.post-card:hover { border-color: #e71937; }
+
+.post-card-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.post-category-badge {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.post-category-badge.preview { background: #111317; color: #ffffff; }
+.post-category-badge.certification { background: #e71937; color: #ffffff; }
+.post-category-badge.etc { background: #6b7280; color: #ffffff; }
+
+.post-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #111;
+}
+
+.post-content {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.4;
+}
+
+.post-meta {
+    display: flex;
+    gap: 8px;
+    font-size: 12px;
+    color: #999;
+}
+
+.post-empty {
+    text-align: center;
+    padding: 60px 0;
+    color: #999;
+    font-size: 14px;
+}
+
+/* 게시글 상세 */
+.post-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.back-btn {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    font-size: 14px;
+    font-weight: 700;
+    color: #666;
+    padding: 0;
+}
+
+.back-btn:hover { color: #e71937; }
+
+.post-detail-card {
+    background: #ffffff;
+    border: 1px solid #eaeaea;
+    border-radius: 12px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.post-detail-content {
+    font-size: 14px;
+    color: #333;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.post-comment-section {
+    background: #ffffff;
+    border: 1px solid #eaeaea;
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.post-comment-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: #111;
+    margin-bottom: 16px;
+}
+
+.post-comment-form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.post-comment-form input {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 14px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+}
+
+.post-comment-form input:focus { border-color: #e71937; }
+
+.post-comment-submit {
+    flex-shrink: 0;
+    padding: 0 18px;
+    background: #e71937;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.post-comment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.post-comment-item {
+    padding-bottom: 14px;
+    border-bottom: 1px solid #f1f3f5;
+}
+
+.post-comment-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+.post-comment-top {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.post-comment-author {
+    font-size: 13px;
+    font-weight: 700;
+    color: #111;
+}
+
+.post-comment-date {
+    font-size: 12px;
+    color: #999;
+}
+
+.post-comment-content {
+    font-size: 13px;
+    color: #444;
+    line-height: 1.5;
+}
+
+/* 글쓰기 폼 */
+.post-write-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.post-write-field input,
+.post-write-field textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+}
+
+.post-write-field input:focus,
+.post-write-field textarea:focus { border-color: #e71937; }
+
+.post-write-textarea { resize: vertical; }
+
+.post-write-error {
+    font-size: 12px;
+    color: #e71937;
+}
+
+.post-write-submit {
+    width: 100%;
+    padding: 13px;
+}
