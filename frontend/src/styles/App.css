@@ -541,12 +541,32 @@ button {
 
 /* 7. 로그인 / 회원가입 */
 .auth-page {
+    position: relative;
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 20px;
 }
+
+.auth-home-link {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    border: 1px solid #eaeaea;
+    border-radius: 50%;
+    color: #333;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.auth-home-link:hover { color: #e71937; border-color: #e71937; }
 
 .auth-card {
     width: 100%;
@@ -690,6 +710,19 @@ button {
 .auth-hint {
     font-size: 12px;
     color: #999;
+}
+
+.auth-banner {
+    width: 100%;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #10b981;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    text-align: center;
 }
 
 .auth-error-submit {

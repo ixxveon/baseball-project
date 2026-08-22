@@ -37,3 +37,18 @@ export async function checkNicknameAvailability(nickname: string): Promise<boole
     );
     return response.data.data.available;
 }
+
+export interface LoginRequest {
+    email: string;
+    password: string;
+}
+
+export interface LoginResponse {
+    accessToken: string;
+    expiresAt: string;
+}
+
+export async function login(request: LoginRequest): Promise<LoginResponse> {
+    const response = await axiosInstance.post<ApiResponse<LoginResponse>>('/members/login', request);
+    return response.data.data;
+}

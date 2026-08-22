@@ -1,4 +1,4 @@
-export type TabType = 'home' | 'recommend' | 'analysis' | 'ranking' | 'community' | 'login' | 'signup';
+export type TabType = 'home' | 'recommend' | 'analysis' | 'ranking' | 'community';
 
 export interface GamePick {
     id: number;
