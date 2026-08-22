@@ -107,9 +107,7 @@ export default function RecommendScreen(): React.JSX.Element {
                     <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
                         이번 달 직관 추천 경기
                     </h2>
-                    <button type="button" style={{ border: 'none', background: 'transparent', color: '#94a3b8', fontSize: '13px', cursor: 'pointer' }}>
-                        전체 보기 &gt;
-                    </button>
+
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
