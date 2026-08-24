@@ -3,7 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AxiosError } from 'axios';
 import AuthLayout from '../layouts/AuthLayout';
 import SocialLoginButtons from '../components/SocialLoginButtons';
-import { checkNicknameAvailability, signup, type SignupValidationErrors } from '../api/memberApi';
+import {
+    checkNicknameAvailability,
+    confirmEmailVerification,
+    sendEmailVerification,
+    signup,
+    type SignupValidationErrors
+} from '../api/memberApi';
 
 type NicknameCheckStatus = 'idle' | 'checking' | 'available' | 'duplicate';
 type EmailVerifyStatus = 'idle' | 'sent' | 'verified';
@@ -74,12 +80,26 @@ export default function SignupPage(): React.JSX.Element {
         }
     };
 
-    const handleSendVerification = (): void => {
-        setEmailVerifyStatus('sent');
+    const handleSendVerification = async (): Promise<void> => {
+        try {
+            await sendEmailVerification(form.email);
+            setEmailVerifyStatus('sent');
+        } catch {
+            setSubmitError('인증번호 발송에 실패했어요. 다시 시도해주세요.');
+        }
     };
 
-    const handleConfirmVerification = (): void => {
-        setEmailVerifyStatus('verified');
+    const handleConfirmVerification = async (): Promise<void> => {
+        try {
+            const verified = await confirmEmailVerification(form.email, verificationCode);
+            if (verified) {
+                setEmailVerifyStatus('verified');
+            } else {
+                setSubmitError('인증번호가 올바르지 않아요');
+            }
+        } catch {
+            setSubmitError('인증 확인에 실패했어요. 다시 시도해주세요');
+        }
     };
 
     const handleCheckNickname = async (): Promise<void> => {
@@ -120,6 +140,11 @@ export default function SignupPage(): React.JSX.Element {
 
         if (nicknameCheckStatus !== 'available' || checkedNickname !== form.nickname.trim()) {
             setSubmitError('닉네임 중복 확인을 해주세요');
+            return;
+        }
+
+        if (emailVerifyStatus !== 'verified') {
+            setSubmitError('이메일 인증을 완료해주세요');
             return;
         }
 
