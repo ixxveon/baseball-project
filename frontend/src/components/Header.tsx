@@ -1,14 +1,23 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { HeaderProps, TabType } from '../types';
+import { clearAccessToken, getAccessToken } from '../utils/tokenStorage';
 
 export default function Header({ activeTab, onTabChange }: HeaderProps): React.JSX.Element {
+    const navigate = useNavigate();
+    const isLoggedIn = Boolean(getAccessToken());
+
     const navItems: { id: TabType; label: string }[] = [
         { id: 'home', label: '홈' },
         { id: 'recommend', label: '직관 추천' },
         { id: 'ranking', label: '랭킹' },
         { id: 'community', label: '커뮤니티' },
     ];
+
+    const handleLogout = (): void => {
+        clearAccessToken();
+        navigate('/');
+    };
 
     return (
         <header className="header-wrapper" style={{
@@ -113,28 +122,70 @@ export default function Header({ activeTab, onTabChange }: HeaderProps): React.J
                         </span>
                     </div>
 
-                    <Link
-                        to="/login"
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            fontWeight: '700',
-                            background: 'none',
-                            border: 'none',
-                            color: '#ffffff',
-                            textDecoration: 'none',
-                            padding: 0
-                        }}
-                    >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="12" cy="8" r="4" />
-                            <path d="M4 20c0-4 3.5-7 8-7s8 3 8 7" />
-                        </svg>
-                        <span>로그인</span>
-                    </Link>
+                    {isLoggedIn ? (
+                        <>
+                            <Link
+                                to="/mypage"
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    cursor: 'pointer',
+                                    fontSize: '14px',
+                                    fontWeight: '700',
+                                    background: 'none',
+                                    border: 'none',
+                                    color: '#ffffff',
+                                    textDecoration: 'none',
+                                    padding: 0
+                                }}
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="8" r="4" />
+                                    <path d="M4 20c0-4 3.5-7 8-7s8 3 8 7" />
+                                </svg>
+                                <span>마이페이지</span>
+                            </Link>
+                            <button
+                                type="button"
+                                onClick={handleLogout}
+                                style={{
+                                    cursor: 'pointer',
+                                    fontSize: '14px',
+                                    fontWeight: '700',
+                                    background: 'none',
+                                    border: 'none',
+                                    color: '#9ca3af',
+                                    padding: 0
+                                }}
+                            >
+                                로그아웃
+                            </button>
+                        </>
+                    ) : (
+                        <Link
+                            to="/login"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontWeight: '700',
+                                background: 'none',
+                                border: 'none',
+                                color: '#ffffff',
+                                textDecoration: 'none',
+                                padding: 0
+                            }}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="8" r="4" />
+                                <path d="M4 20c0-4 3.5-7 8-7s8 3 8 7" />
+                            </svg>
+                            <span>로그인</span>
+                        </Link>
+                    )}
                 </div>
             </div>
         </header>
