@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // --- [타입 정의] ---
 interface UserStats {
@@ -7,6 +8,7 @@ interface UserStats {
     draws: number;
     losses: number;
 }
+
 interface GameRecord {
     id: number;
     date: string;
@@ -16,7 +18,21 @@ interface GameRecord {
     verifyMethod: 'GPS' | 'TICKET' | 'UNVERIFIED';
 }
 
+interface UserProfile {
+    nickname: string;
+    email: string;
+    favoriteTeam: string;
+    joinDate: string;
+}
+
 // --- [목업 데이터] ---
+const mockProfile: UserProfile = {
+    nickname: '위닝요정',
+    email: 'winning@example.com',
+    favoriteTeam: 'LG 트윈스', // 기존 랭킹 페이지와 동일한 응원팀 적용
+    joinDate: '2026.01.15',
+};
+
 const mockStats: UserStats = { totalAttendances: 8, wins: 6, draws: 0, losses: 2 };
 const mockHistory: GameRecord[] = [
     { id: 1, date: '2026.08.15', opponent: 'vs 두산 베어스', stadium: '잠실야구장', result: 'WIN', verifyMethod: 'GPS' },
@@ -26,6 +42,7 @@ const mockHistory: GameRecord[] = [
 
 export default function MyPage(): React.JSX.Element {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const navigate = useNavigate(); // 📌 1. 페이지 이동을 위한 navigate 선언!
 
     const calculateWinRate = (wins: number, losses: number) => {
         const totalDecisions = wins + losses;
@@ -47,6 +64,7 @@ export default function MyPage(): React.JSX.Element {
 
     const badge = getBadgeInfo(mockStats.totalAttendances, winRate);
 
+    // 이벤트 핸들러
     const handleGpsVerify = () => alert("GPS 위치 확인 중입니다...");
     const handleOcrClick = () => fileInputRef.current?.click();
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,15 +72,29 @@ export default function MyPage(): React.JSX.Element {
         if (file) alert(`${file.name} 이미지를 분석 중입니다...`);
     };
 
+    // 📌 2. 프로필 수정 페이지로 넘어가도록 수정!
+    const handleEditProfile = () => {
+        navigate('/profile-edit');
+    };
+
+    const handleDeleteAccount = () => {
+        const confirmDelete = window.confirm("정말로 탈퇴하시겠습니까? 직관 기록과 승률 배지가 모두 삭제됩니다.");
+        if (confirmDelete) {
+            alert("회원 탈퇴 요청이 접수되었습니다. (API 연동 필요)");
+            // TODO: DELETE /api/v1/members/me 호출 및 로그아웃 처리
+        }
+    };
+
     return (
         <div className="mypage-container">
             <style>
                 {`
-          .mypage-container { background-color: #F4F6F8; min-height: 100vh; padding: 40px 16px; font-family: 'Pretendard', sans-serif; }
+          .mypage-container { background-color: #F4F6F8; min-height: 100vh; padding: 40px 16px 80px; font-family: 'Pretendard', sans-serif; }
           .mypage-content { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
           .card-section { background: #fff; border-radius: 20px; padding: 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #f3f4f6; }
           .section-title { font-size: 20px; font-weight: 800; color: #111827; margin: 0 0 20px 0; display: flex; align-items: center; gap: 8px; }
           
+          /* 대시보드 영역 */
           .dashboard-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px; }
           @media (max-width: 600px) { .dashboard-grid { grid-template-columns: 1fr; } }
           
@@ -83,17 +115,26 @@ export default function MyPage(): React.JSX.Element {
           .badge-lose { background: linear-gradient(135deg, #1e3a8a, #312e81); color: #e0e7ff; box-shadow: 0 4px 12px rgba(30,58,138,0.4); }
           .badge-normal { background: #f3f4f6; color: #4b5563; }
 
+          /* 내 정보 영역 추가 */
+          .profile-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+          .info-item { background: #f9fafb; padding: 16px; border-radius: 12px; border: 1px solid #f3f4f6; }
+          .info-label { font-size: 13px; color: #6b7280; margin-bottom: 4px; font-weight: 500; }
+          .info-value { font-size: 16px; color: #111827; font-weight: 700; }
+          .btn-edit-profile { width: 100%; padding: 14px; background: #ffffff; border: 1px solid #d1d5db; border-radius: 12px; font-size: 15px; font-weight: 600; color: #374151; cursor: pointer; transition: all 0.2s; }
+          .btn-edit-profile:hover { background: #f3f4f6; }
+
+          /* 인증 버튼 영역 */
           .verify-buttons { display: flex; gap: 16px; }
           .verify-btn { flex: 1; padding: 20px; border-radius: 16px; border: none; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: transform 0.1s, box-shadow 0.2s; }
           .btn-gps { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
           .btn-ocr { background: #fdf2f8; color: #db2777; border: 1px solid #fbcfe8; }
           .btn-icon { font-size: 24px; }
           
+          /* 기록 영역 */
           .history-list { display: flex; flex-direction: column; gap: 12px; }
           .history-item { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: #f9fafb; border-radius: 12px; border: 1px solid #f3f4f6; }
           .history-info-date { font-size: 12px; color: #6b7280; font-weight: 500; margin-bottom: 4px; }
           .history-info-game { font-size: 15px; font-weight: 700; color: #111827; }
-          
           .history-result-wrap { display: flex; align-items: center; gap: 12px; }
           .verify-tag { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; }
           .tag-gps { background: #dbeafe; color: #1d4ed8; }
@@ -101,12 +142,44 @@ export default function MyPage(): React.JSX.Element {
           .result-tag { font-size: 14px; font-weight: 800; padding: 6px 12px; border-radius: 8px; }
           .res-win { background: #fef2f2; color: #E6002D; }
           .res-lose { background: #f3f4f6; color: #6b7280; }
+
+          /* 회원 탈퇴 영역 */
+          .danger-zone { margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
+          .danger-text { font-size: 13px; color: #6b7280; }
+          .btn-delete-account { background: transparent; border: none; color: #ef4444; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 4px; }
+          .btn-delete-account:hover { color: #b91c1c; }
         `}
             </style>
 
             <div className="mypage-content">
                 <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#111827', margin: '0 0 8px 0' }}>마이 직관 대시보드 🏟️</h1>
 
+                {/* 2. 내 정보 영역 (추가됨) */}
+                <section className="card-section">
+                    <h2 className="section-title">👤 내 정보</h2>
+                    <div className="profile-info-grid">
+                        <div className="info-item">
+                            <div className="info-label">닉네임</div>
+                            <div className="info-value">{mockProfile.nickname}</div>
+                        </div>
+                        <div className="info-item">
+                            <div className="info-label">응원팀</div>
+                            <div className="info-value" style={{ color: '#E6002D' }}>{mockProfile.favoriteTeam}</div>
+                        </div>
+                        <div className="info-item">
+                            <div className="info-label">계정 이메일</div>
+                            <div className="info-value">{mockProfile.email}</div>
+                        </div>
+                        <div className="info-item">
+                            <div className="info-label">가입일</div>
+                            <div className="info-value">{mockProfile.joinDate}</div>
+                        </div>
+                    </div>
+                    {/* 버튼 클릭 시 이동! */}
+                    <button className="btn-edit-profile" onClick={handleEditProfile}>프로필 수정하기</button>
+                </section>
+
+                {/* 1. 승률 및 배지 대시보드 */}
                 <section className="card-section dashboard-grid">
                     <div className="win-rate-box">
                         <div className="win-rate-title">나의 직관 승률</div>
@@ -124,6 +197,8 @@ export default function MyPage(): React.JSX.Element {
                     </div>
                 </section>
 
+
+                {/* 3. 직관 인증하기 */}
                 <section className="card-section">
                     <h2 className="section-title">📍 직관 인증하기</h2>
                     <div className="verify-buttons">
@@ -137,6 +212,7 @@ export default function MyPage(): React.JSX.Element {
                     </div>
                 </section>
 
+                {/* 4. 최근 직관 기록 */}
                 <section className="card-section">
                     <h2 className="section-title">⚾ 최근 직관 기록</h2>
                     <div className="history-list">
@@ -158,6 +234,12 @@ export default function MyPage(): React.JSX.Element {
                         ))}
                     </div>
                 </section>
+
+                {/* 📌 5. 회원 탈퇴 영역 (카드 섹션 밖으로 완전히 분리됨) */}
+                <div className="danger-zone">
+                    <span className="danger-text">더 이상 위닝PICK을 이용하지 않으시겠어요?</span>
+                    <button className="btn-delete-account" onClick={handleDeleteAccount}>회원 탈퇴</button>
+                </div>
             </div>
         </div>
     );
