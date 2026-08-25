@@ -38,6 +38,18 @@ export async function checkNicknameAvailability(nickname: string): Promise<boole
     return response.data.data.available;
 }
 
+export async function sendEmailVerification(email: string): Promise<void> {
+    await axiosInstance.post('/members/email-verification/send', { email });
+}
+
+export async function confirmEmailVerification(email: string, code: string): Promise<boolean> {
+    const response = await axiosInstance.post<ApiResponse<{ verified: boolean }>>(
+        '/members/email-verification/confirm',
+        { email, code },
+    );
+    return response.data.data.verified;
+}
+
 export interface LoginRequest {
     email: string;
     password: string;

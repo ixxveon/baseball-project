@@ -1,5 +1,5 @@
 import axios, { type AxiosInstance } from 'axios';
-import { getAccessToken } from '../utils/tokenStorage';
+import {clearAccessToken, getAccessToken} from '../utils/tokenStorage';
 
 const axiosInstance: AxiosInstance = axios.create({
     baseURL: '/api/v1',
@@ -15,5 +15,16 @@ axiosInstance.interceptors.request.use((config) => {
     }
     return config;
 });
+
+axiosInstance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            clearAccessToken();
+            window.location.href = '/login';
+        }
+        return Promise.reject(error);
+    },
+);
 
 export default axiosInstance;
