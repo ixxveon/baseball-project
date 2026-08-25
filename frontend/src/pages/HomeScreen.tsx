@@ -1,6 +1,6 @@
 import React from 'react';
 import RecommendedGames from '../components/RecommendedGames';
-import AiSummary from '../components/todayAiSummary';
+import AiSummary from '../components/AiSummary';
 import RecentSummary from '../components/RecentSummary';
 import ReservationsLinks from '../components/ReservationsLinks';
 import NoticeBoard from '../components/NoticeBoard';

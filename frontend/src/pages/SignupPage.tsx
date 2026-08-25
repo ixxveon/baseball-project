@@ -3,9 +3,16 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AxiosError } from 'axios';
 import AuthLayout from '../layouts/AuthLayout';
 import SocialLoginButtons from '../components/SocialLoginButtons';
-import { checkNicknameAvailability, signup, type SignupValidationErrors } from '../api/memberApi';
+import {
+    checkNicknameAvailability,
+    confirmEmailVerification,
+    sendEmailVerification,
+    signup,
+    type SignupValidationErrors
+} from '../api/memberApi';
 
 type NicknameCheckStatus = 'idle' | 'checking' | 'available' | 'duplicate';
+type EmailVerifyStatus = 'idle' | 'sent' | 'verified';
 
 interface FormState {
     email: string;
@@ -54,6 +61,8 @@ export default function SignupPage(): React.JSX.Element {
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const [nicknameCheckStatus, setNicknameCheckStatus] = useState<NicknameCheckStatus>('idle');
     const [checkedNickname, setCheckedNickname] = useState<string>('');
+    const [emailVerifyStatus, setEmailVerifyStatus] = useState<EmailVerifyStatus>('idle');
+    const [verificationCode, setVerificationCode] = useState<string>('');
 
     const handleChange = (field: keyof FormState) => (
         e: React.ChangeEvent<HTMLInputElement>,
@@ -63,6 +72,33 @@ export default function SignupPage(): React.JSX.Element {
 
         if (field === 'nickname') {
             setNicknameCheckStatus('idle');
+        }
+
+        if (field === 'email') {
+            setEmailVerifyStatus('idle');
+            setVerificationCode('');
+        }
+    };
+
+    const handleSendVerification = async (): Promise<void> => {
+        try {
+            await sendEmailVerification(form.email);
+            setEmailVerifyStatus('sent');
+        } catch {
+            setSubmitError('인증번호 발송에 실패했어요. 다시 시도해주세요.');
+        }
+    };
+
+    const handleConfirmVerification = async (): Promise<void> => {
+        try {
+            const verified = await confirmEmailVerification(form.email, verificationCode);
+            if (verified) {
+                setEmailVerifyStatus('verified');
+            } else {
+                setSubmitError('인증번호가 올바르지 않아요');
+            }
+        } catch {
+            setSubmitError('인증 확인에 실패했어요. 다시 시도해주세요');
         }
     };
 
@@ -107,6 +143,11 @@ export default function SignupPage(): React.JSX.Element {
             return;
         }
 
+        if (emailVerifyStatus !== 'verified') {
+            setSubmitError('이메일 인증을 완료해주세요');
+            return;
+        }
+
         setIsSubmitting(true);
         try {
             await signup({
@@ -138,15 +179,55 @@ export default function SignupPage(): React.JSX.Element {
             <form className="auth-form" onSubmit={handleSubmit} noValidate>
                 <div className="auth-field">
                     <label htmlFor="email">이메일</label>
-                    <input
-                        id="email"
-                        type="email"
-                        value={form.email}
-                        onChange={handleChange('email')}
-                        placeholder="example@email.com"
-                    />
+                    <div className="auth-field-row">
+                        <input
+                            id="email"
+                            type="email"
+                            value={form.email}
+                            onChange={handleChange('email')}
+                            placeholder="example@email.com"
+                        />
+                        <button
+                            type="button"
+                            className="auth-check-btn"
+                            onClick={handleSendVerification}
+                            disabled={emailVerifyStatus !== 'idle'}
+                        >
+                            인증번호 발송
+                        </button>
+                    </div>
                     {errors.email && <span className="auth-error">{errors.email}</span>}
                 </div>
+
+                {emailVerifyStatus !== 'idle' && (
+                    <div className="auth-field">
+                        <label htmlFor="verificationCode">인증번호</label>
+                        <div className="auth-field-row">
+                            <input
+                                id="verificationCode"
+                                type="text"
+                                value={verificationCode}
+                                onChange={(e) => setVerificationCode(e.target.value)}
+                                placeholder="인증번호 6자리"
+                                disabled={emailVerifyStatus === 'verified'}
+                            />
+                            <button
+                                type="button"
+                                className="auth-check-btn"
+                                onClick={handleConfirmVerification}
+                                disabled={emailVerifyStatus === 'verified'}
+                            >
+                                확인
+                            </button>
+                        </div>
+                        {emailVerifyStatus === 'sent' && (
+                            <span className="auth-success">인증번호를 발송했어요</span>
+                        )}
+                        {emailVerifyStatus === 'verified' && (
+                            <span className="auth-success">이메일 인증이 완료됐어요</span>
+                        )}
+                    </div>
+                )}
 
                 <div className="auth-field">
                     <label htmlFor="nickname">닉네임</label>
