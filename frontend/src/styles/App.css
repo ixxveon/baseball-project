@@ -1054,3 +1054,27 @@ button {
         font-size: 16px;
     }
 }
+/* RecommendScreen 관련 스타일 */
+.recommend-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+}
+
+@media (max-width: 768px) {
+    .recommend-grid {
+        grid-template-columns: repeat(1, 1fr);
+    }
+
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(40px, 1fr));
+        overflow-x: auto;
+    }
+}

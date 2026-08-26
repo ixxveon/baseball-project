@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import AnalysisScreen from '../pages/AnalysisScreen';
+import AnalysisScreen from './AnalysisScreen.tsx';
 import { gamesData } from '../data/games';
 import type { GameRecommendation } from '../types/recommendation';
 

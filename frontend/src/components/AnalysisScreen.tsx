@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchGameAnalysis, GameAnalysisData } from '../api/analysisApi';
+import { fetchGameAnalysis, GameAnalysisData } from '../api/analysisApi.ts';
 
 interface AnalysisScreenProps {
     gameId: string | null;
