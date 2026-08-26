@@ -1,3 +1,4 @@
+// frontend/src/types/recommendation.ts
 export interface GameRecommendation {
     gameId: number;
     gameDate: string;
