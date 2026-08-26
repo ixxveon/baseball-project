@@ -126,7 +126,7 @@ export default function RecommendedGames({
 
             <div className="recommended-header">
                 <span className="badge-today">
-                    오늘의 추천 경기
+                    오늘의 경기
                 </span>
 
                 <span className="recommended-date">
