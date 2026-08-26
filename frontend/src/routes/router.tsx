@@ -13,5 +13,5 @@ export const router = createBrowserRouter([
     { path: '/signup', element: <SignupPage /> },
     { path: '/mypage', element: <PrivateRoute><MyPage /></PrivateRoute> },
     { path: '/oauth/callback', element: <OAuthCallbackPage /> },
-    { path: '/profile-edit', element: <ProfileEditPage /> },
+    { path: '/profile-edit', element: <PrivateRoute> <ProfileEditPage /></PrivateRoute> },
 ]);

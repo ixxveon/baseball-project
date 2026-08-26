@@ -91,7 +91,7 @@ export default function ProfileEditPage(): React.JSX.Element {
                                 onChange={(e) => setNickname(e.target.value)}
                                 placeholder="2~10자 이내로 입력해주세요"
                             />
-                            <button className="btn-action btn-check" onClick={() => alert('사용 가능한 닉네임입니다.')}>중복 확인</button>
+                            <button className="btn-action btn-check" onClick={() => alert('사용 가능한 닉네임입니다. (API 연동 필요)')}>중복 확인</button>
                         </div>
                     </div>
                     <button className="btn-action btn-submit" onClick={handleNicknameChange}>닉네임 변경하기</button>
