@@ -1,151 +1,308 @@
-import React, { useState } from 'react';
-import AnalysisScreen from '../pages/AnalysisScreen';
+import React, { useEffect, useState } from 'react';
+import AnalysisScreen from './AnalysisScreen';
+import { gamesData } from '../data/games';
+import type { GameRecommendation } from '../types/recommendation';
 
-export default function RecommendedGames(): React.JSX.Element {
-    // 경기 분석 모달을 띄우기 위한 상태 변수 (null이면 닫힘, string이면 해당 경기 ID 모달 열림)
-    const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+interface RecommendedGamesProps {
+    favoriteTeam: string;
+}
+
+/*
+ * 팀 로고 경로
+ *
+ * public/
+ * └── images/
+ *     └── teams/
+ *         ├── lg.png
+ *         ├── doosan.png
+ *         ├── kia.png
+ *         ├── samsung.png
+ *         ├── lotte.png
+ *         ├── hanwha.png
+ *         ├── ssg.png
+ *         ├── kiwoom.png
+ *         ├── nc.png
+ *         └── kt.png
+ */
+const teamLogos: Record<string, string> = {
+    'LG 트윈스': '/images/teams/lg.png',
+    '두산 베어스': '/images/teams/doosan.png',
+    '기아 타이거즈': '/images/teams/kia.png',
+    '삼성 라이온즈': '/images/teams/samsung.png',
+    '롯데 자이언츠': '/images/teams/lotte.png',
+    '한화 이글스': '/images/teams/hanwha.png',
+    'SSG 랜더스': '/images/teams/ssg.png',
+    '키움 히어로즈': '/images/teams/kiwoom.png',
+    'NC 다이노스': '/images/teams/nc.png',
+    'KT 위즈': '/images/teams/kt.png',
+};
+
+export default function RecommendedGames({
+                                             favoriteTeam,
+                                         }: RecommendedGamesProps): React.JSX.Element {
+    const [selectedGameId, setSelectedGameId] =
+        useState<string | null>(null);
+
+    const [targetGame, setTargetGame] =
+        useState<GameRecommendation | null>(null);
+
+    useEffect(() => {
+        /*
+         * 오늘 날짜
+         * YYYY-MM-DD
+         */
+        const todayStr = new Date()
+            .toISOString()
+            .split('T')[0];
+
+        /*
+         * 오늘 경기 중
+         * 응원팀이 출전하는 경기 검색
+         */
+        const favoriteGame = gamesData.find(
+            (game) =>
+                game.gameDate === todayStr &&
+                (
+                    game.teamName === favoriteTeam ||
+                    game.opponentTeamName === favoriteTeam
+                )
+        );
+
+        /*
+         * 경기 선택 우선순위
+         *
+         * 1. 오늘 + 응원팀 경기
+         * 2. 오늘 경기
+         * 3. 목업 데이터 첫 번째 경기
+         */
+        const foundGame =
+            favoriteGame ||
+            gamesData.find(
+                (game) => game.gameDate === todayStr
+            ) ||
+            gamesData[0];
+
+        setTargetGame(foundGame);
+    }, [favoriteTeam]);
+
+    /*
+     * 경기 데이터가 없는 경우
+     */
+    if (!targetGame) {
+        return (
+            <div className="recommended-card">
+                오늘의 추천 경기가 없습니다.
+            </div>
+        );
+    }
+
+    /*
+     * 응원팀이 홈팀인지 확인
+     */
+    const isFavoriteHome =
+        targetGame.teamName === favoriteTeam;
+
+    /*
+     * 응원팀이 원정팀인지 확인
+     */
+    const isFavoriteAway =
+        targetGame.opponentTeamName === favoriteTeam;
+
+    /*
+     * 홈팀 / 원정팀 로고
+     */
+    const homeTeamLogo =
+        teamLogos[targetGame.teamName];
+
+    const awayTeamLogo =
+        teamLogos[targetGame.opponentTeamName];
 
     return (
-        <div className="recommended-card" style={{
-            backgroundColor: '#111827',
-            borderRadius: '16px',
-            padding: '24px',
-            color: '#ffffff',
-            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
-            boxSizing: 'border-box'
-        }}>
-            {/* 상단 안내 배지 & 날짜/장소 */}
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '20px'
-            }}>
-                <span style={{
-                    backgroundColor: '#e11d48',
-                    color: '#ffffff',
-                    padding: '6px 14px',
-                    borderRadius: '20px',
-                    fontSize: '13px',
-                    fontWeight: '800'
-                }}>
+        <div className="recommended-card">
+
+            {/* ================================================
+                추천 경기 헤더
+            ================================================= */}
+
+            <div className="recommended-header">
+                <span className="badge-today">
                     오늘의 경기
                 </span>
-                <span style={{ fontSize: '14px', color: '#9ca3af' }}>
-                    2026.08.17 (월) 18:30 | 잠실야구장
+
+                <span className="recommended-date">
+                    {targetGame.gameDate}
                 </span>
             </div>
 
-            {/* 경기 팀 맞대결 프로필 정보 */}
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-around',
-                alignItems: 'center',
-                marginBottom: '24px',
-                padding: '12px 0'
-            }}>
-                {/* 홈팀 */}
-                <div style={{ textAlign: 'center' }}>
-                    <div style={{
-                        width: '72px',
-                        height: '72px',
-                        borderRadius: '50%',
-                        backgroundColor: '#c30452',
-                        margin: '0 auto 10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: '800',
-                        fontSize: '13px',
-                        color: '#ffffff',
-                        border: '3px solid #1f2937'
-                    }}>
-                        LG 트윈스
+
+            {/* ================================================
+                경기 매치업
+            ================================================= */}
+
+            <div className="matchup-container">
+
+                {/* ============================================
+                    HOME TEAM
+                ============================================= */}
+
+                <div
+                    className={`team-box ${
+                        isFavoriteHome
+                            ? 'favorite-team'
+                            : ''
+                    }`}
+                >
+                    {/* HOME */}
+                    <div className="home-away-label">
+                        HOME
                     </div>
-                    <div style={{ fontWeight: '700', fontSize: '16px' }}>LG 트윈스</div>
+
+                    {/* 로고 */}
+                    <div className="team-logo">
+                        {homeTeamLogo ? (
+                            <img
+                                src={homeTeamLogo}
+                                alt={`${targetGame.teamName} 로고`}
+                            />
+                        ) : (
+                            <span className="team-logo-fallback">
+                                {targetGame.teamName}
+                            </span>
+                        )}
+                    </div>
+
+                    {/* 팀 이름 */}
+                    <div className="team-name">
+                        {targetGame.teamName}
+                    </div>
                 </div>
 
-                <div style={{ fontSize: '22px', fontWeight: '900', color: '#6b7280' }}>
+
+                {/* ============================================
+                    VS
+                ============================================= */}
+
+                <div className="vs-text">
                     VS
                 </div>
 
-                {/* 원정팀 */}
-                <div style={{ textAlign: 'center' }}>
-                    <div style={{
-                        width: '72px',
-                        height: '72px',
-                        borderRadius: '50%',
-                        backgroundColor: '#131230',
-                        margin: '0 auto 10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: '800',
-                        fontSize: '13px',
-                        color: '#ffffff',
-                        border: '3px solid #1f2937'
-                    }}>
-                        두산 베어스
+
+                {/* ============================================
+                    AWAY TEAM
+                ============================================= */}
+
+                <div
+                    className={`team-box ${
+                        isFavoriteAway
+                            ? 'favorite-team'
+                            : ''
+                    }`}
+                >
+                    {/* AWAY */}
+                    <div className="home-away-label">
+                        AWAY
                     </div>
-                    <div style={{ fontWeight: '700', fontSize: '16px' }}>두산 베어스</div>
+
+                    {/* 로고 */}
+                    <div className="team-logo">
+                        {awayTeamLogo ? (
+                            <img
+                                src={awayTeamLogo}
+                                alt={`${targetGame.opponentTeamName} 로고`}
+                            />
+                        ) : (
+                            <span className="team-logo-fallback">
+                                {targetGame.opponentTeamName}
+                            </span>
+                        )}
+                    </div>
+
+                    {/* 팀 이름 */}
+                    <div className="team-name">
+                        {targetGame.opponentTeamName}
+                    </div>
                 </div>
             </div>
 
-            {/* 승리 확률 / 추천 점수 / 예상 관중 요약 지표 */}
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-around',
-                padding: '16px 0',
-                borderTop: '1px solid #1f2937',
-                marginBottom: '20px',
-                textAlign: 'center',
-                backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                borderRadius: '12px'
-            }}>
-                <div>
-                    <div style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '4px' }}>LG 트윈스 승리 확률</div>
-                    <div style={{ fontSize: '20px', fontWeight: '800', color: '#e11d48' }}>68%</div>
+
+            {/* ================================================
+                경기 지표
+            ================================================= */}
+
+            <div className="metrics-container">
+
+                {/* 승리 확률 */}
+                <div className="metric-item">
+                    <div className="metric-label">
+                        승리 확률
+                    </div>
+
+                    <div className="metric-value red">
+                        {(targetGame.winProbability * 100).toFixed(1)}%
+                    </div>
                 </div>
-                <div>
-                    <div style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '4px' }}>직관 추천 점수</div>
-                    <div style={{ fontSize: '20px', fontWeight: '800', color: '#10b981' }}>87점 A</div>
+
+
+                {/* 직관 추천 점수 */}
+                <div className="metric-item">
+                    <div className="metric-label">
+                        직관 추천 점수
+                    </div>
+
+                    <div className="metric-value green">
+                        {targetGame.recommendationScore}점
+                    </div>
                 </div>
-                <div>
-                    <div style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '4px' }}>예상 관중</div>
-                    <div style={{ fontSize: '20px', fontWeight: '800', color: '#f3f4f6' }}>22,000명</div>
+
+
+                {/* 추천 등급 */}
+                <div className="metric-item">
+                    <div className="metric-label">
+                        추천 등급
+                    </div>
+
+                    <div className="metric-value light">
+                        {targetGame.recommendationGrade} 등급
+                    </div>
                 </div>
+
             </div>
 
-            {/* 경기 분석 자세히 보기 버튼 */}
+
+            {/* ================================================
+                경기 분석 버튼
+            ================================================= */}
+
             <button
                 type="button"
-                onClick={() => setSelectedGameId('20260817_LG_OB')}
-                style={{
-                    width: '100%',
-                    padding: '14px',
-                    backgroundColor: '#e11d48',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '10px',
-                    fontSize: '15px',
-                    fontWeight: '800',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                    transition: 'background-color 0.2s ease'
-                }}
+                onClick={() =>
+                    setSelectedGameId(
+                        String(targetGame.gameId)
+                    )
+                }
+                className="analysis-button"
             >
-                <span>경기 분석 자세히 보기</span>
-                <span>→</span>
+                <span>
+                    경기 분석 자세히 보기
+                </span>
+
+                <span>
+                    →
+                </span>
             </button>
 
-            {/* 경기 분석 모달/PiP (selectedGameId가 담기면 팝업 출력) */}
+
+            {/* ================================================
+                경기 분석 모달
+            ================================================= */}
+
             <AnalysisScreen
                 gameId={selectedGameId}
-                onClose={() => setSelectedGameId(null)}
+                onClose={() =>
+                    setSelectedGameId(null)
+                }
             />
+
         </div>
     );
 }
