@@ -2,7 +2,7 @@ import React from 'react';
 import type { GameRecommendation } from '../types/recommendation';
 
 interface GameCardProps {
-    game: GameRecommendation; // 👈 GamePick을 GameRecommendation으로 변경
+    game: GameRecommendation;
 }
 
 export default function GameCard({ game }: GameCardProps): React.JSX.Element {
