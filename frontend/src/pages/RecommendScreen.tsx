@@ -1,7 +1,6 @@
 import React from 'react';
 import { GRADE_COLORS, RecommendationGrade } from '../constants/grade';
 
-// 데이터 타입 정의 (I 접두사 금지 규칙 준수)[cite: 1]
 export interface RecommendedGame {
     id: number;
     homeTeam: string;
