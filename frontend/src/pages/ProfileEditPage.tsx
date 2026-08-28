@@ -82,9 +82,10 @@ export default function ProfileEditPage(): React.JSX.Element {
                 <section className="edit-section">
                     <h2 className="section-title">닉네임 변경</h2>
                     <div className="form-group">
-                        <label className="form-label">새로운 닉네임</label>
+                        <label className="form-label" htmlFor="nickname">새로운 닉네임</label>
                         <div className="input-wrap">
                             <input
+                                id="nickname"
                                 type="text"
                                 className="form-input"
                                 value={nickname}
