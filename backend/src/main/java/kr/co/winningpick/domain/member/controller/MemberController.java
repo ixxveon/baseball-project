@@ -3,8 +3,10 @@ package kr.co.winningpick.domain.member.controller;
 import kr.co.winningpick.domain.member.docs.MemberApiDocs;
 import kr.co.winningpick.domain.member.dto.request.RequestConfirmEmailVerification;
 import kr.co.winningpick.domain.member.dto.request.RequestSendEmailVerification;
+import kr.co.winningpick.domain.member.dto.request.RequestSignup;
 import kr.co.winningpick.domain.member.dto.response.ResponseEmailVerification;
 import kr.co.winningpick.domain.member.dto.response.ResponseNicknameAvailability;
+import kr.co.winningpick.domain.member.dto.response.ResponseSignup;
 import kr.co.winningpick.domain.member.service.MemberService;
 import kr.co.winningpick.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -35,5 +37,11 @@ public class MemberController implements MemberApiDocs {
     public ApiResponse<ResponseNicknameAvailability> checkNicknameAvailability(@RequestParam String nickname) {
         boolean available = memberService.checkNicknameAvailability(nickname);
         return ApiResponse.success(new ResponseNicknameAvailability(available));
+    }
+
+    @PostMapping("/signup")
+    public ApiResponse<ResponseSignup> signup(@RequestBody RequestSignup request) {
+        ResponseSignup response = memberService.signup(request);
+        return ApiResponse.success(response);
     }
 }
