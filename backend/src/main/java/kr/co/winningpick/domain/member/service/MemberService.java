@@ -1,17 +1,21 @@
 package kr.co.winningpick.domain.member.service;
 
+import kr.co.winningpick.domain.member.dto.request.RequestLogin;
 import kr.co.winningpick.domain.member.dto.request.RequestSignup;
+import kr.co.winningpick.domain.member.dto.response.ResponseLogin;
 import kr.co.winningpick.domain.member.dto.response.ResponseSignup;
 import kr.co.winningpick.domain.member.entity.Member;
 import kr.co.winningpick.domain.member.exception.MemberErrorCode;
 import kr.co.winningpick.domain.member.repository.MemberRepository;
 import kr.co.winningpick.global.exception.BusinessException;
+import kr.co.winningpick.global.util.JwtProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Random;
 
 @Service
@@ -19,14 +23,11 @@ import java.util.Random;
 public class MemberService {
 
     private static final Duration VERIFICATION_CODE_TTL = Duration.ofMinutes(5);
-
     private static final Duration VERIFIED_STATUS_TTL = Duration.ofMinutes(30);
-
     private final StringRedisTemplate stringRedisTemplate;
-
     private final MemberRepository memberRepository;
-
     private final PasswordEncoder passwordEncoder;
+    private final JwtProvider jwtProvider;
 
     public void sendEmailVerification(String email) {
         String code = generateVerificationCode();
@@ -84,5 +85,19 @@ public class MemberService {
         Member savedMember = memberRepository.save(member);
 
         return new ResponseSignup(savedMember.getId(), savedMember.getEmail(), savedMember.getNickname());
+    }
+
+    public ResponseLogin login(RequestLogin request) {
+        Member member = memberRepository.findByEmail(request.email())
+                .orElseThrow(() -> new BusinessException(MemberErrorCode.LOGIN_FAILED));
+
+        if (!passwordEncoder.matches(request.password(), member.getPassword())) {
+            throw new BusinessException(MemberErrorCode.LOGIN_FAILED);
+        }
+
+        String accessToken = jwtProvider.createAccessToken(member.getId());
+        LocalDateTime expiresAt = LocalDateTime.now().plus(jwtProvider.getAccessTokenValidity());
+
+        return new ResponseLogin(accessToken, expiresAt);
     }
 }

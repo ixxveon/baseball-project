@@ -2,9 +2,11 @@ package kr.co.winningpick.domain.member.controller;
 
 import kr.co.winningpick.domain.member.docs.MemberApiDocs;
 import kr.co.winningpick.domain.member.dto.request.RequestConfirmEmailVerification;
+import kr.co.winningpick.domain.member.dto.request.RequestLogin;
 import kr.co.winningpick.domain.member.dto.request.RequestSendEmailVerification;
 import kr.co.winningpick.domain.member.dto.request.RequestSignup;
 import kr.co.winningpick.domain.member.dto.response.ResponseEmailVerification;
+import kr.co.winningpick.domain.member.dto.response.ResponseLogin;
 import kr.co.winningpick.domain.member.dto.response.ResponseNicknameAvailability;
 import kr.co.winningpick.domain.member.dto.response.ResponseSignup;
 import kr.co.winningpick.domain.member.service.MemberService;
@@ -42,6 +44,12 @@ public class MemberController implements MemberApiDocs {
     @PostMapping("/signup")
     public ApiResponse<ResponseSignup> signup(@RequestBody RequestSignup request) {
         ResponseSignup response = memberService.signup(request);
+        return ApiResponse.success(response);
+    }
+
+    @PostMapping("/login")
+    public ApiResponse<ResponseLogin> login(@RequestBody RequestLogin request) {
+        ResponseLogin response = memberService.login(request);
         return ApiResponse.success(response);
     }
 }
