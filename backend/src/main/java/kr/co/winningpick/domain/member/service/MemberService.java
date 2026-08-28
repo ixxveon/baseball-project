@@ -1,6 +1,7 @@
 package kr.co.winningpick.domain.member.service;
 
 import kr.co.winningpick.domain.member.exception.MemberErrorCode;
+import kr.co.winningpick.domain.member.repository.MemberRepository;
 import kr.co.winningpick.global.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -16,6 +17,8 @@ public class MemberService {
     private static final Duration VERIFICATION_CODE_TTL = Duration.ofMinutes(5);
 
     private final StringRedisTemplate stringRedisTemplate;
+
+    private final MemberRepository memberRepository;
 
     public void sendEmailVerification(String email) {
         String code = generateVerificationCode();
@@ -40,5 +43,9 @@ public class MemberService {
     private String generateVerificationCode() {
         int code = new Random().nextInt(1_000_000);
         return String.format("%06d", code);
+    }
+
+    public boolean checkNicknameAvailability(String nickname) {
+        return !memberRepository.existsByNickname(nickname);
     }
 }
