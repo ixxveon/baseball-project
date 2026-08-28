@@ -1,34 +1,38 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
-interface TeamRanking {
-    rank: number;
+// 1. 백엔드 ResponseRanking DTO 구조와 맞춘 타입 정의
+interface ResponseRanking {
+    teamRank: number;
     teamName: string;
     games: number;
     wins: number;
     draws: number;
     losses: number;
     winRate: string;
-    gameBehind: string;
+    gameDiff: string;
     streak: string;
-    isMyTeam?: boolean;
 }
 
-const mockRankings: TeamRanking[] = [
-    { rank: 1, teamName: 'KIA 타이거즈', games: 110, wins: 65, draws: 2, losses: 43, winRate: '0.602', gameBehind: '0.0', streak: '3승' },
-    { rank: 2, teamName: 'LG 트윈스', games: 112, wins: 60, draws: 2, losses: 50, winRate: '0.545', gameBehind: '5.5', streak: '1패', isMyTeam: true },
-    { rank: 3, teamName: '삼성 라이온즈', games: 111, wins: 60, draws: 2, losses: 49, winRate: '0.550', gameBehind: '5.5', streak: '2승' },
-    { rank: 4, teamName: '두산 베어스', games: 114, wins: 58, draws: 2, losses: 54, winRate: '0.518', gameBehind: '8.5', streak: '1패' },
-    { rank: 5, teamName: 'SSG 랜더스', games: 111, wins: 56, draws: 1, losses: 54, winRate: '0.509', gameBehind: '9.5', streak: '2패' },
-    { rank: 6, teamName: 'NC 다이노스', games: 110, wins: 49, draws: 2, losses: 59, winRate: '0.454', gameBehind: '15.5', streak: '5패' },
-    { rank: 7, teamName: '한화 이글스', games: 109, wins: 48, draws: 2, losses: 59, winRate: '0.449', gameBehind: '16.0', streak: '1승' },
-    { rank: 8, teamName: '롯데 자이언츠', games: 108, wins: 47, draws: 3, losses: 58, winRate: '0.448', gameBehind: '16.0', streak: '2승' },
-    { rank: 9, teamName: 'KT 위즈', games: 111, wins: 53, draws: 2, losses: 56, winRate: '0.486', gameBehind: '12.0', streak: '1패' },
-    { rank: 10, teamName: '키움 히어로즈', games: 110, wins: 42, draws: 0, losses: 68, winRate: '0.382', gameBehind: '23.0', streak: '3패' },
-];
-
 export default function RankingPage(): React.JSX.Element {
+    // 2. 백엔드에서 데이터를 받아올 상태 (초기값은 빈 배열)
+    const [rankings, setRankings] = useState<ResponseRanking[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
 
-    // 1~5위 진출권 강조 색상 유지
+    // 3. 페이지가 켜질 때 백엔드 API 호출
+    useEffect(() => {
+        fetch('http://localhost:8080/api/v1/rankings')
+            .then((res) => res.json())
+            .then((data: ResponseRanking[]) => {
+                setRankings(data);
+                setLoading(false);
+            })
+            .catch((err) => {
+                console.error('랭킹 데이터 로딩 실패:', err);
+                setLoading(false);
+            });
+    }, []);
+
+    // 1~5위 진출권 강조 색상 함수
     const getRankBadgeClass = (rank: number) => {
         if (rank === 1) return 'rank-badge rank-1';
         if (rank === 2) return 'rank-badge rank-2';
@@ -90,7 +94,7 @@ export default function RankingPage(): React.JSX.Element {
                         <h1 className="ranking-title">
                             KBO 정규리그 순위 <span style={{ fontSize: '24px' }}>🔥</span>
                         </h1>
-                        <p className="ranking-subtitle">2026.08.17 기준 <span style={{ margin: '0 8px' }}>|</span> 매일 자정 업데이트</p>
+                        <p className="ranking-subtitle">2026.08.17 기준 <span style={{ margin: '0 8px' }}>|</span> 백엔드 실시간 연동 완료</p>
                     </div>
                     <div className="my-team-badge">
                         <span style={{ color: '#E6002D', fontSize: '18px' }}>★</span> 내 응원팀
@@ -115,30 +119,43 @@ export default function RankingPage(): React.JSX.Element {
                         </thead>
 
                         <tbody>
-                        {mockRankings.map((team) => (
-                            <tr key={team.teamName} className={team.isMyTeam ? 'my-team-row' : ''}>
-                                <td>
-                                    <div className={getRankBadgeClass(team.rank)}>{team.rank}</div>
-                                </td>
-                                <td>
-                                    <div className="team-info">
-                                        <div className="team-logo">로고</div>
-                                        {team.teamName}
-                                    </div>
-                                </td>
-                                <td>{team.games}</td>
-                                <td style={{ fontWeight: 600, color: '#1f2937' }}>{team.wins}</td>
-                                <td>{team.draws}</td>
-                                <td>{team.losses}</td>
-                                <td className="win-rate">{team.winRate}</td>
-                                <td style={{ fontWeight: 500 }}>{team.gameBehind}</td>
-                                <td>
-                    <span className={`streak-badge ${team.streak.includes('승') ? 'streak-win' : 'streak-lose'}`}>
-                      {team.streak}
-                    </span>
+                        {loading ? (
+                            <tr>
+                                <td colSpan={9} style={{ padding: '40px', color: '#6b7280' }}>
+                                    데이터를 불러오는 중입니다... ⚾
                                 </td>
                             </tr>
-                        ))}
+                        ) : (
+                            rankings.map((team) => {
+                                // LG 트윈스일 경우 원본 디자인처럼 내 응원팀 Row 스타일 적용
+                                const isMyTeam = team.teamName === 'LG 트윈스';
+
+                                return (
+                                    <tr key={team.teamName} className={isMyTeam ? 'my-team-row' : ''}>
+                                        <td>
+                                            <div className={getRankBadgeClass(team.teamRank)}>{team.teamRank}</div>
+                                        </td>
+                                        <td>
+                                            <div className="team-info">
+                                                <div className="team-logo">로고</div>
+                                                {team.teamName}
+                                            </div>
+                                        </td>
+                                        <td>{team.games}</td>
+                                        <td style={{ fontWeight: 600, color: '#1f2937' }}>{team.wins}</td>
+                                        <td>{team.draws}</td>
+                                        <td>{team.losses}</td>
+                                        <td className="win-rate">{team.winRate}</td>
+                                        <td style={{ fontWeight: 500 }}>{team.gameDiff}</td>
+                                        <td>
+                                            <span className={`streak-badge ${team.streak.includes('승') ? 'streak-win' : 'streak-lose'}`}>
+                                              {team.streak}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                );
+                            })
+                        )}
                         </tbody>
                     </table>
                 </div>
