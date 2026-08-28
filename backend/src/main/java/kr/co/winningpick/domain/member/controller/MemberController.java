@@ -35,18 +35,21 @@ public class MemberController implements MemberApiDocs {
         return ApiResponse.success(new ResponseEmailVerification(verified));
     }
 
+    @Override
     @GetMapping("/nickname-availability")
     public ApiResponse<ResponseNicknameAvailability> checkNicknameAvailability(@RequestParam String nickname) {
         boolean available = memberService.checkNicknameAvailability(nickname);
         return ApiResponse.success(new ResponseNicknameAvailability(available));
     }
 
+    @Override
     @PostMapping("/signup")
     public ApiResponse<ResponseSignup> signup(@RequestBody RequestSignup request) {
         ResponseSignup response = memberService.signup(request);
         return ApiResponse.success(response);
     }
 
+    @Override
     @PostMapping("/login")
     public ApiResponse<ResponseLogin> login(@RequestBody RequestLogin request) {
         ResponseLogin response = memberService.login(request);
