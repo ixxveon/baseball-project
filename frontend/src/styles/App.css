@@ -1081,6 +1081,11 @@ button {
 
 /* 커뮤니티 게시판 */
 .community-container {
+    max-width: 1600px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 32px 40px;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     gap: 20px;
