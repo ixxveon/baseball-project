@@ -23,7 +23,7 @@ public class PostController {
     private final MemberRepository memberRepository;
 
     @GetMapping
-    public ApiResponse<List<ResponsePost>> getPost() {
+    public ApiResponse<List<ResponsePost>> getPosts() {
         return ApiResponse.success(postService.getPosts());
     }
 
@@ -32,5 +32,10 @@ public class PostController {
         Member author = memberRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(MemberErrorCode.LOGIN_FAILED));
         return ApiResponse.success(postService.createPost(author, request));
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<ResponsePost> getPost(@PathVariable Long id) {
+        return ApiResponse.success(postService.getPost(id));
     }
 }
