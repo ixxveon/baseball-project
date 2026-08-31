@@ -1078,3 +1078,250 @@ button {
         overflow-x: auto;
     }
 }
+
+/* 커뮤니티 게시판 */
+.community-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.community-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.community-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #111317;
+    margin: 0;
+}
+
+.write-btn {
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: none;
+    background: #e71937;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.community-category-tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.category-tab {
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.category-tab.active {
+    background: #111317;
+    color: #ffffff;
+    border-color: #111317;
+}
+
+.post-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.post-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #ffffff;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+}
+
+.post-card:hover { border-color: #e71937; }
+
+.post-card-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.post-category-badge {
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.post-category-badge.preview { background: #111317; color: #ffffff; }
+.post-category-badge.certification { background: #e71937; color: #ffffff; }
+.post-category-badge.etc { background: #6b7280; color: #ffffff; }
+
+.post-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #111317;
+}
+
+.post-content {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.post-meta {
+    display: flex;
+    gap: 8px;
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.post-empty {
+    text-align: center;
+    padding: 40px 0;
+    color: #9ca3af;
+    font-size: 14px;
+}
+
+.post-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.post-detail-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.post-detail-content {
+    font-size: 14px;
+    color: #111317;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.post-comment-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.post-comment-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111317;
+    margin: 0;
+}
+
+.post-comment-form {
+    display: flex;
+    gap: 8px;
+}
+
+.post-comment-form input {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    font-size: 13px;
+}
+
+.post-comment-form input:focus { border-color: #e71937; }
+
+.post-comment-submit {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: none;
+    background: #111317;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.post-comment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.post-comment-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.post-comment-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+.post-comment-top {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.post-comment-author {
+    font-size: 13px;
+    font-weight: 700;
+    color: #111317;
+}
+
+.post-comment-date {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.post-comment-content {
+    font-size: 13px;
+    color: #374151;
+}
+
+.post-write-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.post-write-field input,
+.post-write-field textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+}
+
+.post-write-field input:focus,
+.post-write-field textarea:focus { border-color: #e71937; }
+
+.post-write-textarea { resize: vertical; }
+
+.post-write-error {
+    font-size: 12px;
+    color: #e71937;
+}
+
+.post-write-submit {
+    width: 100%;
+    padding: 13px;
+}
