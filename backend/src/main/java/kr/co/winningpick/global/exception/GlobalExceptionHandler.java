@@ -2,6 +2,8 @@ package kr.co.winningpick.global.exception;
 
 import kr.co.winningpick.global.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -27,6 +29,13 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = e.getErrorCode();
         return ResponseEntity.status(errorCode.getStatus())
                 .body(ApiResponse.fail(errorCode.getMessage()));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolationException(DataIntegrityViolationException e) {
+        log.warn("Data integrity violation", e);
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.fail("이미 존재하는 데이터입니다"));
     }
 
     @ExceptionHandler(Exception.class)
