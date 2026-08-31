@@ -1,17 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { ResponseRanking } from '../types/ranking';
 
-// 1. 백엔드 ResponseRanking DTO 구조와 맞춘 타입 정의
-interface ResponseRanking {
-    teamRank: number;
-    teamName: string;
-    games: number;
-    wins: number;
-    draws: number;
-    losses: number;
-    winRate: string;
-    gameDiff: string;
-    streak: string;
-}
 
 export default function RankingPage(): React.JSX.Element {
     // 2. 백엔드에서 데이터를 받아올 상태 (초기값은 빈 배열)
@@ -38,7 +27,7 @@ export default function RankingPage(): React.JSX.Element {
         if (rank === 2) return 'rank-badge rank-2';
         if (rank === 3) return 'rank-badge rank-3';
         if (rank <= 5) return 'rank-badge rank-ps'; // 4, 5위 강조
-        return 'rank-badge rank-other';             // 6위 이하
+        return 'rank-badge rank-other'; // 6위 이하
     };
 
     return (
@@ -55,21 +44,17 @@ export default function RankingPage(): React.JSX.Element {
           .ranking-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
           .ranking-title { font-size: 28px; font-weight: 800; color: #111827; margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px; }
           .ranking-subtitle { font-size: 14px; color: #6b7280; margin: 0; font-weight: 500; }
-          
           .my-team-badge { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #374151; background: #ffffff; padding: 10px 20px; border-radius: 999px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #f3f4f6; }
           .my-team-name { background: #fef2f2; color: #E6002D; padding: 4px 12px; border-radius: 999px; }
-          
           .table-wrapper { background: #ffffff; border-radius: 24px; box-shadow: 0 8px 30px rgba(0,0,0,0.04); border: 1px solid #e5e7eb; overflow-x: auto; }
           .ranking-table { width: 100%; border-collapse: collapse; text-align: center; white-space: nowrap; }
           .ranking-table th { background: linear-gradient(to right, #111827, #1f2937); color: #d1d5db; padding: 20px 16px; font-size: 13px; font-weight: 600; letter-spacing: 0.5px; }
           .ranking-table th.left-align { text-align: left; }
           .ranking-table td { padding: 16px; font-size: 14px; color: #4b5563; border-bottom: 1px solid #f9fafb; transition: background-color 0.2s; }
-          
           .ranking-table tr:hover td { background-color: #f9fafb; }
           .ranking-table tr.my-team-row td { background-color: #fef2f2; }
           .ranking-table tr.my-team-row:hover td { background-color: #fee2e2; }
           .ranking-table tr.my-team-row td:first-child { border-left: 4px solid #E6002D; }
-          
           /* 순위 배지 디자인 */
           .rank-badge { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; margin: 0 auto; border-radius: 50%; font-weight: bold; font-size: 13px; }
           .rank-1 { background: linear-gradient(135deg, #fde047, #eab308); color: #fff; box-shadow: 0 4px 6px -1px rgba(234,179,8,0.3); }
@@ -77,11 +62,9 @@ export default function RankingPage(): React.JSX.Element {
           .rank-3 { background: linear-gradient(135deg, #fb923c, #f97316); color: #fff; box-shadow: 0 4px 6px -1px rgba(249,115,22,0.3); }
           .rank-ps { background: #4b5563; color: #fff; } /* 4, 5위 강조 */
           .rank-other { background: #f3f4f6; color: #9ca3af; } /* 6위 이하 */
-          
           .team-info { display: flex; align-items: center; gap: 12px; font-weight: 700; color: #1f2937; text-align: left; font-size: 15px; }
           .team-logo { width: 36px; height: 36px; border-radius: 50%; background: #f9fafb; border: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #9ca3af; }
           .win-rate { font-weight: 800; color: #E6002D; font-size: 15px; }
-          
           .streak-badge { display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
           .streak-win { background: #fef2f2; color: #E6002D; border: 1px solid #fee2e2; }
           .streak-lose { background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; }
@@ -94,7 +77,9 @@ export default function RankingPage(): React.JSX.Element {
                         <h1 className="ranking-title">
                             KBO 정규리그 순위 <span style={{ fontSize: '24px' }}>🔥</span>
                         </h1>
-                        <p className="ranking-subtitle">2026.08.17 기준 <span style={{ margin: '0 8px' }}>|</span> 백엔드 실시간 연동 완료</p>
+                        <p className="ranking-subtitle">
+                            2026.08.17 기준 <span style={{ margin: '0 8px' }}>|</span> 백엔드 실시간 연동 완료
+                        </p>
                     </div>
                     <div className="my-team-badge">
                         <span style={{ color: '#E6002D', fontSize: '18px' }}>★</span> 내 응원팀
@@ -148,9 +133,9 @@ export default function RankingPage(): React.JSX.Element {
                                         <td className="win-rate">{team.winRate}</td>
                                         <td style={{ fontWeight: 500 }}>{team.gameDiff}</td>
                                         <td>
-                                            <span className={`streak-badge ${team.streak.includes('승') ? 'streak-win' : 'streak-lose'}`}>
-                                              {team.streak}
-                                            </span>
+                        <span className={`streak-badge ${team.streak.includes('승') ? 'streak-win' : 'streak-lose'}`}>
+                          {team.streak}
+                        </span>
                                         </td>
                                     </tr>
                                 );

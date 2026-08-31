@@ -13,8 +13,8 @@ public class ResponseRanking {
     private Integer wins;
     private Integer draws;
     private Integer losses;
-    private String winRate;
-    private String gameDiff;
+    private Double winRate;
+    private Double gameDiff;
     private String streak;
 
     // Entity(DB 데이터)를 DTO(접시)로 예쁘게 옮겨 담는 마법의 함수입니다!

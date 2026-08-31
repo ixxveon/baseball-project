@@ -20,7 +20,7 @@ public class RankingService {
     public List<ResponseRanking> getRankings() {
         return rankingRepository.findAllByOrderByTeamRankAsc()
                 .stream()
-                .map(ResponseRanking::from) // 가져온 데이터를 접시에 담습니다
+                .map(ResponseRanking::from)
                 .collect(Collectors.toList());
     }
 }
