@@ -1,5 +1,6 @@
 package kr.co.winningpick.domain.member.controller;
 
+import jakarta.validation.Valid;
 import kr.co.winningpick.domain.member.docs.MemberApiDocs;
 import kr.co.winningpick.domain.member.dto.request.RequestConfirmEmailVerification;
 import kr.co.winningpick.domain.member.dto.request.RequestLogin;
@@ -23,14 +24,14 @@ public class MemberController implements MemberApiDocs {
 
     @Override
     @PostMapping("/email-verification/send")
-    public ApiResponse<Void> sendEmailVerification(@RequestBody RequestSendEmailVerification request) {
+    public ApiResponse<Void> sendEmailVerification(@Valid @RequestBody RequestSendEmailVerification request) {
         memberService.sendEmailVerification(request.email());
         return ApiResponse.success(null);
     }
 
     @Override
     @PostMapping("/email-verification/confirm")
-    public ApiResponse<ResponseEmailVerification> confirmEmailVerification(@RequestBody RequestConfirmEmailVerification request) {
+    public ApiResponse<ResponseEmailVerification> confirmEmailVerification(@Valid @RequestBody RequestConfirmEmailVerification request) {
         boolean verified = memberService.confirmEmailVerification(request.email(), request.code());
         return ApiResponse.success(new ResponseEmailVerification(verified));
     }
@@ -44,14 +45,14 @@ public class MemberController implements MemberApiDocs {
 
     @Override
     @PostMapping("/signup")
-    public ApiResponse<ResponseSignup> signup(@RequestBody RequestSignup request) {
+    public ApiResponse<ResponseSignup> signup(@Valid @RequestBody RequestSignup request) {
         ResponseSignup response = memberService.signup(request);
         return ApiResponse.success(response);
     }
 
     @Override
     @PostMapping("/login")
-    public ApiResponse<ResponseLogin> login(@RequestBody RequestLogin request) {
+    public ApiResponse<ResponseLogin> login(@Valid @RequestBody RequestLogin request) {
         ResponseLogin response = memberService.login(request);
         return ApiResponse.success(response);
     }
