@@ -1,22 +1,40 @@
+import math
 from typing import Any
 
 
 class StatPreprocessor:
     def calculate_recent_hitter_wrc(self, current_wrc: float, history: list[float]) -> float:
-        """
-        최신 wRC에서 10경기 전 wRC(리스트의 마지막 인덱스)를 차감하여 최근 10경기 wRC 산출
-        """
         if not history or len(history) < 10:
             return current_wrc
         return round(current_wrc - history[-1], 2)
 
-    def calculate_recent_pitcher_era(self, current_era: float, history: list[float]) -> float:
-        """
-        투수의 최근 10경기 평균 ERA 산출
-        """
-        if not history:
-            return current_era
-        return round(sum(history) / len(history), 2)
+    def calculate_recent_pitcher_ra_per_ip(
+            self, current_era: float, current_ip: float, era_history: list[float], ip_history: list[float]
+    ) -> float:
+        if not era_history or not ip_history or len(era_history) < 10 or len(ip_history) < 10:
+            return round(current_era / 9.0, 3)
+
+        total_runs = sum((era * ip) / 9.0 for era, ip in zip(era_history[:10], ip_history[:10]))
+        total_ip = sum(ip_history[:10])
+
+        if total_ip == 0:
+            return round(current_era / 9.0, 3)
+
+        return round(total_runs / total_ip, 3)
+
+    def calculate_pythagorean_win_rate(self, home_runs: float, away_runs: float) -> tuple[float, float]:
+        exp = 1.83
+        home_pow = math.pow(home_runs, exp)
+        away_pow = math.pow(away_runs, exp)
+
+        total = home_pow + away_pow
+        if total == 0:
+            return 0.50, 0.50
+
+        home_win_rate = round(home_pow / total, 2)
+        away_win_rate = round(1.0 - home_win_rate, 2)
+
+        return home_win_rate, away_win_rate
 
     def process_matchup_stats(
             self,
@@ -25,32 +43,43 @@ class StatPreprocessor:
             home_pitcher: dict[str, Any],
             away_pitcher: dict[str, Any],
     ) -> dict[str, Any]:
-
         home_wrc_last10 = self.calculate_recent_hitter_wrc(
-            float(home_hitter["hitter_wrc"]), home_hitter.get("hitter_wrc_history", [])
+            home_hitter["hitter_wrc"], home_hitter.get("hitter_wrc_history", [])
         )
         away_wrc_last10 = self.calculate_recent_hitter_wrc(
-            float(away_hitter["hitter_wrc"]), away_hitter.get("hitter_wrc_history", [])
+            away_hitter["hitter_wrc"], away_hitter.get("hitter_wrc_history", [])
         )
 
-        home_era_last10 = self.calculate_recent_pitcher_era(
-            float(home_pitcher["pitcher_era"]), home_pitcher.get("pitcher_era_history", [])
+        home_ra_per_ip = self.calculate_recent_pitcher_ra_per_ip(
+            home_pitcher["pitcher_era"],
+            home_pitcher["pitcher_ip"],
+            home_pitcher.get("pitcher_era_history", []),
+            home_pitcher.get("pitcher_ip_history", []),
         )
-        away_era_last10 = self.calculate_recent_pitcher_era(
-            float(away_pitcher["pitcher_era"]), away_pitcher.get("pitcher_era_history", [])
+        away_ra_per_ip = self.calculate_recent_pitcher_ra_per_ip(
+            away_pitcher["pitcher_era"],
+            away_pitcher["pitcher_ip"],
+            away_pitcher.get("pitcher_era_history", []),
+            away_pitcher.get("pitcher_ip_history", []),
+        )
+
+        home_win_rate, away_win_rate = self.calculate_pythagorean_win_rate(
+            home_wrc_last10, away_wrc_last10
         )
 
         return {
             "homeTeam": {
                 "hitterWrcLast10": home_wrc_last10,
-                "pitcherEraLast10": home_era_last10,
+                "pitcherRaPerIpLast10": home_ra_per_ip,
+                "winRate": home_win_rate,
                 "pa": home_hitter["hitter_pa"],
-                "ip": float(home_pitcher["pitcher_ip"]),
+                "ip": home_pitcher["pitcher_ip"],
             },
             "awayTeam": {
                 "hitterWrcLast10": away_wrc_last10,
-                "pitcherEraLast10": away_era_last10,
+                "pitcherRaPerIpLast10": away_ra_per_ip,
+                "winRate": away_win_rate,
                 "pa": away_hitter["hitter_pa"],
-                "ip": float(away_pitcher["pitcher_ip"]),
+                "ip": away_pitcher["pitcher_ip"],
             },
         }
