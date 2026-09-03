@@ -1,5 +1,6 @@
 import json
 from json import JSONDecodeError
+
 import openai
 from openai import APIError
 

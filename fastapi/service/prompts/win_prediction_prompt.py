@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict
+from typing import Any
 
 WIN_PREDICTION_SYSTEM_PROMPT = """
 당신은 KBO 야구 데이터 분석 전문 AI입니다.
@@ -8,7 +8,7 @@ WIN_PREDICTION_SYSTEM_PROMPT = """
 """
 
 
-def build_llm_user_prompt(home_win_rate: float, processed_stats: Dict[str, Any]) -> str:
+def build_llm_user_prompt(home_win_rate: float, processed_stats: dict[str, Any]) -> str:
     json_payload = json.dumps(processed_stats, ensure_ascii=False, indent=2)
     return f"""
 아래 정제된 경기 스탯 데이터를 분석할 준비를 하세요.
