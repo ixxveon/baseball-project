@@ -3,6 +3,7 @@ package kr.co.winningpick.domain.ranking.controller;
 import kr.co.winningpick.domain.ranking.docs.RankingControllerDocs;
 import kr.co.winningpick.domain.ranking.dto.response.ResponseRanking;
 import kr.co.winningpick.domain.ranking.service.RankingService;
+import kr.co.winningpick.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,8 +21,8 @@ public class RankingController implements RankingControllerDocs {
 
     @Override
     @GetMapping
-    public ResponseEntity<List<ResponseRanking>> getRankings() {
+    public ResponseEntity<ApiResponse<List<ResponseRanking>>> getRankings() {
         List<ResponseRanking> rankings = rankingService.getRankings();
-        return ResponseEntity.ok(rankings);
+        return ResponseEntity.ok(ApiResponse.success(rankings));
     }
 }

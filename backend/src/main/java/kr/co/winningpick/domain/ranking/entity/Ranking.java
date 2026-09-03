@@ -14,7 +14,7 @@ public class Ranking {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // 데이터베이스 고유 번호
-
+    @Column(name = "team_rank", unique = true)
     private Integer teamRank; // 순위 (rank는 예약어일 수 있어 teamRank로 사용)
     private String teamName; // 팀명
     private Integer games; // 경기 수
