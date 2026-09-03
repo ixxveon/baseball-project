@@ -1,11 +1,12 @@
-from typing import Any
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel
 
 
 class TeamStatSchema(BaseModel):
     hitterWrcLast10: float
-    pitcherEraLast10: float
+    pitcherRaPerIpLast10: float
+    winRate: float
     pa: int
     ip: float
 
@@ -20,8 +21,17 @@ class WinPredictionRequest(BaseModel):
     gameId: int
 
 
-class ApiResponse(BaseModel):
+class PreparePromptDataSchema(BaseModel):
+    systemPrompt: str
+    userPrompt: str
+    preprocessedMatchup: PreprocessedMatchupSchema
+
+
+T = TypeVar("T")
+
+
+class ApiResponse(BaseModel, Generic[T]):
     success: bool
     status: int
     message: str
-    data: dict[str, Any] | None = None
+    data: T | None = None
