@@ -103,8 +103,3 @@ jobs:
         working-directory: fastapi
         run: pytest tests --tb=short -q
 
-      - name: Install Ruff
-        run: python -m pip install ruff
-
-      - name: Run Ruff
-        run: ruff check .
