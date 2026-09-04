@@ -1,6 +1,7 @@
 package kr.co.winningpick.domain.community.controller;
 
 import jakarta.validation.Valid;
+import kr.co.winningpick.domain.community.docs.PostApiDocs;
 import kr.co.winningpick.domain.community.dto.request.RequestCreatePost;
 import kr.co.winningpick.domain.community.dto.response.ResponsePost;
 import kr.co.winningpick.domain.community.service.PostService;
@@ -17,16 +18,18 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/community/posts")
 @RequiredArgsConstructor
-public class PostController {
+public class PostController implements PostApiDocs {
 
     private final PostService postService;
     private final MemberRepository memberRepository;
 
+    @Override
     @GetMapping
     public ApiResponse<List<ResponsePost>> getPosts() {
         return ApiResponse.success(postService.getPosts());
     }
 
+    @Override
     @PostMapping
     public ApiResponse<ResponsePost> createPost(@RequestParam Long userId, @Valid @RequestBody RequestCreatePost request) {
         Member author = memberRepository.findById(userId)
@@ -34,6 +37,7 @@ public class PostController {
         return ApiResponse.success(postService.createPost(author, request));
     }
 
+    @Override
     @GetMapping("/{id}")
     public ApiResponse<ResponsePost> getPost(@PathVariable Long id) {
         return ApiResponse.success(postService.getPost(id));

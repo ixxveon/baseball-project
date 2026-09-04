@@ -1,6 +1,7 @@
 package kr.co.winningpick.domain.community.controller;
 
 import jakarta.validation.Valid;
+import kr.co.winningpick.domain.community.docs.CommentApiDocs;
 import kr.co.winningpick.domain.community.dto.request.RequestCreateComment;
 import kr.co.winningpick.domain.community.dto.response.ResponseComment;
 import kr.co.winningpick.domain.community.service.CommentService;
@@ -17,16 +18,18 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/community/posts/{postId}/comments")
 @RequiredArgsConstructor
-public class CommentController {
+public class CommentController implements CommentApiDocs {
 
     private final CommentService commentService;
     private final MemberRepository memberRepository;
 
+    @Override
     @GetMapping
     public ApiResponse<List<ResponseComment>> getComments(@PathVariable Long postId) {
         return ApiResponse.success(commentService.getComments(postId));
     }
 
+    @Override
     @PostMapping
     public ApiResponse<ResponseComment> createComment(
             @PathVariable Long postId,
