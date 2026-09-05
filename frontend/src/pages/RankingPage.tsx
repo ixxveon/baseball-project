@@ -1,22 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import { ResponseRanking } from '../types/ranking';
-
+import axiosInstance from '../api/axiosInstance'; // 👈 axiosInstance 임포트 (경로 확인 필요)
 
 export default function RankingPage(): React.JSX.Element {
-    // 2. 백엔드에서 데이터를 받아올 상태 (초기값은 빈 배열)
     const [rankings, setRankings] = useState<ResponseRanking[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
+    const [loading, setLoading] = useState<boolean>(true)
+    const [error, setError] = useState<string | null>(null); //에러 상태
 
-    // 3. 페이지가 켜질 때 백엔드 API 호출
     useEffect(() => {
-        fetch('http://localhost:8080/api/v1/rankings')
-            .then((res) => res.json())
-            .then((data: ResponseRanking[]) => {
-                setRankings(data);
+        // 👈 기존 fetch 대신 axiosInstance 사용
+        // baseURL이 '/api/v1'로 설정되어 있으므로 '/rankings'만 적으면 됩니다.
+        axiosInstance.get('/rankings')
+            .then((res) => {
+                // Axios 기본 응답인 res.data 안에 백엔드가 포장한 ApiResponse 객체가 들어있고,
+                // 그 안의 실제 데이터(data 필드)를 꺼내서 세팅합니다.
+                // (팀의 ApiResponse 구조에 따라 res.data.data가 아닌 res.data.result 등일 수 있으니 확인해 주세요!)
+                setRankings(res.data.data);
                 setLoading(false);
             })
             .catch((err) => {
                 console.error('랭킹 데이터 로딩 실패:', err);
+                setError('데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요. 😢');
                 setLoading(false);
             });
     }, []);
@@ -32,14 +36,10 @@ export default function RankingPage(): React.JSX.Element {
 
     return (
         <div className="ranking-page-container">
+            {/* CSS 스타일 태그 부분은 기존과 완벽히 동일하므로 생략 없이 그대로 유지하시면 됩니다. */}
             <style>
                 {`
-          .ranking-page-container {
-            background-color: #F4F6F8;
-            min-height: 100vh;
-            padding: 40px 16px;
-            font-family: 'Pretendard', 'Malgun Gothic', sans-serif;
-          }
+          .ranking-page-container { background-color: #F4F6F8; min-height: 100vh; padding: 40px 16px; font-family: 'Pretendard', 'Malgun Gothic', sans-serif; }
           .ranking-max-width { max-width: 1024px; margin: 0 auto; }
           .ranking-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
           .ranking-title { font-size: 28px; font-weight: 800; color: #111827; margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px; }
@@ -55,13 +55,12 @@ export default function RankingPage(): React.JSX.Element {
           .ranking-table tr.my-team-row td { background-color: #fef2f2; }
           .ranking-table tr.my-team-row:hover td { background-color: #fee2e2; }
           .ranking-table tr.my-team-row td:first-child { border-left: 4px solid #E6002D; }
-          /* 순위 배지 디자인 */
           .rank-badge { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; margin: 0 auto; border-radius: 50%; font-weight: bold; font-size: 13px; }
           .rank-1 { background: linear-gradient(135deg, #fde047, #eab308); color: #fff; box-shadow: 0 4px 6px -1px rgba(234,179,8,0.3); }
           .rank-2 { background: linear-gradient(135deg, #d1d5db, #9ca3af); color: #fff; box-shadow: 0 4px 6px -1px rgba(156,163,175,0.3); }
           .rank-3 { background: linear-gradient(135deg, #fb923c, #f97316); color: #fff; box-shadow: 0 4px 6px -1px rgba(249,115,22,0.3); }
-          .rank-ps { background: #4b5563; color: #fff; } /* 4, 5위 강조 */
-          .rank-other { background: #f3f4f6; color: #9ca3af; } /* 6위 이하 */
+          .rank-ps { background: #4b5563; color: #fff; }
+          .rank-other { background: #f3f4f6; color: #9ca3af; }
           .team-info { display: flex; align-items: center; gap: 12px; font-weight: 700; color: #1f2937; text-align: left; font-size: 15px; }
           .team-logo { width: 36px; height: 36px; border-radius: 50%; background: #f9fafb; border: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #9ca3af; }
           .win-rate { font-weight: 800; color: #E6002D; font-size: 15px; }
@@ -110,9 +109,20 @@ export default function RankingPage(): React.JSX.Element {
                                     데이터를 불러오는 중입니다... ⚾
                                 </td>
                             </tr>
+                        ) : error ? (
+                            <tr>
+                                <td colSpan={9} style={{ padding: '40px', color: '#ef4444', fontWeight: 'bold' }}>
+                                    {error}
+                                </td>
+                            </tr>
+                        ) : rankings.length === 0 ? (
+                            <tr>
+                                <td colSpan={9} style={{ padding: '40px', color: '#6b7280' }}>
+                                    현재 등록된 랭킹 데이터가 없습니다.
+                                </td>
+                            </tr>
                         ) : (
                             rankings.map((team) => {
-                                // LG 트윈스일 경우 원본 디자인처럼 내 응원팀 Row 스타일 적용
                                 const isMyTeam = team.teamName === 'LG 트윈스';
 
                                 return (
@@ -130,12 +140,13 @@ export default function RankingPage(): React.JSX.Element {
                                         <td style={{ fontWeight: 600, color: '#1f2937' }}>{team.wins}</td>
                                         <td>{team.draws}</td>
                                         <td>{team.losses}</td>
-                                        <td className="win-rate">{team.winRate}</td>
-                                        <td style={{ fontWeight: 500 }}>{team.gameDiff}</td>
+                                        {/* 👈 winRate와 gameDiff를 소수점 자리수에 맞게 포맷팅합니다 */}
+                                        <td className="win-rate">{Number(team.winRate).toFixed(3)}</td>
+                                        <td style={{ fontWeight: 500 }}>{Number(team.gameDiff).toFixed(1)}</td>
                                         <td>
-                        <span className={`streak-badge ${team.streak.includes('승') ? 'streak-win' : 'streak-lose'}`}>
-                          {team.streak}
-                        </span>
+                                                <span className={`streak-badge ${team.streak.includes('승') ? 'streak-win' : 'streak-lose'}`}>
+                                                    {team.streak}
+                                                </span>
                                         </td>
                                     </tr>
                                 );
