@@ -102,3 +102,4 @@ jobs:
       - name: Run tests
         working-directory: fastapi
         run: pytest tests --tb=short -q
+
