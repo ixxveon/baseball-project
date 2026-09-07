@@ -68,4 +68,13 @@ public class Member {
         this.password = encodedPassword;
     }
 
+    public static Member createLocalMember(String email, String nickname, String encodedPassword) {
+        Member member = new Member();
+        member.email = email;
+        member.nickname = nickname;
+        member.password = encodedPassword;
+        member.provider = ProviderType.LOCAL;
+        member.pushAlarmEnabled = false;
+        return member;
+    }
 }
