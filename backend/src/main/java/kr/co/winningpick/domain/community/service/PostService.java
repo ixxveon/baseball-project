@@ -21,9 +21,9 @@ public class PostService {
     private final PostRepository postRepository;
 
     public List<ResponsePost> getPosts() {
-        return postRepository.findAllWithAuthorOrderByCreatedAtDesc()
+        return postRepository.findAllWithAuthorAndCommentCountOrderByCreatedAtDesc()
                 .stream()
-                .map(ResponsePost::from)
+                .map(row -> ResponsePost.from((Post) row[0], (Long) row[1]))
                 .toList();
     }
 
@@ -31,13 +31,16 @@ public class PostService {
     public ResponsePost createPost(Member author, RequestCreatePost request) {
         Post post = Post.create(request.gameId(), author, request.title(), request.content(), request.category());
         Post savedPost = postRepository.save(post);
-        return ResponsePost.from(savedPost);
+        return ResponsePost.from(savedPost, 0);
     }
 
     public ResponsePost getPost(Long postId) {
-        Post post = postRepository.findByIdWithAuthor(postId)
-                .orElseThrow(() -> new BusinessException(PostErrorCode.POST_NOT_FOUND));
-        return ResponsePost.from(post);
+        List<Object[]> rows = postRepository.findByIdWithAuthorAndCommentCount(postId);
+        if (rows.isEmpty()) {
+            throw new BusinessException(PostErrorCode.POST_NOT_FOUND);
+        }
+        Object[] row = rows.get(0);
+        return ResponsePost.from((Post) row[0], (Long) row[1]);
     }
 
 

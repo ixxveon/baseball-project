@@ -15,7 +15,7 @@ public record ResponsePost(
         LocalDateTime createdAt,
         Integer commentCount
 ) {
-    public static ResponsePost from(Post post) {
+    public static ResponsePost from(Post post, long commentCount) {
         return new ResponsePost(
                 post.getId(),
                 post.getGameId(),
@@ -24,7 +24,7 @@ public record ResponsePost(
                 post.getContent(),
                 post.getAuthor().getNickname(),
                 post.getCreatedAt(),
-                0
+                (int) commentCount
         );
     }
 }
