@@ -9,6 +9,7 @@ import kr.co.winningpick.domain.member.entity.Member;
 import kr.co.winningpick.domain.member.exception.MemberErrorCode;
 import kr.co.winningpick.domain.member.repository.MemberRepository;
 import kr.co.winningpick.global.exception.BusinessException;
+import kr.co.winningpick.global.exception.GlobalErrorCode;
 import kr.co.winningpick.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -31,8 +32,11 @@ public class PostController implements PostApiDocs {
 
     @Override
     @PostMapping
-    public ApiResponse<ResponsePost> createPost(@RequestParam Long userId, @Valid @RequestBody RequestCreatePost request) {
-        Member author = memberRepository.findById(userId)
+    public ApiResponse<ResponsePost> createPost(@RequestAttribute(name = "memberId", required = false) Long memberId, @Valid @RequestBody RequestCreatePost request) {
+        if (memberId == null) {
+            throw new BusinessException(GlobalErrorCode.UNAUTHORIZED);
+        }
+        Member author = memberRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(MemberErrorCode.LOGIN_FAILED));
         return ApiResponse.success(postService.createPost(author, request));
     }

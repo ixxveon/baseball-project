@@ -9,6 +9,7 @@ import kr.co.winningpick.domain.member.entity.Member;
 import kr.co.winningpick.domain.member.exception.MemberErrorCode;
 import kr.co.winningpick.domain.member.repository.MemberRepository;
 import kr.co.winningpick.global.exception.BusinessException;
+import kr.co.winningpick.global.exception.GlobalErrorCode;
 import kr.co.winningpick.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -33,10 +34,13 @@ public class CommentController implements CommentApiDocs {
     @PostMapping
     public ApiResponse<ResponseComment> createComment(
             @PathVariable Long postId,
-            @RequestParam Long userId,
+            @RequestAttribute(name = "memberId", required = false) Long memberId,
             @Valid @RequestBody RequestCreateComment request
     ) {
-        Member author = memberRepository.findById(userId)
+        if (memberId == null) {
+            throw new BusinessException(GlobalErrorCode.UNAUTHORIZED);
+        }
+        Member author = memberRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(MemberErrorCode.LOGIN_FAILED));
         return ApiResponse.success(commentService.createComment(author, postId, request));
     }
