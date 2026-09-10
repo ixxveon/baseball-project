@@ -1,5 +1,6 @@
 package kr.co.winningpick.global.util;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,6 +31,16 @@ public class JwtProvider {
                 .expiration(expiry)
                 .signWith(secretKey)
                 .compact();
+    }
+
+    public Long getMemberId(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        return Long.valueOf(claims.getSubject());
     }
 
     public Duration getAccessTokenValidity() {
