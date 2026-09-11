@@ -2,6 +2,7 @@ package kr.co.winningpick.domain.member.controller;
 
 import jakarta.validation.Valid;
 import kr.co.winningpick.domain.member.docs.MemberApiDocs;
+import kr.co.winningpick.domain.member.dto.request.ProfileUpdateRequest;
 import kr.co.winningpick.domain.member.dto.request.RequestConfirmEmailVerification;
 import kr.co.winningpick.domain.member.dto.request.RequestLogin;
 import kr.co.winningpick.domain.member.dto.request.RequestSendEmailVerification;
@@ -55,5 +56,15 @@ public class MemberController implements MemberApiDocs {
     public ApiResponse<ResponseLogin> login(@Valid @RequestBody RequestLogin request) {
         ResponseLogin response = memberService.login(request);
         return ApiResponse.success(response);
+    }
+
+    @Override
+    @PatchMapping("/profile")
+    public ApiResponse<Void> updateProfile(@Valid @RequestBody ProfileUpdateRequest request) {
+        // ⚠️ TODO: 임시로 1번 회원의 ID를 넣었습니다. 나중에 로그인한 회원의 실제 ID를 가져오도록 수정해야 합니다.
+        Long memberId = 1L;
+
+        memberService.updateProfile(memberId, request);
+        return ApiResponse.success(null);
     }
 }
