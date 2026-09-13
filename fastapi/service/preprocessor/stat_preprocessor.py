@@ -27,23 +27,6 @@ class StatPreprocessor:
 
         return round(total_runs / total_ip, 3)
 
-    def calculate_pythagorean_win_rate(self, runs_scored: float, runs_allowed: float) -> Tuple[float, float]:
-        if runs_scored <= 0 and runs_allowed <= 0:
-            return 0.50, 0.50
-
-        exp = 1.83
-        home_pow = math.pow(max(0.0, runs_scored), exp)
-        away_pow = math.pow(max(0.0, runs_allowed), exp)
-
-        total = home_pow + away_pow
-        if total == 0:
-            return 0.50, 0.50
-
-        home_win_rate = round(home_pow / total, 2)
-        away_win_rate = round(1.0 - home_win_rate, 2)
-
-        return home_win_rate, away_win_rate
-
     def process_matchup_stats(
             self,
             home_hitter: Dict[str, Any],
@@ -71,22 +54,16 @@ class StatPreprocessor:
             away_pitcher.get("pitcher_ip_history", []),
         )
 
-        home_win_rate, away_win_rate = self.calculate_pythagorean_win_rate(
-            home_wrc_last10, away_wrc_last10
-        )
-
         return {
             "homeTeam": {
                 "hitterWrcLast10": home_wrc_last10,
                 "pitcherRaPerIpLast10": home_ra_per_ip,
-                "winRate": home_win_rate,
                 "pa": home_hitter.get("hitter_pa", 0),
                 "ip": home_pitcher.get("pitcher_ip", 0.0),
             },
             "awayTeam": {
                 "hitterWrcLast10": away_wrc_last10,
                 "pitcherRaPerIpLast10": away_ra_per_ip,
-                "winRate": away_win_rate,
                 "pa": away_hitter.get("hitter_pa", 0),
                 "ip": away_pitcher.get("pitcher_ip", 0.0),
             },
@@ -148,21 +125,19 @@ class DatabaseSaver:
     UPSERT_SQL = """
                  INSERT INTO processed_match_stats (
                      match_id,
-                     home_hitter_wrc_last10, home_pitcher_ra_per_ip_last10, home_win_rate, home_pa, home_ip,
-                     away_hitter_wrc_last10, away_pitcher_ra_per_ip_last10, away_win_rate, away_pa, away_ip,
+                     home_hitter_wrc_last10, home_pitcher_ra_per_ip_last10, home_pa, home_ip,
+                     away_hitter_wrc_last10, away_pitcher_ra_per_ip_last10, away_pa, away_ip,
                      updated_at
                  ) VALUES (
-                              %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW()
+                              %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW()
                           )
                      ON CONFLICT (match_id) DO UPDATE SET
                      home_hitter_wrc_last10 = EXCLUDED.home_hitter_wrc_last10,
                                                    home_pitcher_ra_per_ip_last10 = EXCLUDED.home_pitcher_ra_per_ip_last10,
-                                                   home_win_rate = EXCLUDED.home_win_rate,
                                                    home_pa = EXCLUDED.home_pa,
                                                    home_ip = EXCLUDED.home_ip,
                                                    away_hitter_wrc_last10 = EXCLUDED.away_hitter_wrc_last10,
                                                    away_pitcher_ra_per_ip_last10 = EXCLUDED.away_pitcher_ra_per_ip_last10,
-                                                   away_win_rate = EXCLUDED.away_win_rate,
                                                    away_pa = EXCLUDED.away_pa,
                                                    away_ip = EXCLUDED.away_ip,
                                                    updated_at = NOW(); \
@@ -200,12 +175,10 @@ class DatabaseSaver:
             match_id,
             stats["homeTeam"]["hitterWrcLast10"],
             stats["homeTeam"]["pitcherRaPerIpLast10"],
-            stats["homeTeam"]["winRate"],
             stats["homeTeam"]["pa"],
             stats["homeTeam"]["ip"],
             stats["awayTeam"]["hitterWrcLast10"],
             stats["awayTeam"]["pitcherRaPerIpLast10"],
-            stats["awayTeam"]["winRate"],
             stats["awayTeam"]["pa"],
             stats["awayTeam"]["ip"],
         )
