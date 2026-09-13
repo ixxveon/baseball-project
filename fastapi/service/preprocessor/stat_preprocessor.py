@@ -2,16 +2,8 @@ import math
 from typing import Any, Dict, List, Tuple
 from bs4 import BeautifulSoup
 
-
-# ==========================================
-# 1. StatPreprocessor (통계 계산 및 전처리 클래스)
-# ==========================================
 class StatPreprocessor:
     def calculate_recent_hitter_wrc(self, current_wrc: float, history: List[float]) -> float:
-        """
-        최근 10경기의 평균 wRC+를 계산합니다.
-        기록이 10경기 미만일 경우 전체 평균(current_wrc)을 반환합니다.
-        """
         if not history or len(history) < 10:
             return round(current_wrc, 2)
 
@@ -21,9 +13,6 @@ class StatPreprocessor:
     def calculate_recent_pitcher_ra_per_ip(
             self, current_era: float, current_ip: float, era_history: List[float], ip_history: List[float]
     ) -> float:
-        """
-        최근 10경기의 이닝당 실점(RA/IP)을 계산합니다.
-        """
         if not era_history or not ip_history or len(era_history) < 10 or len(ip_history) < 10:
             return round(current_era / 9.0, 3) if current_era else 0.0
 
@@ -39,9 +28,6 @@ class StatPreprocessor:
         return round(total_runs / total_ip, 3)
 
     def calculate_pythagorean_win_rate(self, runs_scored: float, runs_allowed: float) -> Tuple[float, float]:
-        """
-        피타고리안 기대 승률을 계산합니다 (지수 1.83 적용).
-        """
         if runs_scored <= 0 and runs_allowed <= 0:
             return 0.50, 0.50
 
@@ -65,9 +51,6 @@ class StatPreprocessor:
             home_pitcher: Dict[str, Any],
             away_pitcher: Dict[str, Any],
     ) -> Dict[str, Any]:
-        """
-        홈/원정 팀의 통계 데이터를 가공하여 최종 결과 딕셔너리로 반환합니다.
-        """
         home_wrc_last10 = self.calculate_recent_hitter_wrc(
             home_hitter.get("hitter_wrc", 0.0), home_hitter.get("hitter_wrc_history", [])
         )
@@ -109,14 +92,9 @@ class StatPreprocessor:
             },
         }
 
-
-# ==========================================
-# 2. MatchHtmlParser (파싱 및 데이터 정제)
-# ==========================================
 class MatchHtmlParser:
     @staticmethod
     def _safe_float(element, default: float = 0.0) -> float:
-        """안전한 float 변환 헬퍼 함수"""
         if element is None:
             return default
         try:
@@ -126,7 +104,6 @@ class MatchHtmlParser:
 
     @staticmethod
     def _safe_int(element, default: int = 0) -> int:
-        """안전한 int 변환 헬퍼 함수"""
         if element is None:
             return default
         try:
@@ -135,10 +112,6 @@ class MatchHtmlParser:
             return default
 
     def parse_match_data(self, html_content: str) -> Dict[str, Any]:
-        """
-        raw HTML을 받아 파싱 후 정제된 dict 형태로 반환합니다.
-        (실제 DOM 구조에 맞게 셀렉터를 지정하면 됩니다)
-        """
         soup = BeautifulSoup(html_content, "html.parser")
 
         match_info_tag = soup.find("div", {"id": "match-info"})
@@ -171,10 +144,6 @@ class MatchHtmlParser:
         }
         return parsed_data
 
-
-# ==========================================
-# 3. DatabaseSaver (PostgreSQL 저장 & Dry-Run)
-# ==========================================
 class DatabaseSaver:
     UPSERT_SQL = """
                  INSERT INTO processed_match_stats (
@@ -204,9 +173,6 @@ class DatabaseSaver:
         self.dry_run = dry_run
 
     def save_batch_stats(self, records: List[Tuple[str, Dict[str, Any]]]):
-        """
-        여러 건의 통계 기록을 트랜잭션 단위로 일괄 저장(또는 Dry-Run 출력)합니다.
-        """
         if self.dry_run:
             print("\n================ [DRY-RUN MODE] ================")
             for match_id, stats in records:
@@ -217,7 +183,6 @@ class DatabaseSaver:
             print("================================================\n")
             return
 
-        # 라이브 DB 커넥션 처리 (psycopg2)
         try:
             import psycopg2
             with psycopg2.connect(**self.db_config) as conn:
@@ -245,10 +210,6 @@ class DatabaseSaver:
             stats["awayTeam"]["ip"],
         )
 
-
-# ==========================================
-# 4. Pipeline Execution (전체 파이프라인 연동 실행)
-# ==========================================
 def run_pipeline(raw_html_list: List[str], db_config: Dict[str, Any], dry_run: bool = True):
     preprocessor = StatPreprocessor()
     parser = MatchHtmlParser()
@@ -257,10 +218,8 @@ def run_pipeline(raw_html_list: List[str], db_config: Dict[str, Any], dry_run: b
     batch_records = []
 
     for idx, html in enumerate(raw_html_list, start=1):
-        # Step 1: HTML 파싱
         raw_data = parser.parse_match_data(html)
 
-        # Step 2: 통계 가공 및 계산
         processed_stats = preprocessor.process_matchup_stats(
             home_hitter=raw_data["home_hitter"],
             away_hitter=raw_data["away_hitter"],
@@ -270,21 +229,14 @@ def run_pipeline(raw_html_list: List[str], db_config: Dict[str, Any], dry_run: b
 
         batch_records.append((raw_data["match_id"], processed_stats))
 
-    # Step 3: DB 저장 또는 Dry-Run 출력
     db_saver.save_batch_stats(batch_records)
 
-
-# ==========================================
-# 5. 메인 실행부
-# ==========================================
 if __name__ == "__main__":
-    # 샘플 raw HTML (01~04 파일 입력에 해당)
     sample_html_files = [
         '<div id="match-info" data-id="20260913_LG_NC"><span class="home-wrc">108.5</span><span class="home-pa">420</span><span class="away-wrc">98.2</span><span class="away-pa">400</span></div>',
         '<div id="match-info" data-id="20260913_SSG_KT"><span class="home-wrc">102.1</span><span class="home-pa">390</span><span class="away-wrc">105.0</span><span class="away-pa">410</span></div>',
     ]
 
-    # PostgreSQL 설정 (실제 네트워크 연결 시 사용자 정보 입력)
     DB_CONFIG = {
         "host": "localhost",
         "port": 5432,
@@ -293,6 +245,4 @@ if __name__ == "__main__":
         "password": "your_password",
     }
 
-    # dry_run=True로 실행 시 SQL 쿼리 파라미터만 안전하게 검증합니다.
-    # 실제 서버 실행 시 dry_run=False 로 변경하시면 됩니다.
     run_pipeline(sample_html_files, DB_CONFIG, dry_run=True)
