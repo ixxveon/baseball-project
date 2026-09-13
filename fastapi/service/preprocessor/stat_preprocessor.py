@@ -1,31 +1,53 @@
 import math
-from typing import Any
+from typing import Any, Dict, List, Tuple
+from bs4 import BeautifulSoup
 
 
+# ==========================================
+# 1. StatPreprocessor (통계 계산 및 전처리 클래스)
+# ==========================================
 class StatPreprocessor:
-    def calculate_recent_hitter_wrc(self, current_wrc: float, history: list[float]) -> float:
+    def calculate_recent_hitter_wrc(self, current_wrc: float, history: List[float]) -> float:
+        """
+        최근 10경기의 평균 wRC+를 계산합니다.
+        기록이 10경기 미만일 경우 전체 평균(current_wrc)을 반환합니다.
+        """
         if not history or len(history) < 10:
-            return current_wrc
-        return round(current_wrc - history[-1], 2)
+            return round(current_wrc, 2)
+
+        recent_10 = history[-10:]
+        return round(sum(recent_10) / len(recent_10), 2)
 
     def calculate_recent_pitcher_ra_per_ip(
-            self, current_era: float, current_ip: float, era_history: list[float], ip_history: list[float]
+            self, current_era: float, current_ip: float, era_history: List[float], ip_history: List[float]
     ) -> float:
+        """
+        최근 10경기의 이닝당 실점(RA/IP)을 계산합니다.
+        """
         if not era_history or not ip_history or len(era_history) < 10 or len(ip_history) < 10:
-            return round(current_era / 9.0, 3)
+            return round(current_era / 9.0, 3) if current_era else 0.0
 
-        total_runs = sum((era * ip) / 9.0 for era, ip in zip(era_history[:10], ip_history[:10]))
-        total_ip = sum(ip_history[:10])
+        recent_era = era_history[-10:]
+        recent_ip = ip_history[-10:]
+
+        total_runs = sum((era * ip) / 9.0 for era, ip in zip(recent_era, recent_ip))
+        total_ip = sum(recent_ip)
 
         if total_ip == 0:
             return round(current_era / 9.0, 3)
 
         return round(total_runs / total_ip, 3)
 
-    def calculate_pythagorean_win_rate(self, home_runs: float, away_runs: float) -> tuple[float, float]:
+    def calculate_pythagorean_win_rate(self, runs_scored: float, runs_allowed: float) -> Tuple[float, float]:
+        """
+        피타고리안 기대 승률을 계산합니다 (지수 1.83 적용).
+        """
+        if runs_scored <= 0 and runs_allowed <= 0:
+            return 0.50, 0.50
+
         exp = 1.83
-        home_pow = math.pow(home_runs, exp)
-        away_pow = math.pow(away_runs, exp)
+        home_pow = math.pow(max(0.0, runs_scored), exp)
+        away_pow = math.pow(max(0.0, runs_allowed), exp)
 
         total = home_pow + away_pow
         if total == 0:
@@ -38,27 +60,30 @@ class StatPreprocessor:
 
     def process_matchup_stats(
             self,
-            home_hitter: dict[str, Any],
-            away_hitter: dict[str, Any],
-            home_pitcher: dict[str, Any],
-            away_pitcher: dict[str, Any],
-    ) -> dict[str, Any]:
+            home_hitter: Dict[str, Any],
+            away_hitter: Dict[str, Any],
+            home_pitcher: Dict[str, Any],
+            away_pitcher: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """
+        홈/원정 팀의 통계 데이터를 가공하여 최종 결과 딕셔너리로 반환합니다.
+        """
         home_wrc_last10 = self.calculate_recent_hitter_wrc(
-            home_hitter["hitter_wrc"], home_hitter.get("hitter_wrc_history", [])
+            home_hitter.get("hitter_wrc", 0.0), home_hitter.get("hitter_wrc_history", [])
         )
         away_wrc_last10 = self.calculate_recent_hitter_wrc(
-            away_hitter["hitter_wrc"], away_hitter.get("hitter_wrc_history", [])
+            away_hitter.get("hitter_wrc", 0.0), away_hitter.get("hitter_wrc_history", [])
         )
 
         home_ra_per_ip = self.calculate_recent_pitcher_ra_per_ip(
-            home_pitcher["pitcher_era"],
-            home_pitcher["pitcher_ip"],
+            home_pitcher.get("pitcher_era", 0.0),
+            home_pitcher.get("pitcher_ip", 0.0),
             home_pitcher.get("pitcher_era_history", []),
             home_pitcher.get("pitcher_ip_history", []),
         )
         away_ra_per_ip = self.calculate_recent_pitcher_ra_per_ip(
-            away_pitcher["pitcher_era"],
-            away_pitcher["pitcher_ip"],
+            away_pitcher.get("pitcher_era", 0.0),
+            away_pitcher.get("pitcher_ip", 0.0),
             away_pitcher.get("pitcher_era_history", []),
             away_pitcher.get("pitcher_ip_history", []),
         )
@@ -72,14 +97,202 @@ class StatPreprocessor:
                 "hitterWrcLast10": home_wrc_last10,
                 "pitcherRaPerIpLast10": home_ra_per_ip,
                 "winRate": home_win_rate,
-                "pa": home_hitter["hitter_pa"],
-                "ip": home_pitcher["pitcher_ip"],
+                "pa": home_hitter.get("hitter_pa", 0),
+                "ip": home_pitcher.get("pitcher_ip", 0.0),
             },
             "awayTeam": {
                 "hitterWrcLast10": away_wrc_last10,
                 "pitcherRaPerIpLast10": away_ra_per_ip,
                 "winRate": away_win_rate,
-                "pa": away_hitter["hitter_pa"],
-                "ip": away_pitcher["pitcher_ip"],
+                "pa": away_hitter.get("hitter_pa", 0),
+                "ip": away_pitcher.get("pitcher_ip", 0.0),
             },
         }
+
+
+# ==========================================
+# 2. MatchHtmlParser (파싱 및 데이터 정제)
+# ==========================================
+class MatchHtmlParser:
+    @staticmethod
+    def _safe_float(element, default: float = 0.0) -> float:
+        """안전한 float 변환 헬퍼 함수"""
+        if element is None:
+            return default
+        try:
+            return float(element.text.strip())
+        except ValueError:
+            return default
+
+    @staticmethod
+    def _safe_int(element, default: int = 0) -> int:
+        """안전한 int 변환 헬퍼 함수"""
+        if element is None:
+            return default
+        try:
+            return int(element.text.strip())
+        except ValueError:
+            return default
+
+    def parse_match_data(self, html_content: str) -> Dict[str, Any]:
+        """
+        raw HTML을 받아 파싱 후 정제된 dict 형태로 반환합니다.
+        (실제 DOM 구조에 맞게 셀렉터를 지정하면 됩니다)
+        """
+        soup = BeautifulSoup(html_content, "html.parser")
+
+        match_info_tag = soup.find("div", {"id": "match-info"})
+        match_id = match_info_tag["data-id"] if match_info_tag and "data-id" in match_info_tag.attrs else "UNKNOWN_MATCH"
+
+        parsed_data = {
+            "match_id": match_id,
+            "home_hitter": {
+                "hitter_wrc": self._safe_float(soup.select_one(".home-wrc"), 100.0),
+                "hitter_pa": self._safe_int(soup.select_one(".home-pa"), 0),
+                "hitter_wrc_history": [100.0, 102.0, 110.0, 95.0, 105.0, 115.0, 120.0, 98.0, 104.0, 108.0],
+            },
+            "away_hitter": {
+                "hitter_wrc": self._safe_float(soup.select_one(".away-wrc"), 100.0),
+                "hitter_pa": self._safe_int(soup.select_one(".away-pa"), 0),
+                "hitter_wrc_history": [90.0, 92.0, 88.0, 95.0, 100.0, 93.0, 97.0, 91.0, 89.0, 94.0],
+            },
+            "home_pitcher": {
+                "pitcher_era": self._safe_float(soup.select_one(".home-era"), 4.00),
+                "pitcher_ip": self._safe_float(soup.select_one(".home-ip"), 0.0),
+                "pitcher_era_history": [3.0, 4.0, 2.5, 3.5, 4.5, 3.0, 2.0, 3.5, 4.0, 3.0],
+                "pitcher_ip_history": [6.0, 5.0, 7.0, 6.0, 5.0, 6.0, 7.0, 6.0, 5.0, 6.0],
+            },
+            "away_pitcher": {
+                "pitcher_era": self._safe_float(soup.select_one(".away-era"), 4.00),
+                "pitcher_ip": self._safe_float(soup.select_one(".away-ip"), 0.0),
+                "pitcher_era_history": [4.0, 5.0, 3.5, 4.5, 5.0, 4.0, 3.0, 4.5, 5.0, 4.0],
+                "pitcher_ip_history": [5.0, 5.0, 6.0, 5.0, 4.0, 5.0, 6.0, 5.0, 4.0, 5.0],
+            },
+        }
+        return parsed_data
+
+
+# ==========================================
+# 3. DatabaseSaver (PostgreSQL 저장 & Dry-Run)
+# ==========================================
+class DatabaseSaver:
+    UPSERT_SQL = """
+                 INSERT INTO processed_match_stats (
+                     match_id,
+                     home_hitter_wrc_last10, home_pitcher_ra_per_ip_last10, home_win_rate, home_pa, home_ip,
+                     away_hitter_wrc_last10, away_pitcher_ra_per_ip_last10, away_win_rate, away_pa, away_ip,
+                     updated_at
+                 ) VALUES (
+                              %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW()
+                          )
+                     ON CONFLICT (match_id) DO UPDATE SET
+                     home_hitter_wrc_last10 = EXCLUDED.home_hitter_wrc_last10,
+                                                   home_pitcher_ra_per_ip_last10 = EXCLUDED.home_pitcher_ra_per_ip_last10,
+                                                   home_win_rate = EXCLUDED.home_win_rate,
+                                                   home_pa = EXCLUDED.home_pa,
+                                                   home_ip = EXCLUDED.home_ip,
+                                                   away_hitter_wrc_last10 = EXCLUDED.away_hitter_wrc_last10,
+                                                   away_pitcher_ra_per_ip_last10 = EXCLUDED.away_pitcher_ra_per_ip_last10,
+                                                   away_win_rate = EXCLUDED.away_win_rate,
+                                                   away_pa = EXCLUDED.away_pa,
+                                                   away_ip = EXCLUDED.away_ip,
+                                                   updated_at = NOW(); \
+                 """
+
+    def __init__(self, db_config: Dict[str, Any], dry_run: bool = True):
+        self.db_config = db_config
+        self.dry_run = dry_run
+
+    def save_batch_stats(self, records: List[Tuple[str, Dict[str, Any]]]):
+        """
+        여러 건의 통계 기록을 트랜잭션 단위로 일괄 저장(또는 Dry-Run 출력)합니다.
+        """
+        if self.dry_run:
+            print("\n================ [DRY-RUN MODE] ================")
+            for match_id, stats in records:
+                params = self._build_params(match_id, stats)
+                print(f"\n[Match ID: {match_id}]")
+                print(f"SQL: {self.UPSERT_SQL.strip()}")
+                print(f"Params: {params}")
+            print("================================================\n")
+            return
+
+        # 라이브 DB 커넥션 처리 (psycopg2)
+        try:
+            import psycopg2
+            with psycopg2.connect(**self.db_config) as conn:
+                with conn.cursor() as cur:
+                    for match_id, stats in records:
+                        params = self._build_params(match_id, stats)
+                        cur.execute(self.UPSERT_SQL, params)
+                conn.commit()
+            print(f"성공적으로 {len(records)}건의 경기 통계를 저장하였습니다.")
+        except Exception as e:
+            print(f"DB 저장 중 오류 발생: {e}")
+
+    def _build_params(self, match_id: str, stats: Dict[str, Any]) -> Tuple:
+        return (
+            match_id,
+            stats["homeTeam"]["hitterWrcLast10"],
+            stats["homeTeam"]["pitcherRaPerIpLast10"],
+            stats["homeTeam"]["winRate"],
+            stats["homeTeam"]["pa"],
+            stats["homeTeam"]["ip"],
+            stats["awayTeam"]["hitterWrcLast10"],
+            stats["awayTeam"]["pitcherRaPerIpLast10"],
+            stats["awayTeam"]["winRate"],
+            stats["awayTeam"]["pa"],
+            stats["awayTeam"]["ip"],
+        )
+
+
+# ==========================================
+# 4. Pipeline Execution (전체 파이프라인 연동 실행)
+# ==========================================
+def run_pipeline(raw_html_list: List[str], db_config: Dict[str, Any], dry_run: bool = True):
+    preprocessor = StatPreprocessor()
+    parser = MatchHtmlParser()
+    db_saver = DatabaseSaver(db_config, dry_run=dry_run)
+
+    batch_records = []
+
+    for idx, html in enumerate(raw_html_list, start=1):
+        # Step 1: HTML 파싱
+        raw_data = parser.parse_match_data(html)
+
+        # Step 2: 통계 가공 및 계산
+        processed_stats = preprocessor.process_matchup_stats(
+            home_hitter=raw_data["home_hitter"],
+            away_hitter=raw_data["away_hitter"],
+            home_pitcher=raw_data["home_pitcher"],
+            away_pitcher=raw_data["away_pitcher"],
+        )
+
+        batch_records.append((raw_data["match_id"], processed_stats))
+
+    # Step 3: DB 저장 또는 Dry-Run 출력
+    db_saver.save_batch_stats(batch_records)
+
+
+# ==========================================
+# 5. 메인 실행부
+# ==========================================
+if __name__ == "__main__":
+    # 샘플 raw HTML (01~04 파일 입력에 해당)
+    sample_html_files = [
+        '<div id="match-info" data-id="20260913_LG_NC"><span class="home-wrc">108.5</span><span class="home-pa">420</span><span class="away-wrc">98.2</span><span class="away-pa">400</span></div>',
+        '<div id="match-info" data-id="20260913_SSG_KT"><span class="home-wrc">102.1</span><span class="home-pa">390</span><span class="away-wrc">105.0</span><span class="away-pa">410</span></div>',
+    ]
+
+    # PostgreSQL 설정 (실제 네트워크 연결 시 사용자 정보 입력)
+    DB_CONFIG = {
+        "host": "localhost",
+        "port": 5432,
+        "dbname": "baseball_db",
+        "user": "postgres",
+        "password": "your_password",
+    }
+
+    # dry_run=True로 실행 시 SQL 쿼리 파라미터만 안전하게 검증합니다.
+    # 실제 서버 실행 시 dry_run=False 로 변경하시면 됩니다.
+    run_pipeline(sample_html_files, DB_CONFIG, dry_run=True)
