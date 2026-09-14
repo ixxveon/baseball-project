@@ -4,6 +4,7 @@ import kr.co.winningpick.domain.community.dto.request.RequestCreateComment;
 import kr.co.winningpick.domain.community.dto.response.ResponseComment;
 import kr.co.winningpick.domain.community.entity.Comment;
 import kr.co.winningpick.domain.community.entity.Post;
+import kr.co.winningpick.domain.community.exception.CommentErrorCode;
 import kr.co.winningpick.domain.community.exception.PostErrorCode;
 import kr.co.winningpick.domain.community.repository.CommentRepository;
 import kr.co.winningpick.domain.community.repository.PostRepository;
@@ -40,5 +41,17 @@ public class CommentService {
         Comment comment = Comment.create(post, author, request.content());
         Comment savedComment = commentRepository.save(comment);
         return ResponseComment.from(savedComment);
+    }
+
+    @Transactional
+    public void deleteComment(Long commentId, Long memberId) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new BusinessException(CommentErrorCode.COMMENT_NOT_FOUND));
+
+        if (!comment.getAuthor().getId().equals(memberId)) {
+            throw new BusinessException(CommentErrorCode.FORBIDDEN);
+        }
+
+        commentRepository.delete(comment);
     }
 }
