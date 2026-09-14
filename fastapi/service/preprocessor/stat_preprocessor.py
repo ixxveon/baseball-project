@@ -1,15 +1,20 @@
+import re
 from typing import Any
 
 from bs4 import BeautifulSoup
 
 
 class StatPreprocessor:
+    """전처리 계산 로직 (기존 로직 그대로 유지)"""
+
     def calculate_recent_hitter_wrc(self, current_wrc: float, history: list[float]) -> float:
+        # history 는 시즌 누적 wRC의 과거 시점 스냅샷 (index 0 = 1경기 전, index -1 = 10경기 전).
+        # 따라서 "최근 10경기 생산력"은 평균이 아니라 현재값과 10경기 전 값의 차이(증가분)다.
         if not history or len(history) < 10:
             return round(current_wrc, 2)
 
         recent_10 = history[-10:]
-        return round(sum(recent_10) / len(recent_10), 2)
+        return round(current_wrc - recent_10[-1], 2)
 
     def calculate_recent_pitcher_ra_per_ip(
             self, current_era: float, current_ip: float, era_history: list[float], ip_history: list[float]
@@ -70,57 +75,149 @@ class StatPreprocessor:
             },
         }
 
-class MatchHtmlParser:
-    @staticmethod
-    def _safe_float(element, default: float = 0.0) -> float:
-        if element is None:
-            return default
-        try:
-            return float(element.text.strip())
-        except ValueError:
-            return default
+
+class RosterHtmlParser:
+    """
+    raw_crawl_01_team_info.html / 02_pitcher_records.html / 03_hitter_records.html /
+    04_schedule_results.html (선수 순위표 + 일정표) 를 파싱하는 '원시데이터 추출' 단계.
+
+    기존 MatchHtmlParser 는 '경기 1건짜리 페이지(#match-info, .home-wrc 등)'를 가정하고
+    있었는데, 실제 크롤링 대상은 '선수 전체 순위표'라서 셀렉터가 전혀 맞지 않았고
+    hitter_wrc_history/pitcher_era_history/pitcher_ip_history 는 파싱 코드 없이
+    하드코딩된 고정값이 저장되는 문제가 있었습니다. 이 클래스가 그 부분을 대체합니다.
+    """
 
     @staticmethod
-    def _safe_int(element, default: int = 0) -> int:
-        if element is None:
-            return default
-        try:
-            return int(element.text.strip())
-        except ValueError:
-            return default
+    def _history_from_text(text: str) -> list[float]:
+        text = text.strip()
+        if text in ("", "-"):
+            return []
+        text = re.sub(r"\s*\(10경기 미만/신규등록\)\s*$", "", text)
+        return [float(v.strip()) for v in text.split(",") if v.strip()]
 
-    def parse_match_data(self, html_content: str) -> dict[str, Any]:
-        soup = BeautifulSoup(html_content, "html.parser")
+    def parse_teams(self, html_path: str) -> tuple[list[dict], dict[str, int], dict[str, int]]:
+        with open(html_path, encoding="utf-8") as f:
+            soup = BeautifulSoup(f.read(), "html.parser")
+        teams, abbr_to_id, stadium_index = [], {}, {}
 
-        match_info_tag = soup.find("div", {"id": "match-info"})
-        match_id = match_info_tag["data-id"] if match_info_tag and "data-id" in match_info_tag.attrs else "UNKNOWN_MATCH"
+        for tr in soup.select("table.tData tbody tr"):
+            tds = tr.find_all("td")
+            team_id = int(tds[0].get_text(strip=True))
+            name = tds[1].get_text(strip=True)
+            abbr = tds[2].get_text(strip=True)
+            stadium_name = tds[3].get_text(strip=True)
+            lat_str, lng_str = tds[4].get_text(strip=True).split(",")
 
-        parsed_data = {
-            "match_id": match_id,
-            "home_hitter": {
-                "hitter_wrc": self._safe_float(soup.select_one(".home-wrc"), 100.0),
-                "hitter_pa": self._safe_int(soup.select_one(".home-pa"), 0),
-                "hitter_wrc_history": [100.0, 102.0, 110.0, 95.0, 105.0, 115.0, 120.0, 98.0, 104.0, 108.0],
-            },
-            "away_hitter": {
-                "hitter_wrc": self._safe_float(soup.select_one(".away-wrc"), 100.0),
-                "hitter_pa": self._safe_int(soup.select_one(".away-pa"), 0),
-                "hitter_wrc_history": [90.0, 92.0, 88.0, 95.0, 100.0, 93.0, 97.0, 91.0, 89.0, 94.0],
-            },
-            "home_pitcher": {
-                "pitcher_era": self._safe_float(soup.select_one(".home-era"), 4.00),
-                "pitcher_ip": self._safe_float(soup.select_one(".home-ip"), 0.0),
-                "pitcher_era_history": [3.0, 4.0, 2.5, 3.5, 4.5, 3.0, 2.0, 3.5, 4.0, 3.0],
-                "pitcher_ip_history": [6.0, 5.0, 7.0, 6.0, 5.0, 6.0, 7.0, 6.0, 5.0, 6.0],
-            },
-            "away_pitcher": {
-                "pitcher_era": self._safe_float(soup.select_one(".away-era"), 4.00),
-                "pitcher_ip": self._safe_float(soup.select_one(".away-ip"), 0.0),
-                "pitcher_era_history": [4.0, 5.0, 3.5, 4.5, 5.0, 4.0, 3.0, 4.5, 5.0, 4.0],
-                "pitcher_ip_history": [5.0, 5.0, 6.0, 5.0, 4.0, 5.0, 6.0, 5.0, 4.0, 5.0],
-            },
-        }
-        return parsed_data
+            if stadium_name not in stadium_index:
+                stadium_index[stadium_name] = len(stadium_index) + 1
+
+            teams.append({
+                "team_id": team_id, "name": name,
+                "home_stadium_id": stadium_index[stadium_name],
+                "latitude": float(lat_str), "longitude": float(lng_str),
+            })
+            abbr_to_id[abbr] = team_id
+
+        return teams, abbr_to_id, stadium_index
+
+    def parse_pitchers(self, html_path: str, abbr_to_id: dict[str, int]) -> list[dict]:
+        with open(html_path, encoding="utf-8") as f:
+            soup = BeautifulSoup(f.read(), "html.parser")
+        pitchers = []
+        for tr in soup.select("table.tData tbody tr"):
+            tds = tr.find_all("td")
+            abbr = tds[1].get_text(strip=True)
+            link = tds[2].find("a")
+            player_id = int(re.search(r"playerId=(\d+)", link["href"]).group(1))
+
+            pitchers.append({
+                "player_id": player_id,
+                "name": link.get_text(strip=True),
+                "team_id": abbr_to_id[abbr],
+                "pitcher_ip": float(tds[3].get_text(strip=True).replace("이닝", "")),
+                "pitcher_era": float(tds[4].get_text(strip=True)),
+                "pitcher_fip": float(tds[5].get_text(strip=True)),
+                "pitcher_era_history": self._history_from_text(tds[6].get_text()),
+                "pitcher_fip_history": self._history_from_text(tds[7].get_text()),
+                "pitcher_ip_history": self._history_from_text(tds[8].get_text()),
+                "pitcher_status": tds[9].get_text(strip=True) == "Y",
+            })
+        return pitchers
+
+    def parse_hitters(self, html_path: str, abbr_to_id: dict[str, int]) -> list[dict]:
+        with open(html_path, encoding="utf-8") as f:
+            soup = BeautifulSoup(f.read(), "html.parser")
+        hitters = []
+        for tr in soup.select("table.tData tbody tr"):
+            tds = tr.find_all("td")
+            abbr = tds[1].get_text(strip=True)
+            link = tds[2].find("a")
+            player_id = int(re.search(r"playerId=(\d+)", link["href"]).group(1))
+
+            hitters.append({
+                "player_id": player_id,
+                "name": link.get_text(strip=True),
+                "team_id": abbr_to_id[abbr],
+                "hitter_position": tds[3].get_text(strip=True),
+                "hitter_pa": int(tds[4].get_text(strip=True).replace("타석", "")),
+                "hitter_wrc": float(tds[5].get_text(strip=True)),
+                "hitter_wrc_history": self._history_from_text(tds[6].get_text()),
+                "hitter_status": tds[7].get_text(strip=True) == "Y",
+            })
+        return hitters
+
+    def parse_schedule(self, html_path: str, abbr_to_id: dict[str, int],
+                       stadium_index: dict[str, int]) -> list[dict]:
+        with open(html_path, encoding="utf-8") as f:
+            soup = BeautifulSoup(f.read(), "html.parser")
+        games = []
+        for i, tr in enumerate(soup.select("table.tData tbody tr"), start=1):
+            tds = tr.find_all("td")
+            score_txt = tds[4].get_text(strip=True)
+            if score_txt == "vs":
+                home_score = away_score = None
+            else:
+                home_score, away_score = (int(x) for x in score_txt.split(":"))
+
+            games.append({
+                "game_id": i,
+                "match_date": tds[0].get_text(strip=True),
+                "match_time": tds[1].get_text(strip=True) + ":00",
+                "stadium_id": stadium_index[tds[2].get_text(strip=True)],
+                "home_team_id": abbr_to_id[tds[3].get_text(strip=True)],
+                "away_team_id": abbr_to_id[tds[5].get_text(strip=True)],
+                "status": "FINISHED" if tds[6].get_text(strip=True) == "경기종료" else "SCHEDULED",
+                "is_weather_warning": tds[7].get_text(strip=True) == "우천특보",
+                "home_score": home_score,
+                "away_score": away_score,
+            })
+        return games
+
+
+def build_team_hitter_profile(hitters: list[dict], team_id: int) -> dict[str, Any]:
+    """팀 타자단 평균 -> process_matchup_stats 가 요구하는 '팀 대표 타자 1명' 형태로 변환"""
+    rows = [h for h in hitters if h["team_id"] == team_id]
+    n = len(rows)
+    avg_pa = round(sum(r["hitter_pa"] for r in rows) / n)
+    avg_wrc = round(sum(r["hitter_wrc"] for r in rows) / n, 2)
+    full_hists = [r["hitter_wrc_history"] for r in rows if len(r["hitter_wrc_history"]) == 10]
+    avg_hist = [round(sum(h[i] for h in full_hists) / len(full_hists), 2) for i in range(10)] if full_hists else []
+    return {"hitter_pa": avg_pa, "hitter_wrc": avg_wrc, "hitter_wrc_history": avg_hist}
+
+
+def select_probable_starter(pitchers: list[dict], team_id: int) -> dict | None:
+    """
+    '선발예고' 소스가 별도로 없어서, 이닝(IP) > 100 인 투수 = 선발진으로 추정하고
+    그 중 최근 ERA 가장 좋은 투수를 그 날의 선발로 가정한다.
+    (선발예고 페이지가 생기면 이 함수만 교체하면 됨)
+    """
+    candidates = [p for p in pitchers if p["team_id"] == team_id and p["pitcher_ip"] > 100]
+    if not candidates:
+        candidates = [p for p in pitchers if p["team_id"] == team_id]
+    if not candidates:
+        return None
+    return min(candidates, key=lambda p: p["pitcher_era"])
+
 
 class DatabaseSaver:
     UPSERT_SQL = """
@@ -141,12 +238,72 @@ class DatabaseSaver:
                                                    away_pitcher_ra_per_ip_last10 = EXCLUDED.away_pitcher_ra_per_ip_last10,
                                                    away_pa = EXCLUDED.away_pa,
                                                    away_ip = EXCLUDED.away_ip,
-                                                   updated_at = NOW(); \
+                                                   updated_at = NOW();
                  """
+
+    UPSERT_PITCHER_SQL = """
+                         INSERT INTO pitcher_stats (
+                             player_id, name, team_id, pitcher_ip, pitcher_era, pitcher_fip,
+                             pitcher_era_history, pitcher_fip_history, pitcher_status
+                         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                             ON CONFLICT (player_id) DO UPDATE SET
+                             pitcher_ip = EXCLUDED.pitcher_ip,
+                                                            pitcher_era = EXCLUDED.pitcher_era,
+                                                            pitcher_fip = EXCLUDED.pitcher_fip,
+                                                            pitcher_era_history = EXCLUDED.pitcher_era_history,
+                                                            pitcher_fip_history = EXCLUDED.pitcher_fip_history,
+                                                            pitcher_status = EXCLUDED.pitcher_status; \
+                         """
+
+    UPSERT_HITTER_SQL = """
+                        INSERT INTO hitter_stats (
+                            player_id, name, team_id, hitter_pa, hitter_wrc,
+                            hitter_wrc_history, hitter_position, hitter_status
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                            ON CONFLICT (player_id) DO UPDATE SET
+                            hitter_pa = EXCLUDED.hitter_pa,
+                                                           hitter_wrc = EXCLUDED.hitter_wrc,
+                                                           hitter_wrc_history = EXCLUDED.hitter_wrc_history,
+                                                           hitter_status = EXCLUDED.hitter_status; \
+                        """
 
     def __init__(self, db_config: dict[str, Any], dry_run: bool = True):
         self.db_config = db_config
         self.dry_run = dry_run
+
+    def _connect(self):
+        import psycopg2
+        return psycopg2.connect(**self.db_config)
+
+    def save_daily_rosters(self, pitchers: list[dict], hitters: list[dict]):
+        """매일 - 선수 시즌 누적 스탯 최신화 (UPDATE)"""
+        import json
+
+        pitcher_params = [
+            (p["player_id"], p["name"], p["team_id"], p["pitcher_ip"], p["pitcher_era"], p["pitcher_fip"],
+             json.dumps(p["pitcher_era_history"]), json.dumps(p["pitcher_fip_history"]), p["pitcher_status"])
+            for p in pitchers
+        ]
+        hitter_params = [
+            (h["player_id"], h["name"], h["team_id"], h["hitter_pa"], h["hitter_wrc"],
+             json.dumps(h["hitter_wrc_history"]), h["hitter_position"], h["hitter_status"])
+            for h in hitters
+        ]
+
+        if self.dry_run:
+            print(f"[DRY-RUN] pitcher_stats upsert {len(pitcher_params)}건, "
+                  f"hitter_stats upsert {len(hitter_params)}건")
+            return
+
+        try:
+            with self._connect() as conn, conn.cursor() as cur:
+                cur.executemany(self.UPSERT_PITCHER_SQL, pitcher_params)
+                cur.executemany(self.UPSERT_HITTER_SQL, hitter_params)
+            print(f"선수 스탯 최신화 완료: 투수 {len(pitcher_params)}명, 타자 {len(hitter_params)}명")
+        except ImportError:
+            print("psycopg2가 설치되어 있지 않습니다. `pip install psycopg2-binary` 필요.")
+        except Exception as e:  # noqa: BLE001 - DB 저장 전체 실패를 유저에게 알리기 위한 최종 방어선
+            print(f"DB 저장 중 오류 발생: {e}")
 
     def save_batch_stats(self, records: list[tuple[str, dict[str, Any]]]):
         if self.dry_run:
@@ -154,21 +311,18 @@ class DatabaseSaver:
             for match_id, stats in records:
                 params = self._build_params(match_id, stats)
                 print(f"\n[Match ID: {match_id}]")
-                print(f"SQL: {self.UPSERT_SQL.strip()}")
                 print(f"Params: {params}")
             print("================================================\n")
             return
 
         try:
-            import psycopg2
-            with psycopg2.connect(**self.db_config) as conn:
-                with conn.cursor() as cur:
-                    for match_id, stats in records:
-                        params = self._build_params(match_id, stats)
-                        cur.execute(self.UPSERT_SQL, params)
-                conn.commit()
+            with self._connect() as conn, conn.cursor() as cur:
+                for match_id, stats in records:
+                    cur.execute(self.UPSERT_SQL, self._build_params(match_id, stats))
             print(f"성공적으로 {len(records)}건의 경기 통계를 저장하였습니다.")
-        except psycopg2.Error as e:
+        except ImportError:
+            print("psycopg2가 설치되어 있지 않습니다. `pip install psycopg2-binary` 필요.")
+        except Exception as e:  # noqa: BLE001
             print(f"DB 저장 중 오류 발생: {e}")
 
     def _build_params(self, match_id: str, stats: dict[str, Any]) -> tuple:
@@ -184,33 +338,50 @@ class DatabaseSaver:
             stats["awayTeam"]["ip"],
         )
 
-def run_pipeline(raw_html_list: list[str], db_config: dict[str, Any], dry_run: bool = True):
-    preprocessor = StatPreprocessor()
-    parser = MatchHtmlParser()
+
+def run_daily_update(dataset_dir: str, db_config: dict[str, Any], dry_run: bool = True,
+                     target_date: str | None = None):
+    """
+    매일 실행되는 배치.
+      1) raw_crawl_01~03 (선수 순위표) 를 파싱해서 pitcher_stats/hitter_stats 최신화
+      2) raw_crawl_04 (일정) 에서 target_date(기본: 오늘) 경기를 찾아 매치업 계산/저장
+    """
+    parser = RosterHtmlParser()
+    _teams, abbr_to_id, stadium_index = parser.parse_teams(f"{dataset_dir}/raw_crawl_01_team_info.html")
+    pitchers = parser.parse_pitchers(f"{dataset_dir}/raw_crawl_02_pitcher_records.html", abbr_to_id)
+    hitters = parser.parse_hitters(f"{dataset_dir}/raw_crawl_03_hitter_records.html", abbr_to_id)
+    games = parser.parse_schedule(f"{dataset_dir}/raw_crawl_04_schedule_results.html", abbr_to_id, stadium_index)
+
     db_saver = DatabaseSaver(db_config, dry_run=dry_run)
+    db_saver.save_daily_rosters(pitchers, hitters)
 
+    if target_date:
+        games = [g for g in games if g["match_date"] == target_date]
+
+    preprocessor = StatPreprocessor()
+    abbr_by_id = {v: k for k, v in abbr_to_id.items()}
     batch_records = []
+    skipped = 0
 
-    for idx, html in enumerate(raw_html_list, start=1):
-        raw_data = parser.parse_match_data(html)
+    for g in games:
+        home_pitcher = select_probable_starter(pitchers, g["home_team_id"])
+        away_pitcher = select_probable_starter(pitchers, g["away_team_id"])
+        if home_pitcher is None or away_pitcher is None:
+            skipped += 1
+            continue
 
-        processed_stats = preprocessor.process_matchup_stats(
-            home_hitter=raw_data["home_hitter"],
-            away_hitter=raw_data["away_hitter"],
-            home_pitcher=raw_data["home_pitcher"],
-            away_pitcher=raw_data["away_pitcher"],
-        )
+        home_hitter = build_team_hitter_profile(hitters, g["home_team_id"])
+        away_hitter = build_team_hitter_profile(hitters, g["away_team_id"])
 
-        batch_records.append((raw_data["match_id"], processed_stats))
+        stats = preprocessor.process_matchup_stats(home_hitter, away_hitter, home_pitcher, away_pitcher)
+        match_id = f"{g['match_date'].replace('-', '')}_{abbr_by_id[g['home_team_id']]}_{abbr_by_id[g['away_team_id']]}"
+        batch_records.append((match_id, stats))
 
     db_saver.save_batch_stats(batch_records)
+    print(f"매치업 계산 완료: {len(batch_records)}건 처리, {skipped}건 스킵(선발투수 미확인)")
+
 
 if __name__ == "__main__":
-    sample_html_files = [
-        '<div id="match-info" data-id="20260913_LG_NC"><span class="home-wrc">108.5</span><span class="home-pa">420</span><span class="away-wrc">98.2</span><span class="away-pa">400</span></div>',
-        '<div id="match-info" data-id="20260913_SSG_KT"><span class="home-wrc">102.1</span><span class="home-pa">390</span><span class="away-wrc">105.0</span><span class="away-pa">410</span></div>',
-    ]
-
     DB_CONFIG = {
         "host": "localhost",
         "port": 5432,
@@ -219,4 +390,9 @@ if __name__ == "__main__":
         "password": "your_password",
     }
 
-    run_pipeline(sample_html_files, DB_CONFIG, dry_run=True)
+    run_daily_update(
+        dataset_dir="fastapi/dataset",
+        db_config=DB_CONFIG,
+        dry_run=True,
+        target_date="2026-03-28",
+    )
