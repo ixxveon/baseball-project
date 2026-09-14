@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.co.winningpick.domain.community.dto.request.RequestCreatePost;
 import kr.co.winningpick.domain.community.dto.response.ResponsePost;
@@ -21,6 +22,7 @@ public interface PostApiDocs {
     kr.co.winningpick.global.response.ApiResponse<List<ResponsePost>> getPosts();
 
     @Operation(summary = "게시글 작성", description = "새 게시글을 작성합니다.")
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "작성 성공"),
             @ApiResponse(responseCode = "400", description = "요청값 검증 실패 (title/content 누락 등)"),
