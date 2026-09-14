@@ -3,6 +3,7 @@ package kr.co.winningpick.domain.community.controller;
 import jakarta.validation.Valid;
 import kr.co.winningpick.domain.community.docs.PostApiDocs;
 import kr.co.winningpick.domain.community.dto.request.RequestCreatePost;
+import kr.co.winningpick.domain.community.dto.request.RequestUpdatePost;
 import kr.co.winningpick.domain.community.dto.response.ResponsePost;
 import kr.co.winningpick.domain.community.service.PostService;
 import kr.co.winningpick.domain.member.entity.Member;
@@ -45,5 +46,31 @@ public class PostController implements PostApiDocs {
     @GetMapping("/{id}")
     public ApiResponse<ResponsePost> getPost(@PathVariable Long id) {
         return ApiResponse.success(postService.getPost(id));
+    }
+
+    @Override
+    @PatchMapping("/{id}")
+    public ApiResponse<ResponsePost> updatePost(
+            @PathVariable Long id,
+            @RequestAttribute(name = "memberId", required = false) Long memberId,
+            @Valid @RequestBody RequestUpdatePost request
+    ) {
+        if (memberId == null) {
+            throw new BusinessException(GlobalErrorCode.UNAUTHORIZED);
+        }
+        return ApiResponse.success(postService.updatePost(id, memberId, request));
+    }
+
+    @Override
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> deletePost(
+            @PathVariable Long id,
+            @RequestAttribute(name = "memberId", required = false) Long memberId
+    ) {
+        if (memberId == null) {
+            throw new BusinessException(GlobalErrorCode.UNAUTHORIZED);
+        }
+        postService.deletePost(id, memberId);
+        return ApiResponse.success(null);
     }
 }
