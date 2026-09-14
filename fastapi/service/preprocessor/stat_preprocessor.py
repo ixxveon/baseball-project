@@ -1,9 +1,10 @@
-import math
-from typing import Any, Dict, List, Tuple
+from typing import Any
+
 from bs4 import BeautifulSoup
 
+
 class StatPreprocessor:
-    def calculate_recent_hitter_wrc(self, current_wrc: float, history: List[float]) -> float:
+    def calculate_recent_hitter_wrc(self, current_wrc: float, history: list[float]) -> float:
         if not history or len(history) < 10:
             return round(current_wrc, 2)
 
@@ -11,7 +12,7 @@ class StatPreprocessor:
         return round(sum(recent_10) / len(recent_10), 2)
 
     def calculate_recent_pitcher_ra_per_ip(
-            self, current_era: float, current_ip: float, era_history: List[float], ip_history: List[float]
+            self, current_era: float, current_ip: float, era_history: list[float], ip_history: list[float]
     ) -> float:
         if not era_history or not ip_history or len(era_history) < 10 or len(ip_history) < 10:
             return round(current_era / 9.0, 3) if current_era else 0.0
@@ -29,11 +30,11 @@ class StatPreprocessor:
 
     def process_matchup_stats(
             self,
-            home_hitter: Dict[str, Any],
-            away_hitter: Dict[str, Any],
-            home_pitcher: Dict[str, Any],
-            away_pitcher: Dict[str, Any],
-    ) -> Dict[str, Any]:
+            home_hitter: dict[str, Any],
+            away_hitter: dict[str, Any],
+            home_pitcher: dict[str, Any],
+            away_pitcher: dict[str, Any],
+    ) -> dict[str, Any]:
         home_wrc_last10 = self.calculate_recent_hitter_wrc(
             home_hitter.get("hitter_wrc", 0.0), home_hitter.get("hitter_wrc_history", [])
         )
@@ -88,7 +89,7 @@ class MatchHtmlParser:
         except ValueError:
             return default
 
-    def parse_match_data(self, html_content: str) -> Dict[str, Any]:
+    def parse_match_data(self, html_content: str) -> dict[str, Any]:
         soup = BeautifulSoup(html_content, "html.parser")
 
         match_info_tag = soup.find("div", {"id": "match-info"})
@@ -143,11 +144,11 @@ class DatabaseSaver:
                                                    updated_at = NOW(); \
                  """
 
-    def __init__(self, db_config: Dict[str, Any], dry_run: bool = True):
+    def __init__(self, db_config: dict[str, Any], dry_run: bool = True):
         self.db_config = db_config
         self.dry_run = dry_run
 
-    def save_batch_stats(self, records: List[Tuple[str, Dict[str, Any]]]):
+    def save_batch_stats(self, records: list[tuple[str, dict[str, Any]]]):
         if self.dry_run:
             print("\n================ [DRY-RUN MODE] ================")
             for match_id, stats in records:
@@ -167,10 +168,10 @@ class DatabaseSaver:
                         cur.execute(self.UPSERT_SQL, params)
                 conn.commit()
             print(f"성공적으로 {len(records)}건의 경기 통계를 저장하였습니다.")
-        except Exception as e:
+        except psycopg2.Error as e:
             print(f"DB 저장 중 오류 발생: {e}")
 
-    def _build_params(self, match_id: str, stats: Dict[str, Any]) -> Tuple:
+    def _build_params(self, match_id: str, stats: dict[str, Any]) -> tuple:
         return (
             match_id,
             stats["homeTeam"]["hitterWrcLast10"],
@@ -183,7 +184,7 @@ class DatabaseSaver:
             stats["awayTeam"]["ip"],
         )
 
-def run_pipeline(raw_html_list: List[str], db_config: Dict[str, Any], dry_run: bool = True):
+def run_pipeline(raw_html_list: list[str], db_config: dict[str, Any], dry_run: bool = True):
     preprocessor = StatPreprocessor()
     parser = MatchHtmlParser()
     db_saver = DatabaseSaver(db_config, dry_run=dry_run)
