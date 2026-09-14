@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.co.winningpick.domain.community.dto.request.RequestCreatePost;
+import kr.co.winningpick.domain.community.dto.request.RequestUpdatePost;
 import kr.co.winningpick.domain.community.dto.response.ResponsePost;
 
 import java.util.List;
@@ -40,4 +41,28 @@ public interface PostApiDocs {
                             {"success":false,"message":"게시글을 찾을 수 없습니다","data":null}""")))
     })
     kr.co.winningpick.global.response.ApiResponse<ResponsePost> getPost(Long id);
+
+    @Operation(summary = "게시글 수정", description = "본인이 작성한 게시글을 수정합니다.")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "수정 성공"),
+            @ApiResponse(responseCode = "400", description = "요청값 검증 실패"),
+            @ApiResponse(responseCode = "403", description = "본인 게시글이 아님",
+                    content = @Content(examples = @ExampleObject(value = """
+                        {"success":false,"message":"본인 게시글만 수정/삭제할 수 있습니다","data":null}""")))    ,
+            @ApiResponse(responseCode = "404", description = "존재하지 않는 게시글",
+                    content = @Content(examples = @ExampleObject(value = """
+                        {"success":false,"message":"게시글을 찾을 수 없습니다","data":null}""")))
+    })
+    kr.co.winningpick.global.response.ApiResponse<ResponsePost> updatePost(Long id, Long memberId, RequestUpdatePost request);
+
+    @Operation(summary = "게시글 삭제", description = "본인이 작성한 게시글을 삭제합니다. 딸린 댓글도 함께 삭제됩니다.")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "삭제 성공"),
+            @ApiResponse(responseCode = "403", description = "본인 게시글이 아님"),
+            @ApiResponse(responseCode = "404", description = "존재하지 않는 게시글")
+    })
+    kr.co.winningpick.global.response.ApiResponse<Void> deletePost(Long id, Long memberId);
+
 }
