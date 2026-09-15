@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import kr.co.winningpick.domain.member.dto.request.ProfileUpdateRequest;
 import kr.co.winningpick.domain.member.dto.request.RequestConfirmEmailVerification;
 import kr.co.winningpick.domain.member.dto.request.RequestLogin;
 import kr.co.winningpick.domain.member.dto.request.RequestSendEmailVerification;
@@ -59,4 +60,11 @@ public interface MemberApiDocs {
                         {"success":false,"message":"이메일 또는 비밀번호가 올바르지 않습니다.","data":null}""")))
     })
     kr.co.winningpick.global.response.ApiResponse<ResponseLogin> login(RequestLogin request);
+
+    @Operation(summary = "프로필 수정", description = "닉네임, 최애 구단, 알림 설정 중 일부 또는 전체를 수정합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "프로필 수정 성공"),
+            @ApiResponse(responseCode = "400", description = "중복된 닉네임 등 잘못된 요청")
+    })
+    kr.co.winningpick.global.response.ApiResponse<Void> updateProfile(ProfileUpdateRequest request);
 }
