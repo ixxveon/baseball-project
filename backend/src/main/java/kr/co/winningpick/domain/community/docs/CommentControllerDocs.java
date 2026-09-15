@@ -13,7 +13,7 @@ import kr.co.winningpick.domain.community.dto.response.ResponseComment;
 import java.util.List;
 
 @Tag(name = "Comment", description = "댓글 관련 API")
-public interface CommentApiDocs {
+public interface CommentControllerDocs {
 
     @Operation(summary = "댓글 목록 조회", description = "게시글에 달린 댓글을 작성일시 오름차순으로 조회합니다.")
     @ApiResponses({
