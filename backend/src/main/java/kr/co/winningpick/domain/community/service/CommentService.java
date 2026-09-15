@@ -49,7 +49,7 @@ public class CommentService {
                 .orElseThrow(() -> new BusinessException(CommentErrorCode.COMMENT_NOT_FOUND));
 
         if (!comment.getPost().getId().equals(postId)) {
-            throw new BusinessException(CommentErrorCode.COMMENT_NOT_FOUND)
+            throw new BusinessException(CommentErrorCode.COMMENT_NOT_FOUND);
         }
 
         if (!comment.getAuthor().getId().equals(memberId)) {
