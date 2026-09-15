@@ -2,10 +2,7 @@ package kr.co.winningpick.domain.member.controller;
 
 import jakarta.validation.Valid;
 import kr.co.winningpick.domain.member.docs.MemberApiDocs;
-import kr.co.winningpick.domain.member.dto.request.RequestConfirmEmailVerification;
-import kr.co.winningpick.domain.member.dto.request.RequestLogin;
-import kr.co.winningpick.domain.member.dto.request.RequestSendEmailVerification;
-import kr.co.winningpick.domain.member.dto.request.RequestSignup;
+import kr.co.winningpick.domain.member.dto.request.*;
 import kr.co.winningpick.domain.member.dto.response.ResponseEmailVerification;
 import kr.co.winningpick.domain.member.dto.response.ResponseLogin;
 import kr.co.winningpick.domain.member.dto.response.ResponseNicknameAvailability;
@@ -55,5 +52,12 @@ public class MemberController implements MemberApiDocs {
     public ApiResponse<ResponseLogin> login(@Valid @RequestBody RequestLogin request) {
         ResponseLogin response = memberService.login(request);
         return ApiResponse.success(response);
+    }
+
+    @Override
+    @PostMapping("/password-reset")
+    public ApiResponse<Void> resetPassword(@Valid @RequestBody RequestResetPassword request) {
+        memberService.resetPassword(request);
+        return ApiResponse.success(null);
     }
 }
