@@ -55,7 +55,7 @@ public class CommentController implements CommentApiDocs {
         if (memberId == null) {
             throw new BusinessException(GlobalErrorCode.UNAUTHORIZED);
         }
-        commentService.deleteComment(commentId, memberId);
+        commentService.deleteComment(postId, commentId, memberId);
         return ApiResponse.success(null);
     }
 }
