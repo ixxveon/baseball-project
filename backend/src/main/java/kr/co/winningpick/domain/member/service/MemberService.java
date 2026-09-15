@@ -97,7 +97,15 @@ public class MemberService {
 
         String accessToken = jwtProvider.createAccessToken(member.getId());
         LocalDateTime expiresAt = LocalDateTime.now().plus(jwtProvider.getAccessTokenValidity());
+        String refreshToken = jwtProvider.createRefreshToken(member.getId());
+        stringRedisTemplate.opsForValue().set(
+                refreshTokenKey(member.getId()),refreshToken, jwtProvider.getRefreshTokenValidity());
 
-        return new ResponseLogin(accessToken, expiresAt);
+
+        return new ResponseLogin(accessToken, expiresAt, refreshToken);
+    }
+
+    private String refreshTokenKey(Long memberId) {
+        return "refresh-token:" + memberId;
     }
 }
