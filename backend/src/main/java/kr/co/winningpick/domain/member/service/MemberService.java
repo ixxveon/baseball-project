@@ -105,6 +105,28 @@ public class MemberService {
         return new ResponseLogin(accessToken, expiresAt, refreshToken);
     }
 
+    public ResponseReissue reissue(String refreshToken) {
+        Long memberId;
+        try {
+            memberId = jwtProvider.getMemberId(refreshToken);
+        } catch (Exception e) {
+            throw new BusinessException(MemberErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        String savedToken = stringRedisTemplate.opsForValue().get(refreshTokenKey(memberId));
+        if (savedToken == null || !savedToken.equals(refreshToken)) {
+            throw new BusinessException(MemberErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        String newAccessToken = jwtProvider.createAccessToken(memberId);
+        LocalDateTime expiresAt = LocalDateTime.now().plus(jwtProvider.getAccessTokenValidity());
+        return new ResponseReissue(newAccessToken, expiresAt);
+    }
+
+    public void logout(Long memberId) {
+        stringRedisTemplate.delete(refreshTokenKey(memberId));
+    }
+
     private String refreshTokenKey(Long memberId) {
         return "refresh-token:" + memberId;
     }
