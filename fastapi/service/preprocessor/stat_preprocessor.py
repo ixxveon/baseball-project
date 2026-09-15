@@ -341,11 +341,6 @@ class DatabaseSaver:
 
 def run_daily_update(dataset_dir: str, db_config: dict[str, Any], dry_run: bool = True,
                      target_date: str | None = None):
-    """
-    매일 실행되는 배치.
-      1) raw_crawl_01~03 (선수 순위표) 를 파싱해서 pitcher_stats/hitter_stats 최신화
-      2) raw_crawl_04 (일정) 에서 target_date(기본: 오늘) 경기를 찾아 매치업 계산/저장
-    """
     parser = RosterHtmlParser()
     _teams, abbr_to_id, stadium_index = parser.parse_teams(f"{dataset_dir}/raw_crawl_01_team_info.html")
     pitchers = parser.parse_pitchers(f"{dataset_dir}/raw_crawl_02_pitcher_records.html", abbr_to_id)

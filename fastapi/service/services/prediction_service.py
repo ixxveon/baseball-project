@@ -1,5 +1,6 @@
 from typing import Any, Protocol
 
+from service.prediction.postgres_repository import PostgresPredictionRepository
 from service.prediction.win_rate_estimator import calculate_weighted_win_rate
 
 from service.preprocessor.stat_preprocessor import StatPreprocessor
@@ -19,111 +20,13 @@ class PredictionRepository(Protocol):
         ...
 
 
-class MockPredictionRepository:
-    """
-    PostgreSQL(progressSQL) 연결 전 API 테스트를 위한 임시 Repository.
-    """
-
-    def get_matchup_stats(self, game_id: int) -> dict[str, Any]:
-        return {
-            "home_hitter": {
-                "hitter_wrc": 45.0,
-                "hitter_pa": 120,
-                "hitter_wrc_history": [
-                    40.0,
-                    38.0,
-                    35.0,
-                    30.0,
-                    25.0,
-                    20.0,
-                    15.0,
-                    10.0,
-                    5.0,
-                    0.0,
-                ],
-            },
-            "away_hitter": {
-                "hitter_wrc": 30.0,
-                "hitter_pa": 110,
-                "hitter_wrc_history": [
-                    28.0,
-                    26.0,
-                    25.0,
-                    22.0,
-                    20.0,
-                    18.0,
-                    15.0,
-                    12.0,
-                    8.0,
-                    2.0,
-                ],
-            },
-            "home_pitcher": {
-                "pitcher_era": 2.50,
-                "pitcher_ip": 50.0,
-                "pitcher_era_history": [
-                    3.00,
-                    2.80,
-                    2.70,
-                    2.60,
-                    2.50,
-                    2.40,
-                    2.30,
-                    2.20,
-                    2.10,
-                    2.00,
-                ],
-                "pitcher_ip_history": [
-                    6.0,
-                    6.0,
-                    7.0,
-                    6.0,
-                    7.0,
-                    6.0,
-                    7.0,
-                    6.0,
-                    7.0,
-                    6.0,
-                ],
-            },
-            "away_pitcher": {
-                "pitcher_era": 4.10,
-                "pitcher_ip": 42.0,
-                "pitcher_era_history": [
-                    4.50,
-                    4.40,
-                    4.30,
-                    4.20,
-                    4.10,
-                    4.00,
-                    3.90,
-                    3.80,
-                    3.70,
-                    3.60,
-                ],
-                "pitcher_ip_history": [
-                    5.0,
-                    6.0,
-                    5.0,
-                    6.0,
-                    5.0,
-                    6.0,
-                    5.0,
-                    6.0,
-                    5.0,
-                    6.0,
-                ],
-            },
-        }
-
-
 class PredictionService:
     def __init__(
             self,
-            repository: PredictionRepository,
+            repository: PredictionRepository | None = None,
             preprocessor: StatPreprocessor | None = None,
     ):
-        self.repository = repository
+        self.repository = repository or PostgresPredictionRepository()
         self.preprocessor = preprocessor or StatPreprocessor()
 
     def prepare_matchup_prompt(
@@ -149,13 +52,7 @@ class PredictionService:
             ),
         )
 
-        # StatPreprocessor는 DB 저장용 원자료(hitterWrcLast10, pitcherRaPerIpLast10 등)만
-        # 계산한다. 승률은 두 팀을 동시에 비교해야 나오는 예측값이라 여기(prediction
-        # 레이어)에서, 상대 투수 보정 가중치를 반영해 별도로 계산한다.
         home_win_rate = calculate_weighted_win_rate(processed_stats)
-
-        # build_llm_user_prompt는
-        # (home_win_rate: float, processed_stats: dict) 형태를 요구한다.
         user_prompt = build_llm_user_prompt(
             home_win_rate,
             processed_stats,
