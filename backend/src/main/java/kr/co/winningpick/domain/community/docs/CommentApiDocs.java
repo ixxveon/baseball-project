@@ -39,6 +39,9 @@ public interface CommentApiDocs {
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "삭제 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 필요",
+                    content = @Content(examples = @ExampleObject(value = """
+                        {"success":false,"message":"인증이 필요합니다","data":null}""")))    ,
             @ApiResponse(responseCode = "403", description = "본인 댓글이 아님"),
             @ApiResponse(responseCode = "404", description = "존재하지 않는 댓글")
     })
