@@ -6,10 +6,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import kr.co.winningpick.domain.member.dto.request.RequestConfirmEmailVerification;
-import kr.co.winningpick.domain.member.dto.request.RequestLogin;
-import kr.co.winningpick.domain.member.dto.request.RequestSendEmailVerification;
-import kr.co.winningpick.domain.member.dto.request.RequestSignup;
+import kr.co.winningpick.domain.member.dto.request.*;
 import kr.co.winningpick.domain.member.dto.response.ResponseEmailVerification;
 import kr.co.winningpick.domain.member.dto.response.ResponseLogin;
 import kr.co.winningpick.domain.member.dto.response.ResponseNicknameAvailability;
@@ -59,4 +56,13 @@ public interface MemberApiDocs {
                         {"success":false,"message":"이메일 또는 비밀번호가 올바르지 않습니다.","data":null}""")))
     })
     kr.co.winningpick.global.response.ApiResponse<ResponseLogin> login(RequestLogin request);
+
+    @Operation(summary = "비밀번호 재설정", description = "이메일 인증이 완료된 계정의 비밀번호를 재설정합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "재설정 성공"),
+            @ApiResponse(responseCode = "400", description = "이메일 인증 미완료",
+                    content = @Content(examples = @ExampleObject(value = """
+                        {"success":false,"message":"이메일 인증을 완료해주세요","data":null}""")))
+    })
+    kr.co.winningpick.global.response.ApiResponse<Void> resetPassword(RequestResetPassword request);
 }

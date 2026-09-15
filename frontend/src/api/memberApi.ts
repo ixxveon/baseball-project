@@ -50,6 +50,13 @@ export async function confirmEmailVerification(email: string, code: string): Pro
     return response.data.data.verified;
 }
 
+export async function resetPassword(email: string, newPassword: string):
+Promise<void> {
+    await axiosInstance.post('/members/password-reset',
+        { email, newPassword }
+    );
+}
+
 export interface LoginRequest {
     email: string;
     password: string;
