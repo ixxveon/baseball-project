@@ -44,4 +44,18 @@ public class CommentController implements CommentApiDocs {
                 .orElseThrow(() -> new BusinessException(MemberErrorCode.LOGIN_FAILED));
         return ApiResponse.success(commentService.createComment(author, postId, request));
     }
+
+    @Override
+    @DeleteMapping("/{commentId}")
+    public ApiResponse<Void> deleteComment(
+            @PathVariable Long postId,
+            @PathVariable Long commentId,
+            @RequestAttribute(name = "memberId", required = false) Long memberId
+    ) {
+        if (memberId == null) {
+            throw new BusinessException(GlobalErrorCode.UNAUTHORIZED);
+        }
+        commentService.deleteComment(postId, commentId, memberId);
+        return ApiResponse.success(null);
+    }
 }
