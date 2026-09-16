@@ -14,7 +14,7 @@ import kr.co.winningpick.domain.community.dto.response.ResponsePost;
 import java.util.List;
 
 @Tag(name = "Post", description = "게시글 관련 API")
-public interface PostApiDocs {
+public interface PostControllerDocs {
 
     @Operation(summary = "게시글 목록 조회", description = "전체 게시글을 최신순으로 조회합니다.")
     @ApiResponses({
