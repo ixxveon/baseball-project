@@ -16,7 +16,7 @@ import kr.co.winningpick.domain.member.dto.response.ResponseNicknameAvailability
 import kr.co.winningpick.domain.member.dto.response.ResponseSignup;
 
 @Tag(name = "Member", description = "회원 관련 API")
-public interface MemberApiDocs {
+public interface MemberControllerDocs {
 
     @Operation(summary = "이메일 인증번호 발송", description = "입력한 이메일로 6자리 인증번호를 발송합니다. 인증번호는 5분간 유효합니다.")
     @ApiResponses({
