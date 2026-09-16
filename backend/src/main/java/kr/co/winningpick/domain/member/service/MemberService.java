@@ -15,6 +15,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import kr.co.winningpick.domain.member.dto.request.ProfileUpdateRequest;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.annotation.PostConstruct;
+import org.springframework.context.annotation.Profile;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -32,12 +34,12 @@ public class MemberService {
     private final JwtProvider jwtProvider;
 
     // 👇 서버가 켜질 때 자동으로 실행되어 테스트용 1번 회원을 만들어주는 마법의 코드입니다.
-    @jakarta.annotation.PostConstruct
+    @Profile("local") //로컬환경에서만 실행
+    @PostConstruct
     public void initTestUser() {
         // 데이터베이스에 회원이 한 명도 없을 때만 실행
         if (memberRepository.count() == 0) {
-            kr.co.winningpick.domain.member.entity.Member dummyUser =
-                    kr.co.winningpick.domain.member.entity.Member.createLocalMember("test@test.com", "기존승요", "1234");
+            Member dummyUser = Member.createLocalMember("test@test.com", "기존승요", passwordEncoder.encode("1234"));
             memberRepository.save(dummyUser);
         }
     }
@@ -117,20 +119,24 @@ public class MemberService {
     @Transactional
     public void updateProfile(Long memberId, ProfileUpdateRequest request) {
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
-        // (만약 MemberErrorCode.MEMBER_NOT_FOUND 같은 에러 코드가 있다면 BusinessException으로 교체하셔도 좋습니다.)
+                .orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
 
         // 1. 닉네임 변경 (입력값이 있고, 기존 닉네임과 다를 경우에만 실행)
         if (request.nickname() != null && !request.nickname().equals(member.getNickname())) {
-            // 친구분이 만들어둔 예외 처리 코드 활용
+
             if (memberRepository.existsByNickname(request.nickname())) {
                 throw new BusinessException(MemberErrorCode.DUPLICATE_NICKNAME);
             }
             member.changeNickname(request.nickname());
         }
 
-        // 2. 최애 구단 변경
+        // 2. 최애 구단 변경 (teamRepository 대신 숫자 범위로 검사)
         if (request.favoriteTeamId() != null) {
+            // 한국 프로야구 구단(1~10번) 범위를 벗어나면 에러 발생
+            if (request.favoriteTeamId() < 1 || request.favoriteTeamId() > 10) {
+                throw new BusinessException(MemberErrorCode.INVALID_TEAM_ID);
+            }
+            // 2. 검사를 무사히 통과했을 때만 회원 정보 업데이트
             member.changeFavoriteTeam(request.favoriteTeamId());
         }
 
@@ -139,6 +145,5 @@ public class MemberService {
             member.changePushAlarm(request.pushAlarm());
         }
     }
-
 
 }
