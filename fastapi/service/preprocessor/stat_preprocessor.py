@@ -1,5 +1,7 @@
 import re
+from datetime import date, datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from bs4 import BeautifulSoup
 
@@ -194,53 +196,7 @@ class RosterHtmlParser:
         return games
 
 
-def build_team_hitter_profile(hitters: list[dict], team_id: int) -> dict[str, Any]:
-    """팀 타자단 평균 -> process_matchup_stats 가 요구하는 '팀 대표 타자 1명' 형태로 변환"""
-    rows = [h for h in hitters if h["team_id"] == team_id]
-    n = len(rows)
-    avg_pa = round(sum(r["hitter_pa"] for r in rows) / n)
-    avg_wrc = round(sum(r["hitter_wrc"] for r in rows) / n, 2)
-    full_hists = [r["hitter_wrc_history"] for r in rows if len(r["hitter_wrc_history"]) == 10]
-    avg_hist = [round(sum(h[i] for h in full_hists) / len(full_hists), 2) for i in range(10)] if full_hists else []
-    return {"hitter_pa": avg_pa, "hitter_wrc": avg_wrc, "hitter_wrc_history": avg_hist}
-
-
-def select_probable_starter(pitchers: list[dict], team_id: int) -> dict | None:
-    """
-    '선발예고' 소스가 별도로 없어서, 이닝(IP) > 100 인 투수 = 선발진으로 추정하고
-    그 중 최근 ERA 가장 좋은 투수를 그 날의 선발로 가정한다.
-    (선발예고 페이지가 생기면 이 함수만 교체하면 됨)
-    """
-    candidates = [p for p in pitchers if p["team_id"] == team_id and p["pitcher_ip"] > 100]
-    if not candidates:
-        candidates = [p for p in pitchers if p["team_id"] == team_id]
-    if not candidates:
-        return None
-    return min(candidates, key=lambda p: p["pitcher_era"])
-
-
 class DatabaseSaver:
-    UPSERT_SQL = """
-                 INSERT INTO processed_match_stats (
-                     match_id,
-                     home_hitter_wrc_last10, home_pitcher_ra_per_ip_last10, home_pa, home_ip,
-                     away_hitter_wrc_last10, away_pitcher_ra_per_ip_last10, away_pa, away_ip,
-                     updated_at
-                 ) VALUES (
-                              %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW()
-                          )
-                     ON CONFLICT (match_id) DO UPDATE SET
-                     home_hitter_wrc_last10 = EXCLUDED.home_hitter_wrc_last10,
-                                                   home_pitcher_ra_per_ip_last10 = EXCLUDED.home_pitcher_ra_per_ip_last10,
-                                                   home_pa = EXCLUDED.home_pa,
-                                                   home_ip = EXCLUDED.home_ip,
-                                                   away_hitter_wrc_last10 = EXCLUDED.away_hitter_wrc_last10,
-                                                   away_pitcher_ra_per_ip_last10 = EXCLUDED.away_pitcher_ra_per_ip_last10,
-                                                   away_pa = EXCLUDED.away_pa,
-                                                   away_ip = EXCLUDED.away_ip,
-                                                   updated_at = NOW();
-                 """
-
     UPSERT_PITCHER_SQL = """
                          INSERT INTO pitcher_stats (
                              player_id, name, team_id, pitcher_ip, pitcher_era, pitcher_fip,
@@ -276,7 +232,7 @@ class DatabaseSaver:
         return psycopg2.connect(**self.db_config)
 
     def save_daily_rosters(self, pitchers: list[dict], hitters: list[dict]):
-        """매일 - 선수 시즌 누적 스탯 최신화 (UPDATE)"""
+        """매일 - 선수 시즌 누적 원자료(현재값+히스토리) 최신화 (UPSERT). 파생값은 저장하지 않는다."""
         import json
 
         pitcher_params = [
@@ -305,42 +261,50 @@ class DatabaseSaver:
         except Exception as e:  # noqa: BLE001 - DB 저장 전체 실패를 유저에게 알리기 위한 최종 방어선
             print(f"DB 저장 중 오류 발생: {e}")
 
-    def save_batch_stats(self, records: list[tuple[str, dict[str, Any]]]):
+    UPDATE_GAME_RESULT_SQL = """
+                             UPDATE games
+                             SET status = %s, home_score = %s, away_score = %s, is_weather_warning = %s
+                             WHERE game_id = %s; \
+                             """
+
+    def sync_game_results(self, games: list[dict], today: date):
+        """
+        오늘(today) 이하 날짜의 경기만 크롤링된 상태/스코어로 갱신한다.
+        오늘보다 미래인 경기는 아직 열리지 않았으므로 건드리지 않는다.
+        (games 행 자체는 시즌 시작 전 일정표로 이미 존재한다고 가정 - INSERT 아님, UPDATE만)
+        """
+        due = [g for g in games if g["match_date"] <= today.isoformat()]
+        params = [
+            (g["status"], g["home_score"], g["away_score"], g["is_weather_warning"], g["game_id"])
+            for g in due
+        ]
+
         if self.dry_run:
-            print("\n================ [DRY-RUN MODE] ================")
-            for match_id, stats in records:
-                params = self._build_params(match_id, stats)
-                print(f"\n[Match ID: {match_id}]")
-                print(f"Params: {params}")
-            print("================================================\n")
+            print(f"[DRY-RUN] games 결과 갱신 대상 {len(params)}건 (오늘: {today.isoformat()})")
             return
 
         try:
             with self._connect() as conn, conn.cursor() as cur:
-                for match_id, stats in records:
-                    cur.execute(self.UPSERT_SQL, self._build_params(match_id, stats))
-            print(f"성공적으로 {len(records)}건의 경기 통계를 저장하였습니다.")
+                cur.executemany(self.UPDATE_GAME_RESULT_SQL, params)
+            print(f"경기 결과 갱신 완료: {len(params)}건 (오늘: {today.isoformat()})")
         except ImportError:
             print("psycopg2가 설치되어 있지 않습니다. `pip install psycopg2-binary` 필요.")
         except Exception as e:  # noqa: BLE001
             print(f"DB 저장 중 오류 발생: {e}")
 
-    def _build_params(self, match_id: str, stats: dict[str, Any]) -> tuple:
-        return (
-            match_id,
-            stats["homeTeam"]["hitterWrcLast10"],
-            stats["homeTeam"]["pitcherRaPerIpLast10"],
-            stats["homeTeam"]["pa"],
-            stats["homeTeam"]["ip"],
-            stats["awayTeam"]["hitterWrcLast10"],
-            stats["awayTeam"]["pitcherRaPerIpLast10"],
-            stats["awayTeam"]["pa"],
-            stats["awayTeam"]["ip"],
-        )
 
+def run_daily_update(dataset_dir: str, db_config: dict[str, Any], dry_run: bool = True):
+    """
+    매일 실행되는 배치.
+      1) raw_crawl_01~03 (선수 순위표) 를 파싱해서 pitcher_stats/hitter_stats 원자료만 최신화한다.
+      2) raw_crawl_04 (일정/결과) 를 파싱해서, 오늘 날짜 이하로 열린 경기의 상태/스코어를 games에 반영한다.
+         (games 행 자체는 시즌 시작 전 일정표로 이미 채워져 있다고 가정 - UPDATE만 수행)
 
-def run_daily_update(dataset_dir: str, db_config: dict[str, Any], dry_run: bool = True,
-                     target_date: str | None = None):
+    매치업 계산(hitterWrcLast10, pitcherRaPerIpLast10, winRate 등)은 여기서 하지 않는다.
+    그 값들은 이미 저장된 히스토리로부터 언제든 다시 계산 가능한 파생값이라, 저장해두면
+    원본과 파생값 두 군데가 따로 놀며 불일치가 생길 여지만 만든다. 실제 매치업 계산은
+    요청이 들어온 시점에 PredictionService.prepare_matchup_prompt() 가 그때그때 수행한다.
+    """
     parser = RosterHtmlParser()
     _teams, abbr_to_id, stadium_index = parser.parse_teams(f"{dataset_dir}/raw_crawl_01_team_info.html")
     pitchers = parser.parse_pitchers(f"{dataset_dir}/raw_crawl_02_pitcher_records.html", abbr_to_id)
@@ -349,45 +313,24 @@ def run_daily_update(dataset_dir: str, db_config: dict[str, Any], dry_run: bool 
 
     db_saver = DatabaseSaver(db_config, dry_run=dry_run)
     db_saver.save_daily_rosters(pitchers, hitters)
-
-    if target_date:
-        games = [g for g in games if g["match_date"] == target_date]
-
-    preprocessor = StatPreprocessor()
-    abbr_by_id = {v: k for k, v in abbr_to_id.items()}
-    batch_records = []
-    skipped = 0
-
-    for g in games:
-        home_pitcher = select_probable_starter(pitchers, g["home_team_id"])
-        away_pitcher = select_probable_starter(pitchers, g["away_team_id"])
-        if home_pitcher is None or away_pitcher is None:
-            skipped += 1
-            continue
-
-        home_hitter = build_team_hitter_profile(hitters, g["home_team_id"])
-        away_hitter = build_team_hitter_profile(hitters, g["away_team_id"])
-
-        stats = preprocessor.process_matchup_stats(home_hitter, away_hitter, home_pitcher, away_pitcher)
-        match_id = f"{g['match_date'].replace('-', '')}_{abbr_by_id[g['home_team_id']]}_{abbr_by_id[g['away_team_id']]}"
-        batch_records.append((match_id, stats))
-
-    db_saver.save_batch_stats(batch_records)
-    print(f"매치업 계산 완료: {len(batch_records)}건 처리, {skipped}건 스킵(선발투수 미확인)")
+    db_saver.sync_game_results(games, today=datetime.now(tz=ZoneInfo("Asia/Seoul")).date())
 
 
 if __name__ == "__main__":
+    # 매일 한 번씩(cron/스케줄러 등) 실행되어 그날 기준 최신 시즌 스탯으로 갱신하는 배치.
+    # 실제 서비스에서는 raw_crawl_*.html 자리에 그날 크롤링한 결과가 들어오게 된다.
+    import os
+
     DB_CONFIG = {
-        "host": "localhost",
-        "port": 5432,
-        "dbname": "baseball_db",
-        "user": "postgres",
-        "password": "your_password",
+        "host": os.environ.get("PGHOST", "localhost"),
+        "port": os.environ.get("PGPORT", "5432"),
+        "dbname": os.environ.get("PGDATABASE", "winningpick"),
+        "user": os.environ.get("PGUSER", "postgres"),
+        "password": os.environ.get("PGPASSWORD", ""),
     }
 
     run_daily_update(
-        dataset_dir="fastapi/dataset",
+        dataset_dir="dataset",
         db_config=DB_CONFIG,
-        dry_run=True,
-        target_date="2026-03-28",
+        dry_run=False,  # 실제 저장
     )

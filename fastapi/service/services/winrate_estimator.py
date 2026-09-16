@@ -1,6 +1,5 @@
 import math
 
-# KBO 평균 ERA(약 4.50) 기준. 실제 리그 평균으로 교체 가능하도록 상수로 분리.
 LEAGUE_AVG_RA_PER_IP = 0.50
 
 PYTHAGOREAN_EXPONENT = 1.83
