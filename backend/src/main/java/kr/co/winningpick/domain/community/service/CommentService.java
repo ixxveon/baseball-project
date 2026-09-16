@@ -44,9 +44,13 @@ public class CommentService {
     }
 
     @Transactional
-    public void deleteComment(Long commentId, Long memberId) {
+    public void deleteComment(Long postId, Long commentId, Long memberId) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new BusinessException(CommentErrorCode.COMMENT_NOT_FOUND));
+
+        if (!comment.getPost().getId().equals(postId)) {
+            throw new BusinessException(CommentErrorCode.COMMENT_NOT_FOUND);
+        }
 
         if (!comment.getAuthor().getId().equals(memberId)) {
             throw new BusinessException(CommentErrorCode.FORBIDDEN);
