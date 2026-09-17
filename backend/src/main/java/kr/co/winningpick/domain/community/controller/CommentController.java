@@ -1,7 +1,7 @@
 package kr.co.winningpick.domain.community.controller;
 
 import jakarta.validation.Valid;
-import kr.co.winningpick.domain.community.docs.CommentApiDocs;
+import kr.co.winningpick.domain.community.docs.CommentControllerDocs;
 import kr.co.winningpick.domain.community.dto.request.RequestCreateComment;
 import kr.co.winningpick.domain.community.dto.response.ResponseComment;
 import kr.co.winningpick.domain.community.service.CommentService;
@@ -19,7 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/community/posts/{postId}/comments")
 @RequiredArgsConstructor
-public class CommentController implements CommentApiDocs {
+public class CommentController implements CommentControllerDocs {
 
     private final CommentService commentService;
     private final MemberRepository memberRepository;
@@ -43,5 +43,19 @@ public class CommentController implements CommentApiDocs {
         Member author = memberRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(MemberErrorCode.LOGIN_FAILED));
         return ApiResponse.success(commentService.createComment(author, postId, request));
+    }
+
+    @Override
+    @DeleteMapping("/{commentId}")
+    public ApiResponse<Void> deleteComment(
+            @PathVariable Long postId,
+            @PathVariable Long commentId,
+            @RequestAttribute(name = "memberId", required = false) Long memberId
+    ) {
+        if (memberId == null) {
+            throw new BusinessException(GlobalErrorCode.UNAUTHORIZED);
+        }
+        commentService.deleteComment(postId, commentId, memberId);
+        return ApiResponse.success(null);
     }
 }
