@@ -67,7 +67,10 @@ public interface MemberControllerDocs {
     @Operation(summary = "로그아웃", description = "서버에 저장된 Refresh Token을 무효화합니다.")
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "로그아웃 성공")
+            @ApiResponse(responseCode = "200", description = "로그아웃 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 필요",
+                    content = @Content(examples = @ExampleObject(value = """
+                    {"success":false,"message":"인증이 필요합니다","data":null}""")))
     })
     kr.co.winningpick.global.response.ApiResponse<Void> logout(Long memberId);
 }
