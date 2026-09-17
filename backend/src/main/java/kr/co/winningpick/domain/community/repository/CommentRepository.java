@@ -11,10 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
-    @Query(
-            value = "SELECT c FROM Comment c JOIN FETCH c.author WHERE c.post.id = :postId ORDER BY c.createdAt ASC",
-            countQuery = "SELECT COUNT(c) FROM Comment c WHERE c.post.id = :postId"
-    )
+    @Query("SELECT c FROM Comment c JOIN FETCH c.author WHERE c.post.id = :postId ORDER BY c.createdAt ASC, c.id ASC")
     Page<Comment> findAllByPostIdWithAuthor(@Param("postId") Long postId, Pageable pageable);
 
     @Modifying
