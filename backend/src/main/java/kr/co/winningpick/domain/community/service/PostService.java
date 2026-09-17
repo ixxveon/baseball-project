@@ -1,9 +1,11 @@
 package kr.co.winningpick.domain.community.service;
 
 import kr.co.winningpick.domain.community.dto.request.RequestCreatePost;
+import kr.co.winningpick.domain.community.dto.request.RequestUpdatePost;
 import kr.co.winningpick.domain.community.dto.response.ResponsePost;
 import kr.co.winningpick.domain.community.entity.Post;
 import kr.co.winningpick.domain.community.exception.PostErrorCode;
+import kr.co.winningpick.domain.community.repository.CommentRepository;
 import kr.co.winningpick.domain.community.repository.PostRepository;
 import kr.co.winningpick.domain.member.entity.Member;
 import kr.co.winningpick.global.exception.BusinessException;
@@ -19,6 +21,7 @@ import java.util.List;
 public class PostService {
 
     private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
 
     public List<ResponsePost> getPosts() {
         return postRepository.findAllWithAuthorAndCommentCountOrderByCreatedAtDesc()
@@ -41,6 +44,36 @@ public class PostService {
         }
         Object[] row = rows.get(0);
         return ResponsePost.from((Post) row[0], (Long) row[1]);
+    }
+
+    @Transactional
+    public ResponsePost updatePost(Long postId, Long memberId, RequestUpdatePost request) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new BusinessException(PostErrorCode.POST_NOT_FOUND));
+
+        if (!post.getAuthor().getId().equals(memberId)) {
+            throw new BusinessException(PostErrorCode.FORBIDDEN);
+        }
+
+        post.update(request.title(), request.content(), request.category());
+
+        List<Object[]> rows = postRepository.findByIdWithAuthorAndCommentCount(postId);
+        Object[] row = rows.get(0);
+        return ResponsePost.from((Post) row[0], (Long) row[1]);
+    }
+
+    @Transactional
+    public void deletePost(Long postId, Long memberId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new BusinessException(PostErrorCode.POST_NOT_FOUND));
+
+                if (!post.getAuthor().getId().equals(memberId)) {
+                    throw new BusinessException(PostErrorCode.FORBIDDEN);
+                }
+
+                commentRepository.deleteAllByPostId(postId);
+                postRepository.delete(post);
+
     }
 
 

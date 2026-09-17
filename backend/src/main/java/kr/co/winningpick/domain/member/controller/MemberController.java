@@ -1,7 +1,7 @@
 package kr.co.winningpick.domain.member.controller;
 
 import jakarta.validation.Valid;
-import kr.co.winningpick.domain.member.docs.MemberApiDocs;
+import kr.co.winningpick.domain.member.docs.MemberControllerDocs;
 import kr.co.winningpick.domain.member.dto.request.RequestConfirmEmailVerification;
 import kr.co.winningpick.domain.member.dto.request.RequestLogin;
 import kr.co.winningpick.domain.member.dto.request.RequestSendEmailVerification;
@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/members")
 @RequiredArgsConstructor
-public class MemberController implements MemberApiDocs {
+public class MemberController implements MemberControllerDocs {
 
     private final MemberService memberService;
 
