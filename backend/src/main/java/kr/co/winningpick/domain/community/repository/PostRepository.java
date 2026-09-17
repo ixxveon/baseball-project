@@ -19,7 +19,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             value = "SELECT p, (SELECT COUNT(c) FROM Comment c WHERE c.post = p) " +
                     "FROM Post p JOIN FETCH p.author " +
                     "WHERE (:gameId IS NULL OR p.gameId = :gameId) " +
-                    "ORDER BY p.createdAt DESC",
+                    "ORDER BY p.createdAt DESC, p.id DESC",
             countQuery = "SELECT COUNT(p) FROM Post p WHERE (:gameId IS NULL OR p.gameId = :gameId)"
     )
     Page<Object[]> findAllWithAuthorAndCommentCount(@Param("gameId") Long gameId, Pageable pageable);
