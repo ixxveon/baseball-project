@@ -10,11 +10,12 @@ import kr.co.winningpick.domain.community.repository.CommentRepository;
 import kr.co.winningpick.domain.community.repository.PostRepository;
 import kr.co.winningpick.domain.member.entity.Member;
 import kr.co.winningpick.global.exception.BusinessException;
+import kr.co.winningpick.global.response.ResponsePage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -24,14 +25,13 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
 
-    public List<ResponseComment> getComments(Long postId) {
+    public ResponsePage<ResponseComment> getComments(Long postId, Pageable pageable) {
         if (!postRepository.existsById(postId)) {
             throw new BusinessException(PostErrorCode.POST_NOT_FOUND);
         }
-        return commentRepository.findAllByPostIdWithAuthorOrderByCreatedAtAsc(postId)
-                .stream()
-                .map(ResponseComment::from)
-                .toList();
+        Page<Comment> page = commentRepository.findAllByPostIdWithAuthor(postId, pageable);
+        Page<ResponseComment> responsePage = page.map(ResponseComment::from);
+        return ResponsePage.from(responsePage);
     }
 
     @Transactional
