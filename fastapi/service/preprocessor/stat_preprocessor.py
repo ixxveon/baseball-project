@@ -7,11 +7,9 @@ from bs4 import BeautifulSoup
 
 
 class StatPreprocessor:
-    """전처리 계산 로직 (기존 로직 그대로 유지)"""
 
     def calculate_recent_hitter_wrc(self, current_wrc: float, history: list[float]) -> float:
-        # history 는 시즌 누적 wRC의 과거 시점 스냅샷 (index 0 = 1경기 전, index -1 = 10경기 전).
-        # 따라서 "최근 10경기 생산력"은 평균이 아니라 현재값과 10경기 전 값의 차이(증가분)다.
+
         if not history or len(history) < 10:
             return round(current_wrc, 2)
 
@@ -79,15 +77,7 @@ class StatPreprocessor:
 
 
 class RosterHtmlParser:
-    """
-    raw_crawl_01_team_info.html / 02_pitcher_records.html / 03_hitter_records.html /
-    04_schedule_results.html (선수 순위표 + 일정표) 를 파싱하는 '원시데이터 추출' 단계.
 
-    기존 MatchHtmlParser 는 '경기 1건짜리 페이지(#match-info, .home-wrc 등)'를 가정하고
-    있었는데, 실제 크롤링 대상은 '선수 전체 순위표'라서 셀렉터가 전혀 맞지 않았고
-    hitter_wrc_history/pitcher_era_history/pitcher_ip_history 는 파싱 코드 없이
-    하드코딩된 고정값이 저장되는 문제가 있었습니다. 이 클래스가 그 부분을 대체합니다.
-    """
 
     @staticmethod
     def _history_from_text(text: str) -> list[float]:
@@ -232,7 +222,7 @@ class DatabaseSaver:
         return psycopg2.connect(**self.db_config)
 
     def save_daily_rosters(self, pitchers: list[dict], hitters: list[dict]):
-        """매일 - 선수 시즌 누적 원자료(현재값+히스토리) 최신화 (UPSERT). 파생값은 저장하지 않는다."""
+
         import json
 
         pitcher_params = [
@@ -258,8 +248,10 @@ class DatabaseSaver:
             print(f"선수 스탯 최신화 완료: 투수 {len(pitcher_params)}명, 타자 {len(hitter_params)}명")
         except ImportError:
             print("psycopg2가 설치되어 있지 않습니다. `pip install psycopg2-binary` 필요.")
-        except Exception as e:  # noqa: BLE001 - DB 저장 전체 실패를 유저에게 알리기 위한 최종 방어선
+            raise
+        except Exception as e:
             print(f"DB 저장 중 오류 발생: {e}")
+            raise
 
     UPDATE_GAME_RESULT_SQL = """
                              UPDATE games
@@ -268,11 +260,7 @@ class DatabaseSaver:
                              """
 
     def sync_game_results(self, games: list[dict], today: date):
-        """
-        오늘(today) 이하 날짜의 경기만 크롤링된 상태/스코어로 갱신한다.
-        오늘보다 미래인 경기는 아직 열리지 않았으므로 건드리지 않는다.
-        (games 행 자체는 시즌 시작 전 일정표로 이미 존재한다고 가정 - INSERT 아님, UPDATE만)
-        """
+
         due = [g for g in games if g["match_date"] <= today.isoformat()]
         params = [
             (g["status"], g["home_score"], g["away_score"], g["is_weather_warning"], g["game_id"])
@@ -289,22 +277,14 @@ class DatabaseSaver:
             print(f"경기 결과 갱신 완료: {len(params)}건 (오늘: {today.isoformat()})")
         except ImportError:
             print("psycopg2가 설치되어 있지 않습니다. `pip install psycopg2-binary` 필요.")
-        except Exception as e:  # noqa: BLE001
+            raise
+        except Exception as e:
             print(f"DB 저장 중 오류 발생: {e}")
+            raise
 
 
 def run_daily_update(dataset_dir: str, db_config: dict[str, Any], dry_run: bool = True):
-    """
-    매일 실행되는 배치.
-      1) raw_crawl_01~03 (선수 순위표) 를 파싱해서 pitcher_stats/hitter_stats 원자료만 최신화한다.
-      2) raw_crawl_04 (일정/결과) 를 파싱해서, 오늘 날짜 이하로 열린 경기의 상태/스코어를 games에 반영한다.
-         (games 행 자체는 시즌 시작 전 일정표로 이미 채워져 있다고 가정 - UPDATE만 수행)
 
-    매치업 계산(hitterWrcLast10, pitcherRaPerIpLast10, winRate 등)은 여기서 하지 않는다.
-    그 값들은 이미 저장된 히스토리로부터 언제든 다시 계산 가능한 파생값이라, 저장해두면
-    원본과 파생값 두 군데가 따로 놀며 불일치가 생길 여지만 만든다. 실제 매치업 계산은
-    요청이 들어온 시점에 PredictionService.prepare_matchup_prompt() 가 그때그때 수행한다.
-    """
     parser = RosterHtmlParser()
     _teams, abbr_to_id, stadium_index = parser.parse_teams(f"{dataset_dir}/raw_crawl_01_team_info.html")
     pitchers = parser.parse_pitchers(f"{dataset_dir}/raw_crawl_02_pitcher_records.html", abbr_to_id)
@@ -317,6 +297,7 @@ def run_daily_update(dataset_dir: str, db_config: dict[str, Any], dry_run: bool 
 
 
 if __name__ == "__main__":
+
     import os
 
     DB_CONFIG = {
