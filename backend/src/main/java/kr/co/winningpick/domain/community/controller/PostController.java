@@ -36,7 +36,7 @@ public class PostController implements PostControllerDocs {
     ) {
         return ApiResponse.success(postService.getPosts(gameId, pageable));
     }
-    
+
     @Override
     @PostMapping
     public ApiResponse<ResponsePost> createPost(@RequestAttribute(name = "memberId", required = false) Long memberId, @Valid @RequestBody RequestCreatePost request) {
