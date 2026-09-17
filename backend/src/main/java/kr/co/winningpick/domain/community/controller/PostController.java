@@ -12,7 +12,10 @@ import kr.co.winningpick.domain.member.repository.MemberRepository;
 import kr.co.winningpick.global.exception.BusinessException;
 import kr.co.winningpick.global.exception.GlobalErrorCode;
 import kr.co.winningpick.global.response.ApiResponse;
+import kr.co.winningpick.global.response.ResponsePage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,10 +30,13 @@ public class PostController implements PostControllerDocs {
 
     @Override
     @GetMapping
-    public ApiResponse<List<ResponsePost>> getPosts() {
-        return ApiResponse.success(postService.getPosts());
+    public ApiResponse<ResponsePage<ResponsePost>> getPosts(
+            @RequestParam(required = false) Long gameId,
+            @PageableDefault(size = 10) Pageable pageable
+    ) {
+        return ApiResponse.success(postService.getPosts(gameId, pageable));
     }
-
+    
     @Override
     @PostMapping
     public ApiResponse<ResponsePost> createPost(@RequestAttribute(name = "memberId", required = false) Long memberId, @Valid @RequestBody RequestCreatePost request) {
