@@ -1,9 +1,8 @@
 from typing import Any, Protocol
 
-from service.prediction.postgres_repository import PostgresPredictionRepository
-from service.prediction.win_rate_estimator import calculate_weighted_win_rate
-
+from service.preprocessor.postgres_repository import PostgresPredictionRepository
 from service.preprocessor.stat_preprocessor import StatPreprocessor
+from service.preprocessor.win_rate_estimator import calculate_weighted_win_rate
 from service.prompts.win_prediction_prompt import (
     WIN_PREDICTION_SYSTEM_PROMPT,
     build_llm_user_prompt,
@@ -52,13 +51,9 @@ class PredictionService:
             ),
         )
 
-        # StatPreprocessor는 DB 저장용 원자료(hitterWrcLast10, pitcherRaPerIpLast10 등)만
-        # 계산한다. 승률은 두 팀을 동시에 비교해야 나오는 예측값이라 여기(prediction
-        # 레이어)에서, 상대 투수 보정 가중치를 반영해 별도로 계산한다.
         home_win_rate = calculate_weighted_win_rate(processed_stats)
 
-        # build_llm_user_prompt는
-        # (home_win_rate: float, processed_stats: dict) 형태를 요구한다.
+
         user_prompt = build_llm_user_prompt(
             home_win_rate,
             processed_stats,

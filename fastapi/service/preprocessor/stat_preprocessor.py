@@ -317,8 +317,6 @@ def run_daily_update(dataset_dir: str, db_config: dict[str, Any], dry_run: bool 
 
 
 if __name__ == "__main__":
-    # 매일 한 번씩(cron/스케줄러 등) 실행되어 그날 기준 최신 시즌 스탯으로 갱신하는 배치.
-    # 실제 서비스에서는 raw_crawl_*.html 자리에 그날 크롤링한 결과가 들어오게 된다.
     import os
 
     DB_CONFIG = {
