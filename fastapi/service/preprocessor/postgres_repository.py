@@ -7,7 +7,7 @@ import psycopg2.extras
 
 class PostgresPredictionRepository:
     def __init__(self, dsn: str | None = None):
-        self.dsn = dsn or self._dsn_from_env()
+        self._dsn_override = dsn
 
     @staticmethod
     def _dsn_from_env() -> str:
@@ -23,7 +23,8 @@ class PostgresPredictionRepository:
         )
 
     def _connect(self):
-        return psycopg2.connect(self.dsn)
+        dsn = self._dsn_override or self._dsn_from_env()
+        return psycopg2.connect(dsn)
 
     def get_matchup_stats(self, game_id: int) -> dict[str, Any]:
         with self._connect() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
