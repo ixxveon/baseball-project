@@ -59,5 +59,11 @@ public class Post {
         return post;
     }
 
+    public void update(String title, String content, PostCategoryType category) {
+        this.title = title;
+        this.content = content;
+        this.category = category;
+    }
+
 
 }
