@@ -1,4 +1,3 @@
-
 import os
 from typing import Any
 
@@ -12,12 +11,15 @@ class PostgresPredictionRepository:
 
     @staticmethod
     def _dsn_from_env() -> str:
+        password = os.environ.get("PGPASSWORD")
+        if not password:
+            raise RuntimeError("필수 환경변수 PGPASSWORD가 설정되지 않았습니다.")
         return (
             f"host={os.environ.get('PGHOST', 'localhost')} "
             f"port={os.environ.get('PGPORT', '5432')} "
             f"dbname={os.environ.get('PGDATABASE', 'winningpick')} "
             f"user={os.environ.get('PGUSER', 'postgres')} "
-            f"password={os.environ.get('PGPASSWORD', '')}"
+            f"password={password}"
         )
 
     def _connect(self):
@@ -35,12 +37,12 @@ class PostgresPredictionRepository:
 
             home_pitcher = self._fetch_starter(cur, game_id, game["home_team_id"])
             away_pitcher = self._fetch_starter(cur, game_id, game["away_team_id"])
-            home_hitter = self._fetch_team_hitter_profile(cur, game["home_team_id"])
-            away_hitter = self._fetch_team_hitter_profile(cur, game["away_team_id"])
+            home_hitters = self._fetch_team_hitters(cur, game["home_team_id"])
+            away_hitters = self._fetch_team_hitters(cur, game["away_team_id"])
 
         return {
-            "home_hitter": home_hitter,
-            "away_hitter": away_hitter,
+            "home_hitters": home_hitters,
+            "away_hitters": away_hitters,
             "home_pitcher": home_pitcher,
             "away_pitcher": away_pitcher,
         }
@@ -49,7 +51,8 @@ class PostgresPredictionRepository:
     def _fetch_starter(cur, game_id: int, team_id: int) -> dict[str, Any]:
         cur.execute(
             """
-            SELECT p.pitcher_ip, p.pitcher_era, p.pitcher_era_history
+            SELECT p.name, p.pitcher_ip, p.pitcher_era,
+                   p.pitcher_recent10_ip, p.pitcher_recent10_earned_runs
             FROM starter_rotation sr
                      JOIN pitcher_stats p ON p.player_id = sr.player_id
             WHERE sr.game_id = %s AND p.team_id = %s
@@ -61,31 +64,38 @@ class PostgresPredictionRepository:
             raise ValueError(f"game_id={game_id}, team_id={team_id} 의 선발투수를 찾을 수 없습니다.")
 
         return {
+            "name": row["name"],
             "pitcher_ip": float(row["pitcher_ip"]),
             "pitcher_era": float(row["pitcher_era"]),
-            "pitcher_era_history": row["pitcher_era_history"] or [],
-            # pitcher_ip_history 는 현재 DB 스키마에 컬럼이 없음 (기존에 확인된 갭).
-            # 값이 없으면 StatPreprocessor가 자동으로 fallback(current_era/9.0)을 탄다.
-            "pitcher_ip_history": [],
+            "pitcher_recent10_ip": float(row["pitcher_recent10_ip"]) if row["pitcher_recent10_ip"] is not None else None,
+            "pitcher_recent10_earned_runs": (
+                float(row["pitcher_recent10_earned_runs"]) if row["pitcher_recent10_earned_runs"] is not None else None
+            ),
         }
 
     @staticmethod
-    def _fetch_team_hitter_profile(cur, team_id: int) -> dict[str, Any]:
+    def _fetch_team_hitters(cur, team_id: int) -> list[dict[str, Any]]:
         cur.execute(
-            'SELECT hitter_pa, hitter_wrc, hitter_wrc_history FROM hitter_stats WHERE team_id = %s',
+            """
+            SELECT name, hitter_pa, hitter_wrc, hitter_recent10_pa, hitter_recent10_wrc
+            FROM hitter_stats
+            WHERE team_id = %s
+            """,
             (team_id,),
         )
         rows = cur.fetchall()
         if not rows:
             raise ValueError(f"team_id={team_id} 의 타자 데이터가 없습니다.")
 
-        n = len(rows)
-        avg_pa = round(sum(r["hitter_pa"] for r in rows) / n)
-        avg_wrc = round(sum(float(r["hitter_wrc"]) for r in rows) / n, 2)
-
-        full_hists = [r["hitter_wrc_history"] for r in rows
-                      if r["hitter_wrc_history"] and len(r["hitter_wrc_history"]) == 10]
-        avg_hist = ([round(sum(h[i] for h in full_hists) / len(full_hists), 2) for i in range(10)]
-                    if full_hists else [])
-
-        return {"hitter_pa": avg_pa, "hitter_wrc": avg_wrc, "hitter_wrc_history": avg_hist}
+        return [
+            {
+                "name": r["name"],
+                "hitter_pa": r["hitter_pa"],
+                "hitter_wrc": float(r["hitter_wrc"]),
+                "hitter_recent10_pa": r["hitter_recent10_pa"],
+                "hitter_recent10_wrc": (
+                    float(r["hitter_recent10_wrc"]) if r["hitter_recent10_wrc"] is not None else None
+                ),
+            }
+            for r in rows
+        ]
