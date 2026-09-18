@@ -1,8 +1,16 @@
 import os
+from datetime import datetime, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import psycopg2
 import psycopg2.extras
+
+PREDICTION_WINDOW_DAYS = 14
+
+
+class PredictionWindowError(ValueError):
+    pass
 
 
 class PostgresPredictionRepository:
@@ -29,24 +37,65 @@ class PostgresPredictionRepository:
     def get_matchup_stats(self, game_id: int) -> dict[str, Any]:
         with self._connect() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
-                'SELECT home_team_id, away_team_id FROM games WHERE game_id = %s',
+                'SELECT home_team_id, away_team_id, match_date FROM games WHERE game_id = %s',
                 (game_id,),
             )
             game = cur.fetchone()
             if game is None:
                 raise ValueError(f"game_id={game_id} 를 찾을 수 없습니다.")
 
+            self._validate_prediction_window(game["match_date"])
+
             home_pitcher = self._fetch_starter(cur, game_id, game["home_team_id"])
             away_pitcher = self._fetch_starter(cur, game_id, game["away_team_id"])
             home_hitters = self._fetch_team_hitters(cur, game["home_team_id"])
             away_hitters = self._fetch_team_hitters(cur, game["away_team_id"])
+            head_to_head = self._fetch_head_to_head(cur, game["home_team_id"], game["away_team_id"])
 
         return {
             "home_hitters": home_hitters,
             "away_hitters": away_hitters,
             "home_pitcher": home_pitcher,
             "away_pitcher": away_pitcher,
+            "head_to_head": head_to_head,
         }
+
+    @staticmethod
+    def _validate_prediction_window(match_date) -> None:
+        today = datetime.now(tz=ZoneInfo("Asia/Seoul")).date()
+        window_end = today + timedelta(days=PREDICTION_WINDOW_DAYS)
+        if not (today <= match_date <= window_end):
+            raise PredictionWindowError(
+                f"분석 가능한 기간이 아닙니다 (오늘부터 {PREDICTION_WINDOW_DAYS}일 이내 경기만 분석 가능): "
+                f"match_date={match_date}"
+            )
+
+    @staticmethod
+    def _fetch_head_to_head(cur, home_team_id: int, away_team_id: int) -> dict[str, int]:
+        cur.execute(
+            """
+            SELECT home_team_id, away_team_id, home_score, away_score
+            FROM games
+            WHERE status = 'FINISHED'
+              AND home_score IS NOT NULL AND away_score IS NOT NULL
+              AND ((home_team_id = %s AND away_team_id = %s)
+                OR (home_team_id = %s AND away_team_id = %s))
+            """,
+            (home_team_id, away_team_id, away_team_id, home_team_id),
+        )
+        rows = cur.fetchall()
+
+        home_wins = away_wins = 0
+        for r in rows:
+            if r["home_score"] == r["away_score"]:
+                continue
+            winner_id = r["home_team_id"] if r["home_score"] > r["away_score"] else r["away_team_id"]
+            if winner_id == home_team_id:
+                home_wins += 1
+            else:
+                away_wins += 1
+
+        return {"homeWins": home_wins, "awayWins": away_wins}
 
     @staticmethod
     def _fetch_starter(cur, game_id: int, team_id: int) -> dict[str, Any]:
@@ -101,12 +150,38 @@ class PostgresPredictionRepository:
             for r in rows
         ]
 
-    def save_prediction(self, game_id: int, home_win_prob: float, summary_comment: str) -> None:
+    def save_prediction(self, game_id: int, home_win_prob: float, result_json: dict[str, Any]) -> None:
+        import json
+
         with self._connect() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO ai_predictions (game_id, home_win_prob, summary_comment)
+                INSERT INTO ai_predictions (game_id, home_win_prob, result_json)
                 VALUES (%s, %s, %s);
                 """,
-                (game_id, home_win_prob, summary_comment),
+                (game_id, home_win_prob, json.dumps(result_json, ensure_ascii=False)),
             )
+
+    def get_cached_prediction(self, game_id: int) -> dict[str, Any] | None:
+        """오늘 이미 생성된 예측이 있으면 그대로 반환 (LLM 재호출 방지). 없거나 어제 이전 것이면 None."""
+        with self._connect() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT result_json, created_at
+                FROM ai_predictions
+                WHERE game_id = %s
+                ORDER BY created_at DESC
+                    LIMIT 1;
+                """,
+                (game_id,),
+            )
+            row = cur.fetchone()
+
+        if row is None:
+            return None
+
+        today = datetime.now(tz=ZoneInfo("Asia/Seoul")).date()
+        if row["created_at"].date() != today:
+            return None
+
+        return row["result_json"]

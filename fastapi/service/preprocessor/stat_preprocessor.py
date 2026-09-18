@@ -80,10 +80,18 @@ class RosterHtmlParser:
         for tr in soup.select("table.tData tbody tr"):
             tds = tr.find_all("td")
             score_txt = tds[5].get_text(strip=True)
-            if score_txt == "vs":
+            if score_txt in ("vs", "-:-"):
                 home_score = away_score = None
             else:
                 home_score, away_score = (int(x) for x in score_txt.split(":"))
+
+            status_txt = tds[7].get_text(strip=True)
+            if status_txt == "경기종료":
+                status = "FINISHED"
+            elif status_txt == "우천취소":
+                status = "CANCELED"
+            else:
+                status = "SCHEDULED"
 
             games.append({
                 "game_id": int(tds[0].get_text(strip=True)),
@@ -92,7 +100,7 @@ class RosterHtmlParser:
                 "stadium_id": stadium_index[tds[3].get_text(strip=True)],
                 "home_team_id": abbr_to_id[tds[4].get_text(strip=True)],
                 "away_team_id": abbr_to_id[tds[6].get_text(strip=True)],
-                "status": "FINISHED" if tds[7].get_text(strip=True) == "경기종료" else "SCHEDULED",
+                "status": status,
                 "is_weather_warning": tds[8].get_text(strip=True) == "우천특보",
                 "home_score": home_score,
                 "away_score": away_score,
@@ -329,6 +337,27 @@ class DatabaseSaver:
         except Exception as e:
             print(f"DB 저장 중 오류 발생: {e}")
             raise
+
+    def has_run_for(self, run_date) -> bool:
+        """이 날짜(경기가 열렸던 날) 배치가 이미 실행됐는지 확인 - 중복 실행 방지용."""
+        if self.dry_run:
+            return False
+
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute("SELECT 1 FROM batch_run_log WHERE run_date = %s;", (run_date,))
+            return cur.fetchone() is not None
+
+    def record_run(self, run_date) -> None:
+        if self.dry_run:
+            print(f"[DRY-RUN] batch_run_log 기록 스킵: {run_date}")
+            return
+
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO batch_run_log (run_date) VALUES (%s) ON CONFLICT DO NOTHING;",
+                (run_date,),
+            )
+        print(f"배치 실행 기록 완료: {run_date}")
 
     def save_daily_rosters(self, pitchers: list[dict], hitters: list[dict]):
         pitcher_params = [

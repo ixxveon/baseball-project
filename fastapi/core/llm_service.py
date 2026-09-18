@@ -2,10 +2,14 @@
 
 import anthropic
 
-from service.schemas.prediction_schema import WinPredictionResultSchema
+from service.schemas.prediction_schema import (
+    WinPredictionResultSchema,
+    WinPredictionSummarySchema,
+)
 
 FALLBACK_HOME_WIN_PROB = 50.0
-FALLBACK_SUMMARY_COMMENT = "AI 분석 서비스 연동이 일시적으로 지연되어 정량 스탯 기반 기본 분석 결과만 표시됩니다."
+FALLBACK_SCORE_PREDICT = "-:-"
+FALLBACK_COMMENT = "AI 분석 서비스 연동이 일시적으로 지연되어 상세 분석을 제공할 수 없습니다."
 
 
 class LLMGenerationError(Exception):
@@ -51,5 +55,12 @@ class LLMService:
     def get_fallback_response() -> WinPredictionResultSchema:
         return WinPredictionResultSchema(
             homeWinProb=FALLBACK_HOME_WIN_PROB,
-            summaryComment=FALLBACK_SUMMARY_COMMENT,
+            scorePredict=FALLBACK_SCORE_PREDICT,
+            summary=WinPredictionSummarySchema(
+                pitcherComparison=FALLBACK_COMMENT,
+                battingComparison=FALLBACK_COMMENT,
+                homeAdvantage=FALLBACK_COMMENT,
+                headToHead=FALLBACK_COMMENT,
+                keyPlayer=FALLBACK_COMMENT,
+            ),
         )

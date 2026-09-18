@@ -24,10 +24,23 @@ class TeamStatSchema(BaseModel):
     hitters: list[HitterStatSchema]
 
 
+class HeadToHeadSchema(BaseModel):
+    homeWins: int
+    awayWins: int
+
+
+class KeyPlayerSchema(BaseModel):
+    name: str
+    side: str  # "home" | "away"
+    recentWrc: float
+
+
 class PreprocessedMatchupSchema(BaseModel):
     gameId: int
     homeTeam: TeamStatSchema
     awayTeam: TeamStatSchema
+    headToHead: HeadToHeadSchema
+    keyPlayers: list[KeyPlayerSchema]
 
 
 class WinPredictionRequest(BaseModel):
@@ -40,9 +53,18 @@ class PreparePromptDataSchema(BaseModel):
     preprocessedMatchup: PreprocessedMatchupSchema
 
 
+class WinPredictionSummarySchema(BaseModel):
+    pitcherComparison: str
+    battingComparison: str
+    homeAdvantage: str
+    headToHead: str
+    keyPlayer: str
+
+
 class WinPredictionResultSchema(BaseModel):
     homeWinProb: float
-    summaryComment: str
+    scorePredict: str
+    summary: WinPredictionSummarySchema
 
 
 class PredictionResultDataSchema(BaseModel):

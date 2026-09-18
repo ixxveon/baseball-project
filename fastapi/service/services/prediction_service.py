@@ -7,7 +7,9 @@ from service.prompts.win_prediction_prompt import (
     build_llm_user_prompt,
 )
 from service.schemas.prediction_schema import (
+    HeadToHeadSchema,
     HitterStatSchema,
+    KeyPlayerSchema,
     PitcherStatSchema,
     PredictionResultDataSchema,
     PreparePromptDataSchema,
@@ -20,7 +22,7 @@ class PredictionRepository(Protocol):
     def get_matchup_stats(self, game_id: int) -> dict[str, Any]:
         ...
 
-    def save_prediction(self, game_id: int, home_win_prob: float, summary_comment: str) -> None:
+    def save_prediction(self, game_id: int, home_win_prob: float, result_json: dict[str, Any]) -> None:
         ...
 
 
@@ -45,10 +47,24 @@ class PredictionService:
             hitters=[self._hitter_schema(h) for h in raw_stats["away_hitters"]],
         )
 
+        head_to_head = HeadToHeadSchema(
+            homeWins=raw_stats["head_to_head"]["homeWins"],
+            awayWins=raw_stats["head_to_head"]["awayWins"],
+        )
+
+        key_players = [
+            p for p in (
+                self._pick_key_player(raw_stats["home_hitters"], "home"),
+                self._pick_key_player(raw_stats["away_hitters"], "away"),
+            ) if p is not None
+        ]
+
         matchup_payload = PreprocessedMatchupSchema(
             gameId=game_id,
             homeTeam=home_team,
             awayTeam=away_team,
+            headToHead=head_to_head,
+            keyPlayers=key_players,
         )
 
         user_prompt = build_llm_user_prompt(matchup_payload.model_dump())
@@ -70,7 +86,7 @@ class PredictionService:
             self.repository.save_prediction(
                 game_id=game_id,
                 home_win_prob=result.homeWinProb,
-                summary_comment=result.summaryComment,
+                result_json=result.model_dump(),
             )
         except LLMGenerationError:
             result = LLMService.get_fallback_response()
@@ -100,3 +116,15 @@ class PredictionService:
             recent10Pa=h.get("hitter_recent10_pa"),
             recent10Wrc=h.get("hitter_recent10_wrc"),
         )
+
+    @staticmethod
+    def _pick_key_player(hitters: list[dict[str, Any]], side: str) -> KeyPlayerSchema | None:
+        if not hitters:
+            return None
+
+        def score(h: dict[str, Any]) -> float:
+            recent = h.get("hitter_recent10_wrc")
+            return recent if recent is not None else h["hitter_wrc"]
+
+        best = max(hitters, key=score)
+        return KeyPlayerSchema(name=best["name"], side=side, recentWrc=score(best))
