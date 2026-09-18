@@ -39,6 +39,7 @@ class WeatherSchema(BaseModel):
     temperature: float
     humidity: float
     condition: str  # "맑음"/"구름많음"/"비"/"눈"/"뇌우" 등
+    isRain: bool
 
 
 class PreprocessedMatchupSchema(BaseModel):
@@ -52,6 +53,26 @@ class PreprocessedMatchupSchema(BaseModel):
 
 class WinPredictionRequest(BaseModel):
     gameId: int
+
+
+class UpcomingGameSchema(BaseModel):
+    gameId: int
+    matchDate: str
+    matchTime: str
+    homeTeamId: int
+    homeTeamName: str
+    awayTeamId: int
+    awayTeamName: str
+    recommendationScore: int | None = None  # 오늘 배치가 미리 계산해뒀으면 값, 아니면 None
+
+
+class RecentRecordSchema(BaseModel):
+    wins: int
+    losses: int
+    gamesCount: int
+    winRate: int  # 0~100
+    avgScored: float
+    avgAllowed: float
 
 
 class PreparePromptDataSchema(BaseModel):
@@ -79,6 +100,7 @@ class PredictionResultDataSchema(BaseModel):
     gameId: int
     preprocessedMatchup: PreprocessedMatchupSchema
     result: WinPredictionResultSchema
+    recommendationScore: int
 
 
 T = TypeVar("T")

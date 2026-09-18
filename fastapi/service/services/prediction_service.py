@@ -1,6 +1,10 @@
 from typing import Any, Protocol
 
 from core.llm_service import LLMGenerationError, LLMService
+from core.recommendation_score import (
+    calculate_recommendation_score,
+    calculate_weather_adjustment,
+)
 from core.weather_service import WeatherService
 from service.preprocessor.postgres_repository import PostgresPredictionRepository
 from service.prompts.win_prediction_prompt import (
@@ -15,7 +19,9 @@ from service.schemas.prediction_schema import (
     PredictionResultDataSchema,
     PreparePromptDataSchema,
     PreprocessedMatchupSchema,
+    RecentRecordSchema,
     TeamStatSchema,
+    UpcomingGameSchema,
     WeatherSchema,
     WinPredictionResultSchema,
 )
@@ -29,6 +35,12 @@ class PredictionRepository(Protocol):
         ...
 
     def get_cached_prediction(self, game_id: int) -> dict[str, Any] | None:
+        ...
+
+    def get_upcoming_games(self) -> list[dict[str, Any]]:
+        ...
+
+    def get_recent_team_record(self, team_id: int, limit: int = 10) -> dict[str, Any]:
         ...
 
 
@@ -89,27 +101,68 @@ class PredictionService:
     def predict(self, game_id: int) -> PredictionResultDataSchema:
         prompt_data = self.prepare_matchup_prompt(game_id)
 
+        weather = prompt_data.preprocessedMatchup.weather
+        weather_adjustment = calculate_weather_adjustment(
+            temperature=weather.temperature if weather else None,
+            humidity=weather.humidity if weather else None,
+            is_rain=weather.isRain if weather else None,
+        )
+
         cached = self.repository.get_cached_prediction(game_id)
         if cached is not None:
-            result = WinPredictionResultSchema.model_validate(cached)
+            result = WinPredictionResultSchema.model_validate(cached["result_json"])
+            recommendation_score = calculate_recommendation_score(result.homeWinProb, weather_adjustment)
         else:
             try:
                 result = self.llm_service.generate_win_summary(
                     prompt_data.systemPrompt,
                     prompt_data.userPrompt,
                 )
+                recommendation_score = calculate_recommendation_score(result.homeWinProb, weather_adjustment)
                 self.repository.save_prediction(
                     game_id=game_id,
                     home_win_prob=result.homeWinProb,
                     result_json=result.model_dump(),
+                    recommendation_score=recommendation_score,
                 )
             except LLMGenerationError:
                 result = LLMService.get_fallback_response()
+                recommendation_score = calculate_recommendation_score(result.homeWinProb, weather_adjustment)
 
         return PredictionResultDataSchema(
             gameId=game_id,
             preprocessedMatchup=prompt_data.preprocessedMatchup,
+            recommendationScore=recommendation_score,
             result=result,
+        )
+
+    def get_upcoming_games(self) -> list[UpcomingGameSchema]:
+        raw_games = self.repository.get_upcoming_games()
+        return [
+            UpcomingGameSchema(
+                gameId=g["game_id"],
+                matchDate=str(g["match_date"]),
+                matchTime=str(g["match_time"]),
+                homeTeamId=g["home_team_id"],
+                homeTeamName=g["home_team_name"],
+                awayTeamId=g["away_team_id"],
+                awayTeamName=g["away_team_name"],
+                recommendationScore=g.get("recommendation_score"),
+            )
+            for g in raw_games
+        ]
+
+    def get_recent_team_record(self, team_id: int) -> RecentRecordSchema:
+        raw = self.repository.get_recent_team_record(team_id, limit=10)
+        decisions = raw["wins"] + raw["losses"]
+        win_rate = round((raw["wins"] / decisions) * 100) if decisions else 0
+        return RecentRecordSchema(
+            wins=raw["wins"],
+            losses=raw["losses"],
+            gamesCount=raw["games_count"],
+            winRate=win_rate,
+            avgScored=raw["avg_scored"],
+            avgAllowed=raw["avg_allowed"],
         )
 
     @staticmethod
@@ -161,4 +214,5 @@ class PredictionService:
             temperature=forecast["temperature"],
             humidity=forecast["humidity"],
             condition=forecast["condition_label"],
+            isRain=forecast["is_rain"],
         )

@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from service.preprocessor.stat_preprocessor import DatabaseSaver, run_daily_update
+from service.services.prediction_service import PredictionService
 
 KST = ZoneInfo("Asia/Seoul")
 
@@ -17,6 +18,25 @@ def _db_config() -> dict[str, str]:
         "user": os.environ.get("PGUSER", "postgres"),
         "password": os.environ.get("PGPASSWORD", ""),
     }
+
+
+def _precompute_predictions() -> None:
+    """오늘부터 14일 이내 예정경기 전부에 대해 미리 예측을 돌려 ai_predictions에 캐싱해둔다.
+    (하루 1번, 사용자 요청과 무관하게 - 목록 화면이 LLM 재호출 없이 점수를 바로 보여줄 수 있게)"""
+    service = PredictionService()
+    games = service.get_upcoming_games()
+    print(f"[스케줄러] 사전계산 대상 경기 {len(games)}건")
+
+    success, failed = 0, 0
+    for g in games:
+        try:
+            service.predict(game_id=g.gameId)
+            success += 1
+        except Exception as e:  # noqa: BLE001 - 경기 하나 실패해도 나머지는 계속 진행
+            failed += 1
+            print(f"[스케줄러] game_id={g.gameId} 사전계산 실패: {e}")
+
+    print(f"[스케줄러] 사전계산 완료 - 성공 {success}건, 실패 {failed}건")
 
 
 def run_daily_batch_job() -> None:
@@ -36,6 +56,9 @@ def run_daily_batch_job() -> None:
         print(f"[스케줄러] {target_date} 배치 실행 완료")
     except Exception as e:  # noqa: BLE001 - 스케줄러 잡 자체가 죽어서 다음 실행까지 안 되는 걸 막기 위한 최종 방어선
         print(f"[스케줄러] {target_date} 배치 실행 중 오류 발생: {e}")
+        return
+
+    _precompute_predictions()
 
 
 def start_scheduler() -> BackgroundScheduler:

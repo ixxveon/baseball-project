@@ -29,12 +29,9 @@ export default function AnalysisScreen({
                 let errorMessage =
                     '데이터를 불러오는 데 실패했습니다.';
 
-                // 일반적인 JavaScript Error
                 if (err instanceof Error) {
                     errorMessage = err.message;
-                }
-                // Axios Error 등에서 response.data.message가 있는 경우
-                else if (
+                } else if (
                     typeof err === 'object' &&
                     err !== null &&
                     'response' in err
@@ -92,11 +89,11 @@ export default function AnalysisScreen({
                         <div className="analysis-stats-box">
                             <div className="analysis-stat-item">
                                 <div className="analysis-stat-label">
-                                    예상 승률
+                                    홈팀 예상 승률
                                 </div>
 
                                 <div className="analysis-stat-value red">
-                                    {data.winRate}%
+                                    {data.homeWinProb}%
                                 </div>
                             </div>
 
@@ -135,9 +132,23 @@ export default function AnalysisScreen({
 
                             <p>
                                 <strong>
-                                    ☀️ 날씨 영향:
+                                    🆚 상대전적:
                                 </strong>{' '}
-                                {data.summary.weatherImpact}
+                                {data.summary.headToHead}
+                            </p>
+
+                            <p>
+                                <strong>
+                                    🔑 키플레이어:
+                                </strong>{' '}
+                                {data.summary.keyPlayer}
+                            </p>
+
+                            <p>
+                                <strong>
+                                    ☀️ 날씨:
+                                </strong>{' '}
+                                {data.summary.weatherComment}
                             </p>
                         </div>
                     </div>
