@@ -172,9 +172,13 @@ class MemberServiceTest {
         when(passwordEncoder.matches("rawPassword", "encodedPassword")).thenReturn(true);
         when(jwtProvider.createAccessToken(1L)).thenReturn("access-token");
         when(jwtProvider.getAccessTokenValidity()).thenReturn(Duration.ofHours(1));
+        when(jwtProvider.createRefreshToken(1L)).thenReturn("refresh-token");
+        when(jwtProvider.getRefreshTokenValidity()).thenReturn(Duration.ofDays(14));
+        when(stringRedisTemplate.opsForValue()).thenReturn(valueOperations);
 
         ResponseLogin response = memberService.login(new RequestLogin("test@example.com", "rawPassword"));
 
         assertThat(response.accessToken()).isEqualTo("access-token");
+        assertThat(response.refreshToken()).isEqualTo("refresh-token");
     }
 }
