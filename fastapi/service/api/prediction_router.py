@@ -5,19 +5,14 @@ from service.schemas.prediction_schema import (
     PreparePromptDataSchema,
     WinPredictionRequest,
 )
-from service.services.prediction_service import (
-    MockPredictionRepository,
-    PredictionService,
-)
+from service.services.prediction_service import PredictionService
 
 router = APIRouter(
     prefix="/ai",
     tags=["AI Prediction"],
 )
 
-prediction_service = PredictionService(
-    repository=MockPredictionRepository(),
-)
+prediction_service = PredictionService()
 
 
 @router.post(
