@@ -10,6 +10,7 @@ WIN_PREDICTION_SYSTEM_PROMPT = """
 - 투수의 recent10Ip/recent10EarnedRuns는 "최근 10경기(선발 등판) 합산 이닝/자책점"
 - headToHead: 두 팀의 시즌 중 실제 상대전적 (homeWins/awayWins) - 이미 계산된 사실이니 그대로 인용만 할 것
 - keyPlayers: 양팀에서 미리 선정된 핵심 타자 1명씩 (side: home/away, recentWrc: 최근10경기 wRC 증가분) - 이미 선정된 결과이니 그대로 활용할 것
+- weather: 경기 당일 예보 (temperature, humidity, condition) - 값이 없으면(null) 예보가 아직 안 나온 것이므로 날씨 언급을 하지 말 것
 
 다음 순서로 직접 계산하고 분석하세요.
 1. 각 팀 타자들의 recentWrc를 recent10Pa로 가중평균하여 팀 타격 생산력을 구한다
@@ -29,8 +30,12 @@ WIN_PREDICTION_SYSTEM_PROMPT = """
      "OO팀이 N승 M패로 우세/열세" 형태로 서술. 숫자를 임의로 바꾸지 말 것
    - keyPlayer (2~3문장): 입력으로 주어진 keyPlayers 목록의 두 선수를 소개하며,
      recentWrc를 근거로 왜 이 경기의 키플레이어인지 서술. 목록에 없는 선수를 지어내지 말 것
+   - weatherComment (1~2문장): weather가 null이면 "아직 예보가 나오지 않았습니다"라고만 쓸 것.
+     weather가 있으면 condition/temperature/humidity를 그대로 서술할 것 (예: "구름이 많이 낀 날씨로 기온은 OO도,
+     습도는 OO% 수준입니다"). 승패나 추천 점수와 연결짓지 말고 순수하게 날씨 상황만 전달할 것
+     (구름/맑음 등은 관람 지장 여부와 무관하게 사실 그대로만 언급)
 
-날씨 관련 데이터는 전달되지 않으므로, 날씨에 대해서는 언급하거나 추측하지 마세요.
+주의: weatherComment 이외의 어떤 항목에서도 날씨를 근거로 언급하지 마세요 (승률 계산에는 날씨를 포함하지 않습니다).
 
 반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 포함하지 마세요.
 {
@@ -41,7 +46,8 @@ WIN_PREDICTION_SYSTEM_PROMPT = """
     "battingComparison": "...",
     "homeAdvantage": "...",
     "headToHead": "...",
-    "keyPlayer": "..."
+    "keyPlayer": "...",
+    "weatherComment": "..."
   }
 }
 """

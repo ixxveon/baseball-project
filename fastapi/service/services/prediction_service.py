@@ -1,6 +1,7 @@
 from typing import Any, Protocol
 
 from core.llm_service import LLMGenerationError, LLMService
+from core.weather_service import WeatherService
 from service.preprocessor.postgres_repository import PostgresPredictionRepository
 from service.prompts.win_prediction_prompt import (
     WIN_PREDICTION_SYSTEM_PROMPT,
@@ -15,6 +16,8 @@ from service.schemas.prediction_schema import (
     PreparePromptDataSchema,
     PreprocessedMatchupSchema,
     TeamStatSchema,
+    WeatherSchema,
+    WinPredictionResultSchema,
 )
 
 
@@ -25,15 +28,20 @@ class PredictionRepository(Protocol):
     def save_prediction(self, game_id: int, home_win_prob: float, result_json: dict[str, Any]) -> None:
         ...
 
+    def get_cached_prediction(self, game_id: int) -> dict[str, Any] | None:
+        ...
+
 
 class PredictionService:
     def __init__(
             self,
             repository: PredictionRepository | None = None,
             llm_service: LLMService | None = None,
+            weather_service: WeatherService | None = None,
     ):
         self.repository = repository or PostgresPredictionRepository()
         self.llm_service = llm_service or LLMService()
+        self.weather_service = weather_service or WeatherService()
 
     def prepare_matchup_prompt(self, game_id: int) -> PreparePromptDataSchema:
         raw_stats = self.repository.get_matchup_stats(game_id)
@@ -59,12 +67,15 @@ class PredictionService:
             ) if p is not None
         ]
 
+        weather = self._fetch_weather(raw_stats)
+
         matchup_payload = PreprocessedMatchupSchema(
             gameId=game_id,
             homeTeam=home_team,
             awayTeam=away_team,
             headToHead=head_to_head,
             keyPlayers=key_players,
+            weather=weather,
         )
 
         user_prompt = build_llm_user_prompt(matchup_payload.model_dump())
@@ -78,18 +89,22 @@ class PredictionService:
     def predict(self, game_id: int) -> PredictionResultDataSchema:
         prompt_data = self.prepare_matchup_prompt(game_id)
 
-        try:
-            result = self.llm_service.generate_win_summary(
-                prompt_data.systemPrompt,
-                prompt_data.userPrompt,
-            )
-            self.repository.save_prediction(
-                game_id=game_id,
-                home_win_prob=result.homeWinProb,
-                result_json=result.model_dump(),
-            )
-        except LLMGenerationError:
-            result = LLMService.get_fallback_response()
+        cached = self.repository.get_cached_prediction(game_id)
+        if cached is not None:
+            result = WinPredictionResultSchema.model_validate(cached)
+        else:
+            try:
+                result = self.llm_service.generate_win_summary(
+                    prompt_data.systemPrompt,
+                    prompt_data.userPrompt,
+                )
+                self.repository.save_prediction(
+                    game_id=game_id,
+                    home_win_prob=result.homeWinProb,
+                    result_json=result.model_dump(),
+                )
+            except LLMGenerationError:
+                result = LLMService.get_fallback_response()
 
         return PredictionResultDataSchema(
             gameId=game_id,
@@ -128,3 +143,22 @@ class PredictionService:
 
         best = max(hitters, key=score)
         return KeyPlayerSchema(name=best["name"], side=side, recentWrc=score(best))
+
+    def _fetch_weather(self, raw_stats: dict[str, Any]) -> WeatherSchema | None:
+        try:
+            forecast = self.weather_service.get_forecast(
+                lat=raw_stats["stadium_latitude"],
+                lon=raw_stats["stadium_longitude"],
+                target_date=raw_stats["match_date"],
+            )
+        except Exception:  # noqa: BLE001 - 날씨 조회 실패는 예측 전체를 막을 이유가 없음(중립 처리)
+            return None
+
+        if forecast is None:
+            return None
+
+        return WeatherSchema(
+            temperature=forecast["temperature"],
+            humidity=forecast["humidity"],
+            condition=forecast["condition_label"],
+        )

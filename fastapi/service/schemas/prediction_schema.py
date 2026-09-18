@@ -35,12 +35,19 @@ class KeyPlayerSchema(BaseModel):
     recentWrc: float
 
 
+class WeatherSchema(BaseModel):
+    temperature: float
+    humidity: float
+    condition: str  # "맑음"/"구름많음"/"비"/"눈"/"뇌우" 등
+
+
 class PreprocessedMatchupSchema(BaseModel):
     gameId: int
     homeTeam: TeamStatSchema
     awayTeam: TeamStatSchema
     headToHead: HeadToHeadSchema
     keyPlayers: list[KeyPlayerSchema]
+    weather: WeatherSchema | None = None  # 예보 범위 밖이면 None
 
 
 class WinPredictionRequest(BaseModel):
@@ -59,6 +66,7 @@ class WinPredictionSummarySchema(BaseModel):
     homeAdvantage: str
     headToHead: str
     keyPlayer: str
+    weatherComment: str
 
 
 class WinPredictionResultSchema(BaseModel):

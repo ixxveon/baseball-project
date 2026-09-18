@@ -37,7 +37,13 @@ class PostgresPredictionRepository:
     def get_matchup_stats(self, game_id: int) -> dict[str, Any]:
         with self._connect() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
-                'SELECT home_team_id, away_team_id, match_date FROM games WHERE game_id = %s',
+                """
+                SELECT g.home_team_id, g.away_team_id, g.match_date,
+                       s.latitude, s.longitude
+                FROM games g
+                         JOIN stadiums s ON s.stadium_id = g.stadium_id
+                WHERE g.game_id = %s
+                """,
                 (game_id,),
             )
             game = cur.fetchone()
@@ -53,6 +59,9 @@ class PostgresPredictionRepository:
             head_to_head = self._fetch_head_to_head(cur, game["home_team_id"], game["away_team_id"])
 
         return {
+            "match_date": game["match_date"],
+            "stadium_latitude": float(game["latitude"]),
+            "stadium_longitude": float(game["longitude"]),
             "home_hitters": home_hitters,
             "away_hitters": away_hitters,
             "home_pitcher": home_pitcher,
