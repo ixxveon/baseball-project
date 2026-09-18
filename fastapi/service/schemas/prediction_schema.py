@@ -3,12 +3,25 @@ from typing import Generic, TypeVar
 from pydantic import BaseModel
 
 
-class TeamStatSchema(BaseModel):
-    hitterWrcLast10: float
-    pitcherRaPerIpLast10: float
-    winRate: float
-    pa: int
+class PitcherStatSchema(BaseModel):
+    name: str
     ip: float
+    era: float
+    recent10Ip: float | None = None
+    recent10EarnedRuns: float | None = None
+
+
+class HitterStatSchema(BaseModel):
+    name: str
+    pa: int
+    wrc: float
+    recent10Pa: int | None = None
+    recent10Wrc: float | None = None
+
+
+class TeamStatSchema(BaseModel):
+    pitcher: PitcherStatSchema
+    hitters: list[HitterStatSchema]
 
 
 class PreprocessedMatchupSchema(BaseModel):
