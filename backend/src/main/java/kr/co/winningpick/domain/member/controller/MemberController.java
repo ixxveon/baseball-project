@@ -5,6 +5,7 @@ import kr.co.winningpick.domain.member.docs.MemberControllerDocs;
 import kr.co.winningpick.domain.member.dto.request.RequestConfirmEmailVerification;
 import kr.co.winningpick.domain.member.dto.request.RequestLogin;
 import kr.co.winningpick.domain.member.dto.request.RequestReissue;
+import kr.co.winningpick.domain.member.dto.request.RequestResetPassword;
 import kr.co.winningpick.domain.member.dto.request.RequestSendEmailVerification;
 import kr.co.winningpick.domain.member.dto.request.RequestSignup;
 import kr.co.winningpick.domain.member.dto.response.ResponseEmailVerification;
@@ -59,6 +60,13 @@ public class MemberController implements MemberControllerDocs {
     public ApiResponse<ResponseLogin> login(@Valid @RequestBody RequestLogin request) {
         ResponseLogin response = memberService.login(request);
         return ApiResponse.success(response);
+    }
+
+    @Override
+    @PostMapping("/password-reset")
+    public ApiResponse<Void> resetPassword(@Valid @RequestBody RequestResetPassword request) {
+        memberService.resetPassword(request);
+        return ApiResponse.success(null);
     }
 
     @Override

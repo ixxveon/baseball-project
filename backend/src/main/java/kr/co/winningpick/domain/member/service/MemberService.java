@@ -1,6 +1,7 @@
 package kr.co.winningpick.domain.member.service;
 
 import kr.co.winningpick.domain.member.dto.request.RequestLogin;
+import kr.co.winningpick.domain.member.dto.request.RequestResetPassword;
 import kr.co.winningpick.domain.member.dto.request.RequestSignup;
 import kr.co.winningpick.domain.member.dto.response.ResponseLogin;
 import kr.co.winningpick.domain.member.dto.response.ResponseReissue;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -130,5 +132,18 @@ public class MemberService {
 
     private String refreshTokenKey(Long memberId) {
         return "refresh-token:" + memberId;
+    }
+
+    @Transactional
+    public void resetPassword(RequestResetPassword request) {
+        String verified = stringRedisTemplate.opsForValue().get(verifiedKey(request.email()));
+        if (verified == null) {
+            throw new BusinessException(MemberErrorCode.EMAIL_NOT_VERIFIED);
+        }
+
+        Member member = memberRepository.findByEmail(request.email())
+                .orElseThrow(() -> new BusinessException(MemberErrorCode.LOGIN_FAILED));
+
+        member.changePassword(passwordEncoder.encode(request.newPassword()));
     }
 }
