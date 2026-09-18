@@ -14,18 +14,23 @@ export default function AnalysisScreen({
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
+    // 데이터 조회 - gameId가 바뀌거나 언마운트되면 이전 요청 결과는 무시(취소 플래그)
     useEffect(() => {
         if (!gameId) return;
 
+        let cancelled = false;
         setLoading(true);
         setError(null);
 
         fetchGameAnalysis(gameId)
             .then((result) => {
+                if (cancelled) return;
                 setData(result);
                 setLoading(false);
             })
             .catch((err: unknown) => {
+                if (cancelled) return;
+
                 let errorMessage =
                     '데이터를 불러오는 데 실패했습니다.';
 
@@ -53,23 +58,62 @@ export default function AnalysisScreen({
                 setError(errorMessage);
                 setLoading(false);
             });
+
+        return () => {
+            cancelled = true;
+        };
     }, [gameId]);
+
+    // ESC로 닫기 + 배경 스크롤 잠금 (모달이 실제로 떠 있을 때만)
+    useEffect(() => {
+        if (!gameId) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [gameId, onClose]);
 
     if (!gameId) return null;
 
+    const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (e.target === e.currentTarget) {
+            onClose();
+        }
+    };
+
     return (
-        <div className="analysis-modal-overlay">
-            <div className="analysis-modal-container">
+        <div
+            className="analysis-modal-overlay"
+            onClick={handleOverlayClick}
+        >
+            <div
+                className="analysis-modal-container"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="analysis-modal-title"
+            >
                 <button
                     type="button"
                     onClick={onClose}
                     className="analysis-close-btn"
+                    aria-label="분석 창 닫기"
                 >
                     ✕
                 </button>
 
-                <h2 className="analysis-modal-title">
-                    🤖 AI 경기 심층 분석
+                <h2 id="analysis-modal-title" className="analysis-modal-title">
+                    AI 경기 심층 분석
                 </h2>
 
                 {loading && (
@@ -109,47 +153,53 @@ export default function AnalysisScreen({
                         </div>
 
                         <div className="analysis-text-details">
-                            <p>
-                                <strong>
-                                    ⚾ 선발 투수 분석:
-                                </strong>{' '}
-                                {data.summary.pitcherComparison}
-                            </p>
+                            <div className="ai-summary-row">
+                                <div className="ai-summary-row-bar" />
+                                <div>
+                                    <div className="ai-summary-row-label">선발 투수 분석</div>
+                                    <p className="ai-summary-row-content">{data.summary.pitcherComparison}</p>
+                                </div>
+                            </div>
 
-                            <p>
-                                <strong>
-                                    🏏 타선 흐름:
-                                </strong>{' '}
-                                {data.summary.battingComparison}
-                            </p>
+                            <div className="ai-summary-row">
+                                <div className="ai-summary-row-bar" />
+                                <div>
+                                    <div className="ai-summary-row-label">타선 흐름</div>
+                                    <p className="ai-summary-row-content">{data.summary.battingComparison}</p>
+                                </div>
+                            </div>
 
-                            <p>
-                                <strong>
-                                    🏟️ 구장 및 홈 이점:
-                                </strong>{' '}
-                                {data.summary.homeAdvantage}
-                            </p>
+                            <div className="ai-summary-row">
+                                <div className="ai-summary-row-bar" />
+                                <div>
+                                    <div className="ai-summary-row-label">구장 및 홈 이점</div>
+                                    <p className="ai-summary-row-content">{data.summary.homeAdvantage}</p>
+                                </div>
+                            </div>
 
-                            <p>
-                                <strong>
-                                    🆚 상대전적:
-                                </strong>{' '}
-                                {data.summary.headToHead}
-                            </p>
+                            <div className="ai-summary-row">
+                                <div className="ai-summary-row-bar" />
+                                <div>
+                                    <div className="ai-summary-row-label">상대전적</div>
+                                    <p className="ai-summary-row-content">{data.summary.headToHead}</p>
+                                </div>
+                            </div>
 
-                            <p>
-                                <strong>
-                                    🔑 키플레이어:
-                                </strong>{' '}
-                                {data.summary.keyPlayer}
-                            </p>
+                            <div className="ai-summary-row">
+                                <div className="ai-summary-row-bar" />
+                                <div>
+                                    <div className="ai-summary-row-label">키플레이어</div>
+                                    <p className="ai-summary-row-content">{data.summary.keyPlayer}</p>
+                                </div>
+                            </div>
 
-                            <p>
-                                <strong>
-                                    ☀️ 날씨:
-                                </strong>{' '}
-                                {data.summary.weatherComment}
-                            </p>
+                            <div className="ai-summary-row">
+                                <div className="ai-summary-row-bar" />
+                                <div>
+                                    <div className="ai-summary-row-label">날씨</div>
+                                    <p className="ai-summary-row-content">{data.summary.weatherComment}</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}
