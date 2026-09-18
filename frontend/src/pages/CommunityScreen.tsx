@@ -109,21 +109,25 @@ export default function CommunityScreen(): React.JSX.Element {
 
     if (viewMode === 'write') {
         return (
-            <PostWriteForm
-                onSubmit={(input) => { void handleCreatePost(input); }}
-                onCancel={() => setViewMode('list')}
-            />
+            <div className="community-container">
+                <PostWriteForm
+                    onSubmit={(input) => { void handleCreatePost(input); }}
+                    onCancel={() => setViewMode('list')}
+                />
+            </div>
         );
     }
 
     if (viewMode === 'detail' && selectedPost) {
         return (
-            <PostDetail
-                post={selectedPost}
-                comments={comments}
-                onBack={() => setViewMode('list')}
-                onAddComment={(content) => { void handleAddComment(content); }}
-            />
+            <div className="community-container">
+                <PostDetail
+                    post={selectedPost}
+                    comments={comments}
+                    onBack={() => setViewMode('list')}
+                    onAddComment={(content) => { void handleAddComment(content); }}
+                />
+            </div>
         );
     }
 

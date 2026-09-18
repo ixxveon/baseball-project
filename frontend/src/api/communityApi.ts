@@ -16,12 +16,18 @@ interface ResponsePage<T> {
     hasNext: boolean;
 }
 
+function formatDate(isoString: string): string {
+    const date = new Date(isoString);
+    const pad = (n: number): string => String(n).padStart(2, '0');
+    return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 export async function getPosts(gameId?: number): Promise<CommunityPost[]> {
     const response = await axiosInstance.get<ApiResponse<ResponsePage<CommunityPost>>>(
         '/community/posts',
         { params: { gameId, size: 50 } },
     );
-    return response.data.data.content;
+    return response.data.data.content.map((post) => ({ ...post, createdAt: formatDate(post.createdAt) }));
 }
 
 export async function getComments(postId: number): Promise<PostComment[]> {
@@ -29,12 +35,12 @@ export async function getComments(postId: number): Promise<PostComment[]> {
         `/community/posts/${postId}/comments`,
         { params: { size: 50 } },
     );
-    return response.data.data.content;
+    return response.data.data.content.map((comment) => ({ ...comment, createdAt: formatDate(comment.createdAt) }));
 }
 
 export async function createPost(input: { gameId: number; category: PostCategory; title: string; content: string }): Promise<CommunityPost> {
     const response = await axiosInstance.post<ApiResponse<CommunityPost>>('/community/posts', input);
-    return response.data.data;
+    return { ...response.data.data, createdAt: formatDate(response.data.data.createdAt) };
 }
 
 export async function createComment(postId: number, content: string): Promise<PostComment> {
@@ -42,5 +48,5 @@ export async function createComment(postId: number, content: string): Promise<Po
         `/community/posts/${postId}/comments`,
         { content },
     );
-    return response.data.data;
+    return { ...response.data.data, createdAt: formatDate(response.data.data.createdAt) };
 }
