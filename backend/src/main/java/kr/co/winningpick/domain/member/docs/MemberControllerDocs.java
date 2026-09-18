@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.co.winningpick.domain.member.dto.request.ProfileUpdateRequest;
 import kr.co.winningpick.domain.member.dto.request.RequestConfirmEmailVerification;
@@ -17,9 +18,11 @@ import kr.co.winningpick.domain.member.dto.response.ResponseLogin;
 import kr.co.winningpick.domain.member.dto.response.ResponseNicknameAvailability;
 import kr.co.winningpick.domain.member.dto.response.ResponseSignup;
 import org.springframework.web.bind.annotation.RequestAttribute;
+import kr.co.winningpick.domain.member.dto.request.*;
+import kr.co.winningpick.domain.member.dto.response.*;
 
 @Tag(name = "Member", description = "회원 관련 API")
-public interface MemberApiDocs {
+public interface MemberControllerDocs {
 
     @Operation(summary = "이메일 인증번호 발송", description = "입력한 이메일로 6자리 인증번호를 발송합니다. 인증번호는 5분간 유효합니다.")
     @ApiResponses({
@@ -72,4 +75,23 @@ public interface MemberApiDocs {
             @Parameter(hidden = true) @RequestAttribute(name = "memberId", required = false) Long memberId,
             ProfileUpdateRequest request
     );
+
+    @Operation(summary = "Access Token 재발급", description = "Refresh Token으로 새 Access Token을 발급받습니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "재발급 성공"),
+            @ApiResponse(responseCode = "401", description = "유효하지 않거나 만료된 Refresh Token",
+                    content = @Content(examples = @ExampleObject(value = """
+                        {"success":false,"message":"유효하지 않은 리프레시 토큰입니다","data":null}""")))
+    })
+    kr.co.winningpick.global.response.ApiResponse<ResponseReissue> reissue(RequestReissue request);
+
+    @Operation(summary = "로그아웃", description = "서버에 저장된 Refresh Token을 무효화합니다.")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "로그아웃 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 필요",
+                    content = @Content(examples = @ExampleObject(value = """
+                    {"success":false,"message":"인증이 필요합니다","data":null}""")))
+    })
+    kr.co.winningpick.global.response.ApiResponse<Void> logout(Long memberId);
 }

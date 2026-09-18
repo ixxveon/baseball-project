@@ -1,15 +1,18 @@
 package kr.co.winningpick.domain.member.controller;
 
 import jakarta.validation.Valid;
-import kr.co.winningpick.domain.member.docs.MemberApiDocs;
+
 import kr.co.winningpick.domain.member.dto.request.ProfileUpdateRequest;
+import kr.co.winningpick.domain.member.docs.MemberControllerDocs;
 import kr.co.winningpick.domain.member.dto.request.RequestConfirmEmailVerification;
 import kr.co.winningpick.domain.member.dto.request.RequestLogin;
+import kr.co.winningpick.domain.member.dto.request.RequestReissue;
 import kr.co.winningpick.domain.member.dto.request.RequestSendEmailVerification;
 import kr.co.winningpick.domain.member.dto.request.RequestSignup;
 import kr.co.winningpick.domain.member.dto.response.ResponseEmailVerification;
 import kr.co.winningpick.domain.member.dto.response.ResponseLogin;
 import kr.co.winningpick.domain.member.dto.response.ResponseNicknameAvailability;
+import kr.co.winningpick.domain.member.dto.response.ResponseReissue;
 import kr.co.winningpick.domain.member.dto.response.ResponseSignup;
 import kr.co.winningpick.domain.member.service.MemberService;
 import kr.co.winningpick.global.exception.BusinessException;
@@ -21,7 +24,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/members")
 @RequiredArgsConstructor
-public class MemberController implements MemberApiDocs {
+public class MemberController implements MemberControllerDocs {
 
     private final MemberService memberService;
 
@@ -74,6 +77,22 @@ public class MemberController implements MemberApiDocs {
 
         // 3. 실제 멤버 ID를 Service로 넘겨줍니다.
         memberService.updateProfile(memberId, request);
+        return ApiResponse.success(null);
+    }
+
+    @Override
+    @PostMapping("/reissue")
+    public ApiResponse<ResponseReissue> reissue(@Valid @RequestBody RequestReissue request) {
+        return ApiResponse.success(memberService.reissue(request.refreshToken()));
+    }
+
+    @Override
+    @PostMapping("/logout")
+    public ApiResponse<Void> logout(@RequestAttribute(name = "memberId", required = false) Long memberId) {
+        if (memberId == null) {
+            throw new BusinessException(GlobalErrorCode.UNAUTHORIZED);
+        }
+        memberService.logout(memberId);
         return ApiResponse.success(null);
     }
 }
