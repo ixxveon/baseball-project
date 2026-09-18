@@ -1,8 +1,6 @@
 package kr.co.winningpick.domain.member.controller;
 
 import jakarta.validation.Valid;
-
-import kr.co.winningpick.domain.member.dto.request.ProfileUpdateRequest;
 import kr.co.winningpick.domain.member.docs.MemberControllerDocs;
 import kr.co.winningpick.domain.member.dto.request.RequestConfirmEmailVerification;
 import kr.co.winningpick.domain.member.dto.request.RequestLogin;
@@ -20,6 +18,8 @@ import kr.co.winningpick.global.exception.GlobalErrorCode;
 import kr.co.winningpick.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import kr.co.winningpick.domain.member.dto.request.ProfileUpdateRequest;
+import kr.co.winningpick.domain.member.dto.request.RequestResetPassword;
 
 @RestController
 @RequestMapping("/api/v1/members")
@@ -77,6 +77,13 @@ public class MemberController implements MemberControllerDocs {
 
         // 3. 실제 멤버 ID를 Service로 넘겨줍니다.
         memberService.updateProfile(memberId, request);
+        return ApiResponse.success(null);
+    }
+
+    @Override
+    @PostMapping("/password-reset")
+    public ApiResponse<Void> resetPassword(@Valid @RequestBody RequestResetPassword request) {
+        memberService.resetPassword(request);
         return ApiResponse.success(null);
     }
 

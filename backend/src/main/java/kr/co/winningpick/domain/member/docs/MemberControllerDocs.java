@@ -66,6 +66,15 @@ public interface MemberControllerDocs {
     })
     kr.co.winningpick.global.response.ApiResponse<ResponseLogin> login(RequestLogin request);
 
+    @Operation(summary = "비밀번호 재설정", description = "이메일 인증이 완료된 계정의 비밀번호를 재설정합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "재설정 성공"),
+            @ApiResponse(responseCode = "400", description = "이메일 인증 미완료",
+                    content = @Content(examples = @ExampleObject(value = """
+                        {"success":false,"message":"이메일 인증을 완료해주세요","data":null}""")))
+    })
+    kr.co.winningpick.global.response.ApiResponse<Void> resetPassword(RequestResetPassword request);
+
     @Operation(summary = "프로필 수정", description = "닉네임, 최애 구단, 알림 설정 중 일부 또는 전체를 수정합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "프로필 수정 성공"),

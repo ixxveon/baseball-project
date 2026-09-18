@@ -1330,3 +1330,263 @@ button {
     width: 100%;
     padding: 13px;
 }
+
+
+/* =========================================================
+   Auth 페이지 (로그인 / 회원가입 / 비밀번호 찾기)
+========================================================= */
+
+.auth-page {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+}
+
+.auth-home-link {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    text-decoration: none;
+}
+
+.auth-home-link:hover {
+    color: #0f172a;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 420px;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    padding: 40px 36px;
+}
+
+.auth-brand {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2px;
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    margin-bottom: 24px;
+}
+
+.auth-brand .brand-main {
+    color: #e11d48;
+}
+
+.auth-brand .brand-sub-dark {
+    color: #0f172a;
+}
+
+.auth-title {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 28px;
+}
+
+.auth-banner {
+    background-color: #fdf2f4;
+    color: #e11d48;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    padding: 10px 14px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.auth-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.auth-field label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #475569;
+}
+
+.auth-field input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    color: #1a1a1a;
+}
+
+.auth-field input:focus {
+    border-color: #e71937;
+}
+
+.auth-field input::placeholder {
+    color: #b0b8c1;
+}
+
+.auth-field-row {
+    display: flex;
+    gap: 8px;
+}
+
+.auth-field-row input {
+    flex: 1;
+}
+
+.auth-check-btn {
+    flex-shrink: 0;
+    padding: 0 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background-color: #f8fafc;
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.auth-check-btn:disabled {
+    color: #b0b8c1;
+    cursor: not-allowed;
+}
+
+.auth-hint {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.auth-error {
+    font-size: 12px;
+    color: #e71937;
+    font-weight: 600;
+}
+
+.auth-success {
+    font-size: 12px;
+    color: #10b981;
+    font-weight: 600;
+}
+
+.auth-error-submit {
+    text-align: center;
+    margin: 0;
+}
+
+.auth-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #475569;
+}
+
+.auth-checkbox-row input {
+    width: auto;
+}
+
+.auth-submit-btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    background-color: #e11d48;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 800;
+    margin-top: 4px;
+}
+
+.auth-submit-btn:disabled {
+    background-color: #f1a7b8;
+    cursor: not-allowed;
+}
+
+.auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0;
+    color: #b0b8c1;
+    font-size: 12px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background-color: #e2e8f0;
+}
+
+.auth-switch-text {
+    text-align: center;
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 8px;
+}
+
+.auth-switch-link {
+    color: #e11d48;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.auth-switch-link:hover {
+    text-decoration: underline;
+}
+
+.social-btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.social-btn {
+    width: 100%;
+    padding: 13px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    background-color: #ffffff;
+    color: #1a1a1a;
+}
+
+.social-btn.kakao {
+    background-color: #fee500;
+    border-color: #fee500;
+    color: #191600;
+}
+
+.social-btn.naver {
+    background-color: #03c75a;
+    border-color: #03c75a;
+    color: #ffffff;
+}
+
+.social-btn.google {
+    background-color: #ffffff;
+    border-color: #e2e8f0;
+    color: #1a1a1a;
+}

@@ -1,6 +1,7 @@
 package kr.co.winningpick.domain.member.service;
 
 import kr.co.winningpick.domain.member.dto.request.RequestLogin;
+import kr.co.winningpick.domain.member.dto.request.RequestResetPassword;
 import kr.co.winningpick.domain.member.dto.request.RequestSignup;
 import kr.co.winningpick.domain.member.dto.response.ResponseLogin;
 import kr.co.winningpick.domain.member.dto.response.ResponseReissue;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Profile;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -179,4 +181,17 @@ public class MemberService {
         }
     }
 
+
+    @Transactional
+    public void resetPassword(RequestResetPassword request) {
+        String verified = stringRedisTemplate.opsForValue().get(verifiedKey(request.email()));
+        if (verified == null) {
+            throw new BusinessException(MemberErrorCode.EMAIL_NOT_VERIFIED);
+        }
+
+        Member member = memberRepository.findByEmail(request.email())
+                .orElseThrow(() -> new BusinessException(MemberErrorCode.LOGIN_FAILED));
+
+        member.changePassword(passwordEncoder.encode(request.newPassword()));
+    }
 }
