@@ -1203,7 +1203,26 @@ button {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    max-width: 720px;
+    width: 100%;
+    margin: 0 auto;
 }
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: 6px;
+    padding: 4px 0;
+    border: none;
+    background: none;
+    color: #6b7280;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.back-btn:hover { color: #111317; }
 
 .post-detail-card {
     display: flex;
@@ -1226,6 +1245,10 @@ button {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    padding: 20px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #ffffff;
 }
 
 .post-comment-title {
@@ -1303,6 +1326,9 @@ button {
     display: flex;
     flex-direction: column;
     gap: 16px;
+    max-width: 720px;
+    width: 100%;
+    margin: 0 auto;
 }
 
 .post-write-field input,
