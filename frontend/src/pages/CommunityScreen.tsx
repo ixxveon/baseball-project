@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import PostCard from '../components/PostCard';
 import PostDetail from '../components/PostDetail';
 import PostWriteForm from '../components/PostWriteForm';
-import { communityPostsData } from '../data/communityPosts';
-import { communityCommentsData } from '../data/communityComments';
+import { createComment, createPost, getComments, getPosts } from '../api/communityApi';
 import type { CommunityPost, PostCategory, PostComment } from '../types';
 
 type CategoryFilter = PostCategory | 'ALL';
@@ -17,51 +16,91 @@ const CATEGORY_TABS: { id: CategoryFilter; label: string }[] = [
 ];
 
 export default function CommunityScreen(): React.JSX.Element {
-    const [posts, setPosts] = useState<CommunityPost[]>(communityPostsData);
-    const [comments, setComments] = useState<PostComment[]>(communityCommentsData);
+    const [posts, setPosts] = useState<CommunityPost[]>([]);
+    const [comments, setComments] = useState<PostComment[]>([]);
     const [activeCategory, setActiveCategory] = useState<CategoryFilter>('ALL');
     const [viewMode, setViewMode] = useState<ViewMode>('list');
     const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string>('');
+
+    useEffect(() => {
+        let cancelled = false;
+
+        async function loadPosts(): Promise<void> {
+            setIsLoading(true);
+            setError('');
+            try {
+                const data = await getPosts();
+                if (!cancelled) {
+                    setPosts(data);
+                }
+            } catch {
+                if (!cancelled) {
+                    setError('게시글을 불러오지 못했어요');
+                }
+            } finally {
+                if (!cancelled) {
+                    setIsLoading(false);
+                }
+            }
+        }
+
+        void loadPosts();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (selectedPostId === null) {
+            return;
+        }
+
+        let cancelled = false;
+
+        async function loadComments(): Promise<void> {
+            try {
+                const data = await getComments(selectedPostId as number);
+                if (!cancelled) {
+                    setComments(data);
+                }
+            } catch {
+                if (!cancelled) {
+                    setComments([]);
+                }
+            }
+        }
+
+        void loadComments();
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedPostId]);
 
     const filteredPosts = activeCategory === 'ALL'
         ? posts
         : posts.filter((post) => post.category === activeCategory);
 
     const selectedPost = posts.find((post) => post.id === selectedPostId) ?? null;
-    const selectedComments = comments.filter((comment) => comment.postId === selectedPostId);
 
     const handleSelectPost = (postId: number): void => {
         setSelectedPostId(postId);
         setViewMode('detail');
     };
 
-    const handleCreatePost = (input: { category: PostCategory; title: string; content: string }): void => {
-        const newPost: CommunityPost = {
-            id: Math.max(...posts.map((post) => post.id)) + 1,
-            gameId: 0,
-            category: input.category,
-            title: input.title,
-            content: input.content,
-            author: '나',
-            createdAt: '방금 전',
-            commentCount: 0,
-        };
+    const handleCreatePost = async (input: { category: PostCategory; title: string; content: string }): Promise<void> => {
+        const newPost = await createPost({ gameId: 0, ...input });
         setPosts((prev) => [newPost, ...prev]);
         setViewMode('list');
     };
 
-    const handleAddComment = (content: string): void => {
+    const handleAddComment = async (content: string): Promise<void> => {
         if (selectedPostId === null) {
             return;
         }
 
-        const newComment: PostComment = {
-            id: Math.max(0, ...comments.map((comment) => comment.id)) + 1,
-            postId: selectedPostId,
-            author: '나',
-            content,
-            createdAt: '방금 전',
-        };
+        const newComment = await createComment(selectedPostId, content);
         setComments((prev) => [...prev, newComment]);
         setPosts((prev) => prev.map((post) => (
             post.id === selectedPostId ? { ...post, commentCount: post.commentCount + 1 } : post
@@ -71,7 +110,7 @@ export default function CommunityScreen(): React.JSX.Element {
     if (viewMode === 'write') {
         return (
             <PostWriteForm
-                onSubmit={handleCreatePost}
+                onSubmit={(input) => { void handleCreatePost(input); }}
                 onCancel={() => setViewMode('list')}
             />
         );
@@ -81,9 +120,9 @@ export default function CommunityScreen(): React.JSX.Element {
         return (
             <PostDetail
                 post={selectedPost}
-                comments={selectedComments}
+                comments={comments}
                 onBack={() => setViewMode('list')}
-                onAddComment={handleAddComment}
+                onAddComment={(content) => { void handleAddComment(content); }}
             />
         );
     }
@@ -109,7 +148,11 @@ export default function CommunityScreen(): React.JSX.Element {
             </div>
 
             <div className="post-list">
-                {filteredPosts.length > 0 ? (
+                {isLoading ? (
+                    <p className="post-empty">불러오는 중...</p>
+                ) : error ? (
+                    <p className="post-empty">{error}</p>
+                ) : filteredPosts.length > 0 ? (
                     filteredPosts.map((post) => (
                         <div key={post.id} onClick={() => handleSelectPost(post.id)}>
                             <PostCard post={post} />
