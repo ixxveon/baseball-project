@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import BackButton from './BackButton';
 import type { CommunityPost, PostCategory, PostComment } from '../types';
+import { getCurrentMemberId } from '../utils/currentUser';
 
 interface PostDetailProps {
     post: CommunityPost;
     comments: PostComment[];
     onBack: () => void;
     onAddComment: (content: string) => void;
+    onEdit: () => void;
+    onDelete: () => void;
 }
 
 const CATEGORY_LABEL: Record<PostCategory, string> = {
@@ -21,8 +24,15 @@ const CATEGORY_CLASS: Record<PostCategory, string> = {
     ETC: 'etc',
 };
 
-export default function PostDetail({ post, comments, onBack, onAddComment }: PostDetailProps): React.JSX.Element {
+export default function PostDetail({ post, comments, onBack, onAddComment, onEdit, onDelete }: PostDetailProps): React.JSX.Element {
     const [commentInput, setCommentInput] = useState<string>('');
+    const isAuthor = post.authorId === getCurrentMemberId();
+
+    const handleDelete = (): void => {
+        if (window.confirm('게시글을 삭제할까요?')) {
+            onDelete();
+        }
+    };
 
     const handleSubmitComment = (e: React.FormEvent<HTMLFormElement>): void => {
         e.preventDefault();
@@ -46,6 +56,12 @@ export default function PostDetail({ post, comments, onBack, onAddComment }: Pos
                         {CATEGORY_LABEL[post.category]}
                     </span>
                     <span className="post-title">{post.title}</span>
+                    {isAuthor && (
+                        <div className="post-detail-actions">
+                            <button type="button" className="post-edit-btn" onClick={onEdit}>수정</button>
+                            <button type="button" className="post-delete-btn" onClick={handleDelete}>삭제</button>
+                        </div>
+                    )}
                 </div>
                 <div className="post-meta">
                     <span>{post.author}</span>

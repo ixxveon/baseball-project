@@ -1224,6 +1224,27 @@ button {
 
 .back-btn:hover { color: #111317; }
 
+.post-detail-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.post-edit-btn,
+.post-delete-btn {
+    padding: 4px 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+}
+
+.post-edit-btn:hover { border-color: #111317; color: #111317; }
+.post-delete-btn:hover { border-color: #e71937; color: #e71937; }
+
 .post-detail-card {
     display: flex;
     flex-direction: column;

@@ -5,6 +5,11 @@ import type { PostCategory } from '../types';
 interface PostWriteFormProps {
     onSubmit: (input: { category: PostCategory; title: string; content: string }) => void;
     onCancel: () => void;
+    heading?: string;
+    submitLabel?: string;
+    initialCategory?: PostCategory;
+    initialTitle?: string;
+    initialContent?: string;
 }
 
 const CATEGORY_OPTIONS: { id: PostCategory; label: string }[] = [
@@ -13,10 +18,18 @@ const CATEGORY_OPTIONS: { id: PostCategory; label: string }[] = [
     { id: 'ETC', label: '기타' },
 ];
 
-export default function PostWriteForm({ onSubmit, onCancel }: PostWriteFormProps): React.JSX.Element {
-    const [category, setCategory] = useState<PostCategory>('PREVIEW');
-    const [title, setTitle] = useState<string>('');
-    const [content, setContent] = useState<string>('');
+export default function PostWriteForm({
+    onSubmit,
+    onCancel,
+    heading = '글쓰기',
+    submitLabel = '등록하기',
+    initialCategory = 'PREVIEW',
+    initialTitle = '',
+    initialContent = '',
+}: PostWriteFormProps): React.JSX.Element {
+    const [category, setCategory] = useState<PostCategory>(initialCategory);
+    const [title, setTitle] = useState<string>(initialTitle);
+    const [content, setContent] = useState<string>(initialContent);
     const [error, setError] = useState<string>('');
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
@@ -34,7 +47,7 @@ export default function PostWriteForm({ onSubmit, onCancel }: PostWriteFormProps
         <form className="post-write-form" onSubmit={handleSubmit} noValidate>
             <BackButton label="목록으로" onClick={onCancel} />
 
-            <h2 className="community-title">글쓰기</h2>
+            <h2 className="community-title">{heading}</h2>
 
             <div className="community-category-tabs">
                 {CATEGORY_OPTIONS.map((option) => (
@@ -70,7 +83,7 @@ export default function PostWriteForm({ onSubmit, onCancel }: PostWriteFormProps
 
             {error && <p className="post-write-error">{error}</p>}
 
-            <button type="submit" className="write-btn post-write-submit">등록하기</button>
+            <button type="submit" className="write-btn post-write-submit">{submitLabel}</button>
         </form>
     );
 }

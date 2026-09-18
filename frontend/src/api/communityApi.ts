@@ -50,3 +50,12 @@ export async function createComment(postId: number, content: string): Promise<Po
     );
     return { ...response.data.data, createdAt: formatDate(response.data.data.createdAt) };
 }
+
+export async function updatePost(postId: number, input: { category: PostCategory; title: string; content: string }): Promise<CommunityPost> {
+    const response = await axiosInstance.patch<ApiResponse<CommunityPost>>(`/community/posts/${postId}`, input);
+    return { ...response.data.data, createdAt: formatDate(response.data.data.createdAt) };
+}
+
+export async function deletePost(postId: number): Promise<void> {
+    await axiosInstance.delete(`/community/posts/${postId}`);
+}

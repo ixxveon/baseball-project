@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import PostCard from '../components/PostCard';
 import PostDetail from '../components/PostDetail';
 import PostWriteForm from '../components/PostWriteForm';
-import { createComment, createPost, getComments, getPosts } from '../api/communityApi';
+import { createComment, createPost, deletePost, getComments, getPosts, updatePost } from '../api/communityApi';
 import type { CommunityPost, PostCategory, PostComment } from '../types';
 
 type CategoryFilter = PostCategory | 'ALL';
-type ViewMode = 'list' | 'detail' | 'write';
+type ViewMode = 'list' | 'detail' | 'write' | 'edit';
 
 const CATEGORY_TABS: { id: CategoryFilter; label: string }[] = [
     { id: 'ALL', label: '전체' },
@@ -100,6 +100,37 @@ export default function CommunityScreen(): React.JSX.Element {
         }
     };
 
+    const handleUpdatePost = async (input: { category: PostCategory; title: string; content: string }): Promise<void> => {
+        if (selectedPostId === null) {
+            return;
+        }
+
+        try {
+            const updated = await updatePost(selectedPostId, input);
+            setPosts((prev) => prev.map((post) => (post.id === selectedPostId ? updated : post)));
+            setViewMode('detail');
+            window.alert('게시글이 수정되었습니다');
+        } catch {
+            window.alert('게시글 수정에 실패했어요. 잠시 후 다시 시도해주세요');
+        }
+    };
+
+    const handleDeletePost = async (): Promise<void> => {
+        if (selectedPostId === null) {
+            return;
+        }
+
+        try {
+            await deletePost(selectedPostId);
+            setPosts((prev) => prev.filter((post) => post.id !== selectedPostId));
+            setSelectedPostId(null);
+            setViewMode('list');
+            window.alert('게시글이 삭제되었습니다');
+        } catch {
+            window.alert('게시글 삭제에 실패했어요. 잠시 후 다시 시도해주세요');
+        }
+    };
+
     const handleAddComment = async (content: string): Promise<void> => {
         if (selectedPostId === null) {
             return;
@@ -127,6 +158,22 @@ export default function CommunityScreen(): React.JSX.Element {
         );
     }
 
+    if (viewMode === 'edit' && selectedPost) {
+        return (
+            <div className="community-container">
+                <PostWriteForm
+                    heading="게시글 수정"
+                    submitLabel="수정하기"
+                    initialCategory={selectedPost.category}
+                    initialTitle={selectedPost.title}
+                    initialContent={selectedPost.content}
+                    onSubmit={(input) => { void handleUpdatePost(input); }}
+                    onCancel={() => setViewMode('detail')}
+                />
+            </div>
+        );
+    }
+
     if (viewMode === 'detail' && selectedPost) {
         return (
             <div className="community-container">
@@ -135,6 +182,8 @@ export default function CommunityScreen(): React.JSX.Element {
                     comments={comments}
                     onBack={() => setViewMode('list')}
                     onAddComment={(content) => { void handleAddComment(content); }}
+                    onEdit={() => setViewMode('edit')}
+                    onDelete={() => { void handleDeletePost(); }}
                 />
             </div>
         );
