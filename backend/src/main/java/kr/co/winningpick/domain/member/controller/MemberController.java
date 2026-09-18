@@ -4,14 +4,18 @@ import jakarta.validation.Valid;
 import kr.co.winningpick.domain.member.docs.MemberControllerDocs;
 import kr.co.winningpick.domain.member.dto.request.RequestConfirmEmailVerification;
 import kr.co.winningpick.domain.member.dto.request.RequestLogin;
+import kr.co.winningpick.domain.member.dto.request.RequestReissue;
 import kr.co.winningpick.domain.member.dto.request.RequestResetPassword;
 import kr.co.winningpick.domain.member.dto.request.RequestSendEmailVerification;
 import kr.co.winningpick.domain.member.dto.request.RequestSignup;
 import kr.co.winningpick.domain.member.dto.response.ResponseEmailVerification;
 import kr.co.winningpick.domain.member.dto.response.ResponseLogin;
 import kr.co.winningpick.domain.member.dto.response.ResponseNicknameAvailability;
+import kr.co.winningpick.domain.member.dto.response.ResponseReissue;
 import kr.co.winningpick.domain.member.dto.response.ResponseSignup;
 import kr.co.winningpick.domain.member.service.MemberService;
+import kr.co.winningpick.global.exception.BusinessException;
+import kr.co.winningpick.global.exception.GlobalErrorCode;
 import kr.co.winningpick.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -62,6 +66,22 @@ public class MemberController implements MemberControllerDocs {
     @PostMapping("/password-reset")
     public ApiResponse<Void> resetPassword(@Valid @RequestBody RequestResetPassword request) {
         memberService.resetPassword(request);
+        return ApiResponse.success(null);
+    }
+
+    @Override
+    @PostMapping("/reissue")
+    public ApiResponse<ResponseReissue> reissue(@Valid @RequestBody RequestReissue request) {
+        return ApiResponse.success(memberService.reissue(request.refreshToken()));
+    }
+
+    @Override
+    @PostMapping("/logout")
+    public ApiResponse<Void> logout(@RequestAttribute(name = "memberId", required = false) Long memberId) {
+        if (memberId == null) {
+            throw new BusinessException(GlobalErrorCode.UNAUTHORIZED);
+        }
+        memberService.logout(memberId);
         return ApiResponse.success(null);
     }
 }
