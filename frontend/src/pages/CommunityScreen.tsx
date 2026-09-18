@@ -90,9 +90,14 @@ export default function CommunityScreen(): React.JSX.Element {
     };
 
     const handleCreatePost = async (input: { category: PostCategory; title: string; content: string }): Promise<void> => {
-        const newPost = await createPost({ gameId: 0, ...input });
-        setPosts((prev) => [newPost, ...prev]);
-        setViewMode('list');
+        try {
+            const newPost = await createPost({ gameId: 0, ...input });
+            setPosts((prev) => [newPost, ...prev]);
+            setViewMode('list');
+            window.alert('게시글이 등록되었습니다');
+        } catch {
+            window.alert('게시글 등록에 실패했어요. 잠시 후 다시 시도해주세요');
+        }
     };
 
     const handleAddComment = async (content: string): Promise<void> => {
@@ -100,11 +105,15 @@ export default function CommunityScreen(): React.JSX.Element {
             return;
         }
 
-        const newComment = await createComment(selectedPostId, content);
-        setComments((prev) => [...prev, newComment]);
-        setPosts((prev) => prev.map((post) => (
-            post.id === selectedPostId ? { ...post, commentCount: post.commentCount + 1 } : post
-        )));
+        try {
+            const newComment = await createComment(selectedPostId, content);
+            setComments((prev) => [...prev, newComment]);
+            setPosts((prev) => prev.map((post) => (
+                post.id === selectedPostId ? { ...post, commentCount: post.commentCount + 1 } : post
+            )));
+        } catch {
+            window.alert('댓글 등록에 실패했어요. 잠시 후 다시 시도해주세요');
+        }
     };
 
     if (viewMode === 'write') {
