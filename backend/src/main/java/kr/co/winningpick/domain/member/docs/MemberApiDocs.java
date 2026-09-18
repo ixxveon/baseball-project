@@ -1,6 +1,7 @@
 package kr.co.winningpick.domain.member.docs;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -15,6 +16,7 @@ import kr.co.winningpick.domain.member.dto.response.ResponseEmailVerification;
 import kr.co.winningpick.domain.member.dto.response.ResponseLogin;
 import kr.co.winningpick.domain.member.dto.response.ResponseNicknameAvailability;
 import kr.co.winningpick.domain.member.dto.response.ResponseSignup;
+import org.springframework.web.bind.annotation.RequestAttribute;
 
 @Tag(name = "Member", description = "회원 관련 API")
 public interface MemberApiDocs {
@@ -66,5 +68,8 @@ public interface MemberApiDocs {
             @ApiResponse(responseCode = "200", description = "프로필 수정 성공"),
             @ApiResponse(responseCode = "400", description = "중복된 닉네임 등 잘못된 요청")
     })
-    kr.co.winningpick.global.response.ApiResponse<Void> updateProfile(ProfileUpdateRequest request);
+    kr.co.winningpick.global.response.ApiResponse<Void> updateProfile(
+            @Parameter(hidden = true) @RequestAttribute(name = "memberId", required = false) Long memberId,
+            ProfileUpdateRequest request
+    );
 }

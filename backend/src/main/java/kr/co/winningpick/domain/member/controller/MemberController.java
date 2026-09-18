@@ -12,6 +12,8 @@ import kr.co.winningpick.domain.member.dto.response.ResponseLogin;
 import kr.co.winningpick.domain.member.dto.response.ResponseNicknameAvailability;
 import kr.co.winningpick.domain.member.dto.response.ResponseSignup;
 import kr.co.winningpick.domain.member.service.MemberService;
+import kr.co.winningpick.global.exception.BusinessException;
+import kr.co.winningpick.global.exception.GlobalErrorCode;
 import kr.co.winningpick.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -60,10 +62,17 @@ public class MemberController implements MemberApiDocs {
 
     @Override
     @PatchMapping("/profile")
-    public ApiResponse<Void> updateProfile(@Valid @RequestBody ProfileUpdateRequest request) {
-        // ⚠️ TODO: 임시로 1번 회원의 ID를 넣었습니다. 나중에 로그인한 회원의 실제 ID를 가져오도록 수정해야 합니다.
-        Long memberId = 1L;
+    public ApiResponse<Void> updateProfile(
+            // 👇 1. 가짜 값 대신, 필터(인터셉터)가 꽂아주는 로그인 유저 ID를 받아옵니다.
+            @RequestAttribute(name = "memberId", required = false) Long memberId,
+            @Valid @RequestBody ProfileUpdateRequest request) {
 
+        // 👇 2. 로그인하지 않은 사용자(memberId가 null)면 401 UNAUTHORIZED 에러를 던집니다!
+        if (memberId == null) {
+            throw new BusinessException(GlobalErrorCode.UNAUTHORIZED);
+        }
+
+        // 3. 실제 멤버 ID를 Service로 넘겨줍니다.
         memberService.updateProfile(memberId, request);
         return ApiResponse.success(null);
     }
