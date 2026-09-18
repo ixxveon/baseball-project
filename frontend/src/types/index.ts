@@ -32,6 +32,7 @@ export interface CommunityPost {
     title: string;
     content: string;
     author: string;
+    authorId: number;
     createdAt: string;
     commentCount: number;
 }
@@ -40,6 +41,7 @@ export interface PostComment {
     id: number;
     postId: number;
     author: string;
+    authorId: number;
     content: string;
     createdAt: string;
 }
