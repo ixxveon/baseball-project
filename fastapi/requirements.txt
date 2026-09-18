@@ -1,9 +1,12 @@
 beautifulsoup4==4.15.0
 fastapi==0.141.1
-openai==3.14.1
 psycopg2_binary==2.9.13
 pydantic==2.13.5
 pydantic_settings==2.15.0
 uvicorn==0.34.0
 pytest==8.4.2
 ruff==0.16.5
+anthropic==1.6.0
+APScheduler==3.11.3
+httpx==0.28.1
+httpx2==2.13.0
