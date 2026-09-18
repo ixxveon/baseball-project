@@ -17,6 +17,7 @@ import kr.co.winningpick.domain.member.dto.request.ProfileUpdateRequest;
 import org.springframework.transaction.annotation.Transactional;
 import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Profile;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -34,11 +35,12 @@ public class MemberService {
     private final JwtProvider jwtProvider;
 
     // 👇 서버가 켜질 때 자동으로 실행되어 테스트용 1번 회원을 만들어주는 마법의 코드입니다.
-    @Profile("local") //로컬환경에서만 실행
+    @Value("${spring.profiles.active:}")
+    private String activeProfile; //로컬환경에서만 실행
     @PostConstruct
     public void initTestUser() {
-        // 데이터베이스에 회원이 한 명도 없을 때만 실행
-        if (memberRepository.count() == 0) {
+        // 👇 3. 현재 환경이 "local"일 때만, 그리고 회원이 없을 때만 실행되도록 if문으로 꽉 묶었습니다.
+        if ("local".equals(activeProfile) && memberRepository.count() == 0) {
             Member dummyUser = Member.createLocalMember("test@test.com", "기존승요", passwordEncoder.encode("1234"));
             memberRepository.save(dummyUser);
         }
