@@ -41,6 +41,7 @@ export interface PostComment {
     id: number;
     postId: number;
     author: string;
+    authorId: number;
     content: string;
     createdAt: string;
 }

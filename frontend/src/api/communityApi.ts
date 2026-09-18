@@ -59,3 +59,7 @@ export async function updatePost(postId: number, input: { category: PostCategory
 export async function deletePost(postId: number): Promise<void> {
     await axiosInstance.delete(`/community/posts/${postId}`);
 }
+
+export async function deleteComment(postId: number, commentId: number): Promise<void> {
+    await axiosInstance.delete(`/community/posts/${postId}/comments/${commentId}`);
+}

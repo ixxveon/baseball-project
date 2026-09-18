@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import PostCard from '../components/PostCard';
 import PostDetail from '../components/PostDetail';
 import PostWriteForm from '../components/PostWriteForm';
-import { createComment, createPost, deletePost, getComments, getPosts, updatePost } from '../api/communityApi';
+import { createComment, createPost, deleteComment, deletePost, getComments, getPosts, updatePost } from '../api/communityApi';
 import type { CommunityPost, PostCategory, PostComment } from '../types';
 
 type CategoryFilter = PostCategory | 'ALL';
@@ -78,6 +78,26 @@ export default function CommunityScreen(): React.JSX.Element {
         };
     }, [selectedPostId]);
 
+    // 게시글 클릭/글쓰기 진입마다 브라우저 히스토리를 쌓아서, 뒤로가기를 누르면
+    // 커뮤니티 진입 전 페이지(마이페이지 등)로 바로 튕기지 않고 이전 화면(목록/상세)으로 돌아오게 한다.
+    useEffect(() => {
+        function handlePopState(event: PopStateEvent): void {
+            const state = event.state as { view?: ViewMode; postId?: number } | null;
+            if (state?.view === 'detail' || state?.view === 'edit') {
+                setSelectedPostId(state.postId ?? null);
+                setViewMode(state.view);
+            } else if (state?.view === 'write') {
+                setViewMode('write');
+            } else {
+                setSelectedPostId(null);
+                setViewMode('list');
+            }
+        }
+
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, []);
+
     const filteredPosts = activeCategory === 'ALL'
         ? posts
         : posts.filter((post) => post.category === activeCategory);
@@ -87,13 +107,24 @@ export default function CommunityScreen(): React.JSX.Element {
     const handleSelectPost = (postId: number): void => {
         setSelectedPostId(postId);
         setViewMode('detail');
+        window.history.pushState({ view: 'detail', postId }, '');
+    };
+
+    const goToWrite = (): void => {
+        setViewMode('write');
+        window.history.pushState({ view: 'write' }, '');
+    };
+
+    const goToEdit = (): void => {
+        setViewMode('edit');
+        window.history.pushState({ view: 'edit', postId: selectedPostId }, '');
     };
 
     const handleCreatePost = async (input: { category: PostCategory; title: string; content: string }): Promise<void> => {
         try {
             const newPost = await createPost({ gameId: 0, ...input });
             setPosts((prev) => [newPost, ...prev]);
-            setViewMode('list');
+            window.history.back();
             window.alert('게시글이 등록되었습니다');
         } catch {
             window.alert('게시글 등록에 실패했어요. 잠시 후 다시 시도해주세요');
@@ -108,7 +139,7 @@ export default function CommunityScreen(): React.JSX.Element {
         try {
             const updated = await updatePost(selectedPostId, input);
             setPosts((prev) => prev.map((post) => (post.id === selectedPostId ? updated : post)));
-            setViewMode('detail');
+            window.history.back();
             window.alert('게시글이 수정되었습니다');
         } catch {
             window.alert('게시글 수정에 실패했어요. 잠시 후 다시 시도해주세요');
@@ -123,8 +154,7 @@ export default function CommunityScreen(): React.JSX.Element {
         try {
             await deletePost(selectedPostId);
             setPosts((prev) => prev.filter((post) => post.id !== selectedPostId));
-            setSelectedPostId(null);
-            setViewMode('list');
+            window.history.back();
             window.alert('게시글이 삭제되었습니다');
         } catch {
             window.alert('게시글 삭제에 실패했어요. 잠시 후 다시 시도해주세요');
@@ -147,12 +177,28 @@ export default function CommunityScreen(): React.JSX.Element {
         }
     };
 
+    const handleDeleteComment = async (commentId: number): Promise<void> => {
+        if (selectedPostId === null) {
+            return;
+        }
+
+        try {
+            await deleteComment(selectedPostId, commentId);
+            setComments((prev) => prev.filter((comment) => comment.id !== commentId));
+            setPosts((prev) => prev.map((post) => (
+                post.id === selectedPostId ? { ...post, commentCount: post.commentCount - 1 } : post
+            )));
+        } catch {
+            window.alert('댓글 삭제에 실패했어요. 잠시 후 다시 시도해주세요');
+        }
+    };
+
     if (viewMode === 'write') {
         return (
             <div className="community-container">
                 <PostWriteForm
                     onSubmit={(input) => { void handleCreatePost(input); }}
-                    onCancel={() => setViewMode('list')}
+                    onCancel={() => window.history.back()}
                 />
             </div>
         );
@@ -168,7 +214,7 @@ export default function CommunityScreen(): React.JSX.Element {
                     initialTitle={selectedPost.title}
                     initialContent={selectedPost.content}
                     onSubmit={(input) => { void handleUpdatePost(input); }}
-                    onCancel={() => setViewMode('detail')}
+                    onCancel={() => window.history.back()}
                 />
             </div>
         );
@@ -180,10 +226,11 @@ export default function CommunityScreen(): React.JSX.Element {
                 <PostDetail
                     post={selectedPost}
                     comments={comments}
-                    onBack={() => setViewMode('list')}
+                    onBack={() => window.history.back()}
                     onAddComment={(content) => { void handleAddComment(content); }}
-                    onEdit={() => setViewMode('edit')}
+                    onEdit={goToEdit}
                     onDelete={() => { void handleDeletePost(); }}
+                    onDeleteComment={(commentId) => { void handleDeleteComment(commentId); }}
                 />
             </div>
         );
@@ -193,7 +240,7 @@ export default function CommunityScreen(): React.JSX.Element {
         <div className="community-container">
             <div className="community-header">
                 <h1 className="community-title">커뮤니티</h1>
-                <button type="button" className="write-btn" onClick={() => setViewMode('write')}>글쓰기</button>
+                <button type="button" className="write-btn" onClick={goToWrite}>글쓰기</button>
             </div>
 
             <div className="community-category-tabs">
