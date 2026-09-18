@@ -22,11 +22,14 @@ public class KakaoOAuth2UserService extends DefaultOAuth2UserService {
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         OAuth2User oAuth2User = super.loadUser(userRequest);
 
-        String socialId = String.valueOf(oAuth2User.getAttribute("id"));
+        Object idAttribute = oAuth2User.getAttribute("id");
+        String socialId = String.valueOf(idAttribute);
 
         Map<String, Object> kakaoAccount = oAuth2User.getAttribute("kakao_account");
         Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
-        String email = (String) kakaoAccount.get("email");
+
+        String rawEmail = (String) kakaoAccount.get("email");
+        String email = (rawEmail != null) ? rawEmail : "kakao_" + socialId + "@winningpick.local";
         String nickname = (String) profile.get("nickname");
 
         memberRepository.findBySocialIdAndProvider(socialId, ProviderType.KAKAO)
