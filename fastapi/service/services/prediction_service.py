@@ -1,5 +1,6 @@
 from typing import Any, Protocol
 
+from core.llm_service import LLMGenerationError, LLMService
 from service.preprocessor.postgres_repository import PostgresPredictionRepository
 from service.prompts.win_prediction_prompt import (
     WIN_PREDICTION_SYSTEM_PROMPT,
@@ -8,6 +9,7 @@ from service.prompts.win_prediction_prompt import (
 from service.schemas.prediction_schema import (
     HitterStatSchema,
     PitcherStatSchema,
+    PredictionResultDataSchema,
     PreparePromptDataSchema,
     PreprocessedMatchupSchema,
     TeamStatSchema,
@@ -18,10 +20,18 @@ class PredictionRepository(Protocol):
     def get_matchup_stats(self, game_id: int) -> dict[str, Any]:
         ...
 
+    def save_prediction(self, game_id: int, home_win_prob: float, summary_comment: str) -> None:
+        ...
+
 
 class PredictionService:
-    def __init__(self, repository: PredictionRepository | None = None):
+    def __init__(
+            self,
+            repository: PredictionRepository | None = None,
+            llm_service: LLMService | None = None,
+    ):
         self.repository = repository or PostgresPredictionRepository()
+        self.llm_service = llm_service or LLMService()
 
     def prepare_matchup_prompt(self, game_id: int) -> PreparePromptDataSchema:
         raw_stats = self.repository.get_matchup_stats(game_id)
@@ -47,6 +57,28 @@ class PredictionService:
             systemPrompt=WIN_PREDICTION_SYSTEM_PROMPT,
             userPrompt=user_prompt,
             preprocessedMatchup=matchup_payload,
+        )
+
+    def predict(self, game_id: int) -> PredictionResultDataSchema:
+        prompt_data = self.prepare_matchup_prompt(game_id)
+
+        try:
+            result = self.llm_service.generate_win_summary(
+                prompt_data.systemPrompt,
+                prompt_data.userPrompt,
+            )
+            self.repository.save_prediction(
+                game_id=game_id,
+                home_win_prob=result.homeWinProb,
+                summary_comment=result.summaryComment,
+            )
+        except LLMGenerationError:
+            result = LLMService.get_fallback_response()
+
+        return PredictionResultDataSchema(
+            gameId=game_id,
+            preprocessedMatchup=prompt_data.preprocessedMatchup,
+            result=result,
         )
 
     @staticmethod

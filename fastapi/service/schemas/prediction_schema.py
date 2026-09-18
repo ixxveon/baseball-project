@@ -40,6 +40,17 @@ class PreparePromptDataSchema(BaseModel):
     preprocessedMatchup: PreprocessedMatchupSchema
 
 
+class WinPredictionResultSchema(BaseModel):
+    homeWinProb: float
+    summaryComment: str
+
+
+class PredictionResultDataSchema(BaseModel):
+    gameId: int
+    preprocessedMatchup: PreprocessedMatchupSchema
+    result: WinPredictionResultSchema
+
+
 T = TypeVar("T")
 
 

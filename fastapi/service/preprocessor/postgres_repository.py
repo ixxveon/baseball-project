@@ -100,3 +100,13 @@ class PostgresPredictionRepository:
             }
             for r in rows
         ]
+
+    def save_prediction(self, game_id: int, home_win_prob: float, summary_comment: str) -> None:
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO ai_predictions (game_id, home_win_prob, summary_comment)
+                VALUES (%s, %s, %s);
+                """,
+                (game_id, home_win_prob, summary_comment),
+            )
