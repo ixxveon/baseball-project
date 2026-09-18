@@ -1,8 +1,8 @@
 package kr.co.winningpick.global.config;
 
 import kr.co.winningpick.domain.member.oauth.CustomOAuth2UserService;
-import kr.co.winningpick.domain.member.oauth.KakaoOAuth2UserService;
 import kr.co.winningpick.domain.member.oauth.OAuth2LoginSuccessHandler;
+import kr.co.winningpick.domain.member.oauth.SocialOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,7 +19,7 @@ public class SecurityConfig {
 
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
-    private final KakaoOAuth2UserService kakaoOAuth2UserService;
+    private final SocialOAuth2UserService socialOAuth2UserService;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -30,7 +30,7 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo
                                 .oidcUserService(customOAuth2UserService)
-                                .userService(kakaoOAuth2UserService)
+                                .userService(socialOAuth2UserService)
                         )
                         .successHandler(oAuth2LoginSuccessHandler)
                 );

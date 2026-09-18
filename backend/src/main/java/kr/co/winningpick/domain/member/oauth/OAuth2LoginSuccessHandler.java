@@ -14,6 +14,7 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -41,6 +42,10 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     private String extractSocialId(OAuth2User oAuth2User, ProviderType provider) {
         if (provider == ProviderType.GOOGLE) {
             return oAuth2User.getAttribute("sub");
+        }
+        if (provider == ProviderType.NAVER) {
+            Map<String, Object> response = oAuth2User.getAttribute("response");
+            return (String) response.get("id");
         }
         Object id = oAuth2User.getAttribute("id");
         return String.valueOf(id);
