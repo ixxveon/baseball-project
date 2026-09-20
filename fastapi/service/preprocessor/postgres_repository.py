@@ -56,7 +56,9 @@ class PostgresPredictionRepository:
             away_pitcher = self._fetch_starter(cur, game_id, game["away_team_id"])
             home_hitters = self._fetch_team_hitters(cur, game["home_team_id"])
             away_hitters = self._fetch_team_hitters(cur, game["away_team_id"])
-            head_to_head = self._fetch_head_to_head(cur, game["home_team_id"], game["away_team_id"])
+            head_to_head = self._fetch_head_to_head(
+                cur, game["home_team_id"], game["away_team_id"], game["match_date"]
+            )
 
         return {
             "match_date": game["match_date"],
@@ -80,17 +82,18 @@ class PostgresPredictionRepository:
             )
 
     @staticmethod
-    def _fetch_head_to_head(cur, home_team_id: int, away_team_id: int) -> dict[str, int]:
+    def _fetch_head_to_head(cur, home_team_id: int, away_team_id: int, season_match_date) -> dict[str, int]:
         cur.execute(
             """
             SELECT home_team_id, away_team_id, home_score, away_score
             FROM games
             WHERE status = 'FINISHED'
               AND home_score IS NOT NULL AND away_score IS NOT NULL
+              AND EXTRACT(YEAR FROM match_date) = EXTRACT(YEAR FROM %s::date)
               AND ((home_team_id = %s AND away_team_id = %s)
                 OR (home_team_id = %s AND away_team_id = %s))
             """,
-            (home_team_id, away_team_id, away_team_id, home_team_id),
+            (season_match_date, home_team_id, away_team_id, away_team_id, home_team_id),
         )
         rows = cur.fetchall()
 

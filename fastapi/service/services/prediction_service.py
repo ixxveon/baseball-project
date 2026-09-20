@@ -31,7 +31,13 @@ class PredictionRepository(Protocol):
     def get_matchup_stats(self, game_id: int) -> dict[str, Any]:
         ...
 
-    def save_prediction(self, game_id: int, home_win_prob: float, result_json: dict[str, Any]) -> None:
+    def save_prediction(
+            self,
+            game_id: int,
+            home_win_prob: float,
+            result_json: dict[str, Any],
+            recommendation_score: int,
+    ) -> None:
         ...
 
     def get_cached_prediction(self, game_id: int) -> dict[str, Any] | None:
@@ -111,7 +117,7 @@ class PredictionService:
         cached = self.repository.get_cached_prediction(game_id)
         if cached is not None:
             result = WinPredictionResultSchema.model_validate(cached["result_json"])
-            recommendation_score = calculate_recommendation_score(result.homeWinProb, weather_adjustment)
+            recommendation_score = cached["recommendation_score"]
         else:
             try:
                 result = self.llm_service.generate_win_summary(

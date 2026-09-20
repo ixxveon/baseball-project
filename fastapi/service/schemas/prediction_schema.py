@@ -1,6 +1,6 @@
 from typing import Generic, TypeVar
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class PitcherStatSchema(BaseModel):
@@ -91,8 +91,8 @@ class WinPredictionSummarySchema(BaseModel):
 
 
 class WinPredictionResultSchema(BaseModel):
-    homeWinProb: float
-    scorePredict: str
+    homeWinProb: float = Field(ge=0, le=100)
+    scorePredict: str = Field(pattern=r"^(\d+:\d+|-:-)$")
     summary: WinPredictionSummarySchema
 
 

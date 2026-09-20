@@ -270,6 +270,31 @@ class DatabaseSaver:
         import psycopg2
         return psycopg2.connect(**self.db_config)
 
+    DAILY_BATCH_LOCK_ID = 727501001
+
+    def try_acquire_daily_batch_lock(self):
+        if self.dry_run:
+            return None
+
+        conn = self._connect()
+        conn.autocommit = True
+        with conn.cursor() as cur:
+            cur.execute("SELECT pg_try_advisory_lock(%s);", (self.DAILY_BATCH_LOCK_ID,))
+            acquired = cur.fetchone()[0]
+
+        if not acquired:
+            conn.close()
+            return None
+        return conn
+
+    @staticmethod
+    def release_daily_batch_lock(conn) -> None:
+        if conn is None:
+            return
+        with conn.cursor() as cur:
+            cur.execute("SELECT pg_advisory_unlock(%s);", (DatabaseSaver.DAILY_BATCH_LOCK_ID,))
+        conn.close()
+
     def save_teams(self, teams: list[dict], stadium_index: dict[str, int]):
         stadium_id_to_name = {sid: name for name, sid in stadium_index.items()}
         stadium_id_to_coords = {}
@@ -346,6 +371,15 @@ class DatabaseSaver:
         with self._connect() as conn, conn.cursor() as cur:
             cur.execute("SELECT 1 FROM batch_run_log WHERE run_date = %s;", (run_date,))
             return cur.fetchone() is not None
+
+    def get_last_run_date(self):
+        if self.dry_run:
+            return None
+
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute("SELECT MAX(run_date) FROM batch_run_log;")
+            row = cur.fetchone()
+            return row[0] if row else None
 
     def record_run(self, run_date) -> None:
         if self.dry_run:
