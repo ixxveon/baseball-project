@@ -32,21 +32,37 @@ export default function AiSummary({ favoriteTeam }: AiSummaryProps): React.JSX.E
     const [showFullReport, setShowFullReport] = useState<boolean>(false);
 
     useEffect(() => {
-        if (!targetGame) return;
+        if (gameLoading) return;
 
+        if (!targetGame) {
+            setData(null);
+            setError(null);
+            setLoading(false);
+            return;
+        }
+
+        let cancelled = false;
         setLoading(true);
         setError(null);
 
         fetchGameAnalysis(String(targetGame.gameId))
             .then((result) => {
+                if (cancelled) return;
                 setData(result);
                 setLoading(false);
             })
             .catch(() => {
+                if (cancelled) return;
                 setError('AI 분석 데이터를 불러오는 데 실패했습니다.');
                 setLoading(false);
             });
-    }, [targetGame]);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [targetGame, gameLoading]);
+
+    const noGame = !gameLoading && !loading && !error && !targetGame;
 
     const items: SummaryItem[] = data ? [
         { label: '선발 투수 분석', content: data.summary.pitcherComparison },
@@ -66,6 +82,10 @@ export default function AiSummary({ favoriteTeam }: AiSummaryProps): React.JSX.E
 
                 {error && (
                     <p className="ai-summary-error">{error}</p>
+                )}
+
+                {noGame && (
+                    <p className="ai-summary-status">표시할 예정 경기가 없습니다.</p>
                 )}
 
                 {!gameLoading && !loading && !error && data && (

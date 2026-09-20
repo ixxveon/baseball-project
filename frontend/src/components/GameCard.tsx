@@ -7,17 +7,27 @@ interface GameCardProps {
 }
 
 export default function GameCard({ game, onClick }: GameCardProps): React.JSX.Element {
-    return (
-        <div
-            className="game-card"
-            onClick={() => onClick?.(game.gameId)}
-            style={onClick ? { cursor: 'pointer' } : undefined}
-        >
+    const content = (
+        <>
             <span>{game.matchDate}</span>
             <span>{game.homeTeamName} vs {game.awayTeamName}</span>
             <span>
                 추천점수: {game.recommendationScore !== null ? `${game.recommendationScore}점` : '계산중'}
             </span>
-        </div>
+        </>
+    );
+
+    if (!onClick) {
+        return <div className="game-card">{content}</div>;
+    }
+
+    return (
+        <button
+            type="button"
+            className="game-card game-card-button"
+            onClick={() => onClick(game.gameId)}
+        >
+            {content}
+        </button>
     );
 }

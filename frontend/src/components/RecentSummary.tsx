@@ -13,17 +13,24 @@ export default function RecentSummary({ teamId }: RecentSummaryProps): React.JSX
     useEffect(() => {
         if (teamId === null) return;
 
+        let cancelled = false;
         setLoading(true);
         setError(null);
         fetchRecentRecord(teamId)
             .then((result) => {
+                if (cancelled) return;
                 setRecord(result);
                 setLoading(false);
             })
             .catch(() => {
+                if (cancelled) return;
                 setError('최근 성적을 불러오는 데 실패했습니다.');
                 setLoading(false);
             });
+
+        return () => {
+            cancelled = true;
+        };
     }, [teamId]);
 
     return (

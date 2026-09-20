@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { fetchGameAnalysis, GameAnalysisData } from '../api/analysisApi.ts';
 
 interface AnalysisScreenProps {
     gameId: string | null;
     onClose: () => void;
 }
+
+const FOCUSABLE_SELECTOR =
+    'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
 
 export default function AnalysisScreen({
                                            gameId,
@@ -13,6 +16,9 @@ export default function AnalysisScreen({
     const [data, setData] = useState<GameAnalysisData | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const modalContainerRef = useRef<HTMLDivElement>(null);
+    const closeButtonRef = useRef<HTMLButtonElement>(null);
+    const previouslyFocusedElementRef = useRef<HTMLElement | null>(null);
 
     // 데이터 조회 - gameId가 바뀌거나 언마운트되면 이전 요청 결과는 무시(취소 플래그)
     useEffect(() => {
@@ -64,13 +70,43 @@ export default function AnalysisScreen({
         };
     }, [gameId]);
 
-    // ESC로 닫기 + 배경 스크롤 잠금 (모달이 실제로 떠 있을 때만)
+    // ESC로 닫기 + 배경 스크롤 잠금 + 포커스 이동/트랩 (모달이 실제로 떠 있을 때만)
     useEffect(() => {
         if (!gameId) return;
+
+        previouslyFocusedElementRef.current = document.activeElement as HTMLElement | null;
+        closeButtonRef.current?.focus();
+
+        const getFocusableElements = (): HTMLElement[] => {
+            const container = modalContainerRef.current;
+            if (!container) return [];
+            return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+        };
 
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 onClose();
+                return;
+            }
+
+            if (e.key !== 'Tab') return;
+
+            const focusable = getFocusableElements();
+            if (focusable.length === 0) return;
+
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            const active = document.activeElement;
+            const activeInsideModal = active instanceof Node && modalContainerRef.current?.contains(active);
+
+            if (e.shiftKey) {
+                if (!activeInsideModal || active === first) {
+                    e.preventDefault();
+                    last.focus();
+                }
+            } else if (!activeInsideModal || active === last) {
+                e.preventDefault();
+                first.focus();
             }
         };
 
@@ -81,6 +117,7 @@ export default function AnalysisScreen({
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
             document.body.style.overflow = previousOverflow;
+            previouslyFocusedElementRef.current?.focus();
         };
     }, [gameId, onClose]);
 
@@ -98,12 +135,14 @@ export default function AnalysisScreen({
             onClick={handleOverlayClick}
         >
             <div
+                ref={modalContainerRef}
                 className="analysis-modal-container"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="analysis-modal-title"
             >
                 <button
+                    ref={closeButtonRef}
                     type="button"
                     onClick={onClose}
                     className="analysis-close-btn"

@@ -11,7 +11,7 @@ const TEAM_RESERVATIONS: TeamReservation[] = [
     { name: '두산 베어스', url: 'https://nol.yanolja.com/ticket/genre/sports/bears' },
     { name: 'KT 위즈', url: 'https://www.ticketlink.co.kr/sports/137/62' },
     { name: 'SSG 랜더스', url: 'https://www.ssglanders.com/game/ticket' },
-    { name: 'NC 다이노스', url: 'https://www.ncdinos.com/' },
+    { name: 'NC 다이노스', url: 'https://ticket.ncdinos.com/' },
     { name: '삼성 라이온즈', url: 'https://www.ticketlink.co.kr/sports/137/57' },
     { name: '롯데 자이언츠', url: 'https://ticket.giantsclub.com/loginForm.do' },
     { name: '한화 이글스', url: 'https://www.ticketlink.co.kr/sports/137/63' },

@@ -31,7 +31,7 @@ export function useTargetGame(favoriteTeam: string): UseTargetGameResult {
         return { targetGame: null, favoriteTeamId: null, loading, isToday: false };
     }
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
 
     const favoriteGameToday = games.find(
         (game) =>
