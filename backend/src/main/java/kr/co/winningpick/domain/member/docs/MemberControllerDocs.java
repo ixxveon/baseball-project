@@ -73,6 +73,19 @@ public interface MemberControllerDocs {
     })
     kr.co.winningpick.global.response.ApiResponse<ResponseReissue> reissue(RequestReissue request);
 
+    @Operation(summary = "내 정보 조회", description = "로그인한 회원의 기본 정보(id, 이메일, 닉네임)를 조회합니다.")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 필요",
+                    content = @Content(examples = @ExampleObject(value = """
+                    {"success":false,"message":"인증이 필요합니다","data":null}"""))),
+            @ApiResponse(responseCode = "404", description = "회원을 찾을 수 없음",
+                    content = @Content(examples = @ExampleObject(value = """
+                    {"success":false,"message":"회원을 찾을 수 없습니다","data":null}""")))
+    })
+    kr.co.winningpick.global.response.ApiResponse<ResponseMyInfo> getMyInfo(Long memberId);
+
     @Operation(summary = "로그아웃", description = "서버에 저장된 Refresh Token을 무효화합니다.")
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
