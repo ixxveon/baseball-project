@@ -41,7 +41,7 @@ export default function LoginPage(): React.JSX.Element {
         try {
             const { accessToken } = await login(form);
             saveAccessToken(accessToken);
-            navigate('/mypage');
+            navigate('/', { replace: true });
         } catch (error: unknown) {
             if (error instanceof AxiosError && error.response) {
                 const responseData = error.response.data as { message?: string };
@@ -97,6 +97,9 @@ export default function LoginPage(): React.JSX.Element {
             <p className="auth-switch-text">
                 아직 계정이 없으신가요?{' '}
                 <Link to="/signup" className="auth-switch-link">회원가입</Link>
+            </p>
+            <p className="auth-switch-text">
+                <Link to="/forgot-password" className="auth-switch-link">비밀번호를 잊으셨나요?</Link>
             </p>
         </AuthLayout>
     );
