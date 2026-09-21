@@ -5,7 +5,6 @@ import kr.co.winningpick.domain.member.docs.MemberControllerDocs;
 import kr.co.winningpick.domain.member.dto.request.RequestConfirmEmailVerification;
 import kr.co.winningpick.domain.member.dto.request.RequestLogin;
 import kr.co.winningpick.domain.member.dto.request.RequestReissue;
-import kr.co.winningpick.domain.member.dto.request.RequestResetPassword;
 import kr.co.winningpick.domain.member.dto.request.RequestSendEmailVerification;
 import kr.co.winningpick.domain.member.dto.request.RequestSignup;
 import kr.co.winningpick.domain.member.dto.response.ResponseEmailVerification;
@@ -20,6 +19,8 @@ import kr.co.winningpick.global.exception.GlobalErrorCode;
 import kr.co.winningpick.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import kr.co.winningpick.domain.member.dto.request.ProfileUpdateRequest;
+import kr.co.winningpick.domain.member.dto.request.RequestResetPassword;
 
 @RestController
 @RequestMapping("/api/v1/members")
@@ -61,6 +62,23 @@ public class MemberController implements MemberControllerDocs {
     public ApiResponse<ResponseLogin> login(@Valid @RequestBody RequestLogin request) {
         ResponseLogin response = memberService.login(request);
         return ApiResponse.success(response);
+    }
+
+    @Override
+    @PatchMapping("/profile")
+    public ApiResponse<Void> updateProfile(
+            // 👇 1. 가짜 값 대신, 필터(인터셉터)가 꽂아주는 로그인 유저 ID를 받아옵니다.
+            @RequestAttribute(name = "memberId", required = false) Long memberId,
+            @Valid @RequestBody ProfileUpdateRequest request) {
+
+        // 👇 2. 로그인하지 않은 사용자(memberId가 null)면 401 UNAUTHORIZED 에러를 던집니다!
+        if (memberId == null) {
+            throw new BusinessException(GlobalErrorCode.UNAUTHORIZED);
+        }
+
+        // 3. 실제 멤버 ID를 Service로 넘겨줍니다.
+        memberService.updateProfile(memberId, request);
+        return ApiResponse.success(null);
     }
 
     @Override
