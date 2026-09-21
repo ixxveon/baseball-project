@@ -10,17 +10,17 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.co.winningpick.domain.community.dto.request.RequestCreatePost;
 import kr.co.winningpick.domain.community.dto.request.RequestUpdatePost;
 import kr.co.winningpick.domain.community.dto.response.ResponsePost;
-
-import java.util.List;
+import kr.co.winningpick.global.response.ResponsePage;
+import org.springframework.data.domain.Pageable;
 
 @Tag(name = "Post", description = "게시글 관련 API")
 public interface PostControllerDocs {
 
-    @Operation(summary = "게시글 목록 조회", description = "전체 게시글을 최신순으로 조회합니다.")
+    @Operation(summary = "게시글 목록 조회", description = "게시글을 페이지 단위로 조회합니다. gameId를 주면 그 경기 게시글만 조회합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공")
     })
-    kr.co.winningpick.global.response.ApiResponse<List<ResponsePost>> getPosts();
+    kr.co.winningpick.global.response.ApiResponse<ResponsePage<ResponsePost>> getPosts(Long gameId, Pageable pageable);
 
     @Operation(summary = "게시글 작성", description = "새 게시글을 작성합니다.")
     @SecurityRequirement(name = "bearerAuth")
