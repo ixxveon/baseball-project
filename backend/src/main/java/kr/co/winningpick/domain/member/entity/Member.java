@@ -77,4 +77,14 @@ public class Member {
         member.pushAlarmEnabled = false;
         return member;
     }
+
+    public static Member createSocialMember(String email, String nickname, ProviderType provider, String socialId) {
+        Member member = new Member();
+        member.email = email;
+        member.nickname = nickname;
+        member.provider = provider;
+        member.socialId = socialId;
+        member.pushAlarmEnabled = false;
+        return member;
+    }
 }
