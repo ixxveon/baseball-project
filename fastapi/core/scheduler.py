@@ -33,18 +33,17 @@ def _precompute_predictions() -> None:
         try:
             service.predict(game_id=g.gameId)
             success += 1
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             failures.append(e)
             print(f"[스케줄러] game_id={g.gameId} 사전계산 실패:\n{traceback.format_exc()}")
 
     print(f"[스케줄러] 사전계산 완료 - 성공 {success}건, 실패 {len(failures)}건")
 
     if failures:
-        raise ExceptionGroup(
+        raise RuntimeError(
             f"경기 사전계산 {len(failures)}건 실패 (대상 {len(games)}건 중) - "
-            "실패한 경기는 다음 배치에서 자동으로 재시도됩니다",
-            failures,
-        )
+            "실패한 경기는 다음 배치에서 자동으로 재시도됩니다"
+        ) from failures[0]
 
 
 def _pending_run_dates(db_saver: DatabaseSaver, target_date: date) -> list[date]:
