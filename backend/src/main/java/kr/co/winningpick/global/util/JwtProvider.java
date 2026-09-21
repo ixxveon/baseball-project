@@ -1,6 +1,6 @@
 package kr.co.winningpick.global.util;
 
-import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Claims; // 👈 누락됐던 import 추가
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,19 +13,25 @@ import java.util.Date;
 @Component
 public class JwtProvider {
 
-    private static final Duration ACCESS_TOKEN_VALIDITY = Duration.ofHours(1);
 
     private static final Duration REFRESH_TOKEN_VALIDITY = Duration.ofDays(14);
 
     private final SecretKey secretKey;
 
-    public JwtProvider(@Value("${jwt.secret}") String secret) {
+    private final Duration accessTokenValidity;
+
+
+    public JwtProvider(
+            @Value("${jwt.secret}") String secret,
+            @Value("${jwt.access-token-validity-in-seconds}") long validityInSeconds
+    ) {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes());
+        this.accessTokenValidity = Duration.ofSeconds(validityInSeconds);
     }
 
     public String createAccessToken(Long memberId) {
         Date now = new Date();
-        Date expiry = new Date(now.getTime() + ACCESS_TOKEN_VALIDITY.toMillis());
+        Date expiry = new Date(now.getTime() + accessTokenValidity.toMillis());
 
         return Jwts.builder()
                 .subject(String.valueOf(memberId))
@@ -34,6 +40,7 @@ public class JwtProvider {
                 .signWith(secretKey)
                 .compact();
     }
+
 
     public String createRefreshToken(Long memberId) {
         Date now = new Date();
@@ -47,6 +54,7 @@ public class JwtProvider {
                 .compact();
     }
 
+
     public Long getMemberId(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(secretKey)
@@ -58,8 +66,11 @@ public class JwtProvider {
     }
 
     public Duration getAccessTokenValidity() {
-        return ACCESS_TOKEN_VALIDITY;
+        return accessTokenValidity;
     }
 
-    public Duration getRefreshTokenValidity() { return REFRESH_TOKEN_VALIDITY; }
+
+    public Duration getRefreshTokenValidity() {
+        return REFRESH_TOKEN_VALIDITY;
+    }
 }
