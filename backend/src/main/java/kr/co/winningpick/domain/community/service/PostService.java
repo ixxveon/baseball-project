@@ -9,7 +9,10 @@ import kr.co.winningpick.domain.community.repository.CommentRepository;
 import kr.co.winningpick.domain.community.repository.PostRepository;
 import kr.co.winningpick.domain.member.entity.Member;
 import kr.co.winningpick.global.exception.BusinessException;
+import kr.co.winningpick.global.response.ResponsePage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,11 +26,11 @@ public class PostService {
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
 
-    public List<ResponsePost> getPosts() {
-        return postRepository.findAllWithAuthorAndCommentCountOrderByCreatedAtDesc()
-                .stream()
-                .map(row -> ResponsePost.from((Post) row[0], (Long) row[1]))
-                .toList();
+    public ResponsePage<ResponsePost> getPosts(Long gameId, Pageable pageable) {
+        Page<Object[]> page = postRepository.findAllWithAuthorAndCommentCount(gameId, pageable);
+        Page<ResponsePost> responsePage = page.map(row ->
+                ResponsePost.from((Post) row[0], (Long) row[1]));
+        return ResponsePage.from(responsePage);
     }
 
     @Transactional

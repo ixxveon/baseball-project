@@ -1,8 +1,10 @@
 package kr.co.winningpick.domain.member.service;
 
 import kr.co.winningpick.domain.member.dto.request.RequestLogin;
+import kr.co.winningpick.domain.member.dto.request.RequestResetPassword;
 import kr.co.winningpick.domain.member.dto.request.RequestSignup;
 import kr.co.winningpick.domain.member.dto.response.ResponseLogin;
+import kr.co.winningpick.domain.member.dto.response.ResponseReissue;
 import kr.co.winningpick.domain.member.dto.response.ResponseSignup;
 import kr.co.winningpick.domain.member.entity.Member;
 import kr.co.winningpick.domain.member.exception.MemberErrorCode;
@@ -13,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -97,7 +100,50 @@ public class MemberService {
 
         String accessToken = jwtProvider.createAccessToken(member.getId());
         LocalDateTime expiresAt = LocalDateTime.now().plus(jwtProvider.getAccessTokenValidity());
+        String refreshToken = jwtProvider.createRefreshToken(member.getId());
+        stringRedisTemplate.opsForValue().set(
+                refreshTokenKey(member.getId()),refreshToken, jwtProvider.getRefreshTokenValidity());
 
-        return new ResponseLogin(accessToken, expiresAt);
+
+        return new ResponseLogin(accessToken, expiresAt, refreshToken);
+    }
+
+    public ResponseReissue reissue(String refreshToken) {
+        Long memberId;
+        try {
+            memberId = jwtProvider.getMemberId(refreshToken);
+        } catch (Exception e) {
+            throw new BusinessException(MemberErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        String savedToken = stringRedisTemplate.opsForValue().get(refreshTokenKey(memberId));
+        if (savedToken == null || !savedToken.equals(refreshToken)) {
+            throw new BusinessException(MemberErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        String newAccessToken = jwtProvider.createAccessToken(memberId);
+        LocalDateTime expiresAt = LocalDateTime.now().plus(jwtProvider.getAccessTokenValidity());
+        return new ResponseReissue(newAccessToken, expiresAt);
+    }
+
+    public void logout(Long memberId) {
+        stringRedisTemplate.delete(refreshTokenKey(memberId));
+    }
+
+    private String refreshTokenKey(Long memberId) {
+        return "refresh-token:" + memberId;
+    }
+
+    @Transactional
+    public void resetPassword(RequestResetPassword request) {
+        String verified = stringRedisTemplate.opsForValue().get(verifiedKey(request.email()));
+        if (verified == null) {
+            throw new BusinessException(MemberErrorCode.EMAIL_NOT_VERIFIED);
+        }
+
+        Member member = memberRepository.findByEmail(request.email())
+                .orElseThrow(() -> new BusinessException(MemberErrorCode.LOGIN_FAILED));
+
+        member.changePassword(passwordEncoder.encode(request.newPassword()));
     }
 }
