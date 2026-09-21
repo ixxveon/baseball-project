@@ -78,7 +78,6 @@ class WeatherService:
                 closest = block
                 closest_diff = diff
 
-        # 예보 제공 범위(대략 5일) 밖이면 가장 가까운 블록도 몇 시간 이상 차이나므로 컷오프
         if closest is None or closest_diff > 3 * 3600 + 1800:
             return None
 
