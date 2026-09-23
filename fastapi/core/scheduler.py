@@ -1,4 +1,3 @@
-import os
 import traceback
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -6,20 +5,11 @@ from zoneinfo import ZoneInfo
 from apscheduler.events import EVENT_JOB_ERROR
 from apscheduler.schedulers.background import BackgroundScheduler
 
+from core.config import settings
 from service.preprocessor.stat_preprocessor import DatabaseSaver, run_daily_update
 from service.services.prediction_service import PredictionService
 
 KST = ZoneInfo("Asia/Seoul")
-
-
-def _db_config() -> dict[str, str]:
-    return {
-        "host": os.environ.get("PGHOST", "localhost"),
-        "port": os.environ.get("PGPORT", "5432"),
-        "dbname": os.environ.get("PGDATABASE", "winningpick"),
-        "user": os.environ.get("PGUSER", "postgres"),
-        "password": os.environ.get("PGPASSWORD", ""),
-    }
 
 
 def _precompute_predictions() -> None:
@@ -63,7 +53,7 @@ def _pending_run_dates(db_saver: DatabaseSaver, target_date: date) -> list[date]
 
 def run_daily_batch_job() -> None:
     target_date = datetime.now(tz=KST).date() - timedelta(days=1)
-    db_config = _db_config()
+    db_config = settings.db_config()
     db_saver = DatabaseSaver(db_config, dry_run=False)
 
     lock_conn = db_saver.try_acquire_daily_batch_lock()

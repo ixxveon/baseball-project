@@ -3,6 +3,8 @@ from zoneinfo import ZoneInfo
 
 import httpx
 
+from core.config import settings
+
 KST = ZoneInfo("Asia/Seoul")
 
 # OpenWeather 'main' 값 -> 한국어 표기
@@ -32,16 +34,11 @@ class WeatherService:
     BASE_URL = "https://api.openweathermap.org/data/2.5/forecast"
 
     def __init__(self, api_key: str | None = None):
-        import os
         self._api_key_override = api_key
-        self._env_key = lambda: os.environ.get("OPENWEATHER_API_KEY")
 
     @property
     def api_key(self) -> str:
-        key = self._api_key_override or self._env_key()
-        if not key:
-            raise RuntimeError("필수 환경변수 OPENWEATHER_API_KEY가 설정되지 않았습니다.")
-        return key
+        return self._api_key_override or settings.require_openweather_api_key()
 
     def get_forecast(self, lat: float, lon: float, target_date: date, target_hour: int = 18) -> dict | None:
         params = {

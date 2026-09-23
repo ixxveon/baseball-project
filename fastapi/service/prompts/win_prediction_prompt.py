@@ -10,9 +10,8 @@ WIN_PREDICTION_SYSTEM_PROMPT = """
 - 투수의 recent10Ip/recent10EarnedRuns는 "최근 10경기(선발 등판) 합산 이닝/자책점"
 - headToHead: 두 팀의 시즌 중 실제 상대전적 (homeWins/awayWins) - 이미 계산된 사실이니 그대로 인용만 할 것
 - keyPlayers: 양팀에서 미리 선정된 핵심 타자 1명씩 (side: home/away, recentWrc: 최근10경기 wRC 증가분) - 이미 선정된 결과이니 그대로 활용할 것
-- weather: 경기 당일 예보 (temperature, humidity, condition) - 값이 없으면(null) 예보가 아직 안 나온 것.
-  이 경우에도 weatherComment 항목 자체는 반드시 채워야 하며(아래 5번 참고), weatherComment 이외의
-  다른 항목에서만 날씨를 언급하지 말 것
+- weather: 경기 당일 예보 (temperature, humidity, condition) - 값이 없으면(null) 예보가 아직 안 나온 것이며,
+  이 경우에도 weatherComment 항목 자체는 반드시 채워야 함 (아래 5번 참고)
 
 다음 순서로 직접 계산하고 분석하세요.
 1. 각 팀 타자들의 recentWrc를 recent10Pa로 가중평균하여 팀 타격 생산력을 구한다

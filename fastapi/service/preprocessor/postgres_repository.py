@@ -1,10 +1,11 @@
-import os
 from datetime import datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
 import psycopg2
 import psycopg2.extras
+
+from core.config import settings
 
 PREDICTION_WINDOW_DAYS = 14
 
@@ -17,21 +18,8 @@ class PostgresPredictionRepository:
     def __init__(self, dsn: str | None = None):
         self._dsn_override = dsn
 
-    @staticmethod
-    def _dsn_from_env() -> str:
-        password = os.environ.get("PGPASSWORD")
-        if not password:
-            raise RuntimeError("필수 환경변수 PGPASSWORD가 설정되지 않았습니다.")
-        return (
-            f"host={os.environ.get('PGHOST', 'localhost')} "
-            f"port={os.environ.get('PGPORT', '5432')} "
-            f"dbname={os.environ.get('PGDATABASE', 'winningpick')} "
-            f"user={os.environ.get('PGUSER', 'postgres')} "
-            f"password={password}"
-        )
-
     def _connect(self):
-        dsn = self._dsn_override or self._dsn_from_env()
+        dsn = self._dsn_override or settings.db_dsn()
         return psycopg2.connect(dsn)
 
     def get_matchup_stats(self, game_id: int) -> dict[str, Any]:
