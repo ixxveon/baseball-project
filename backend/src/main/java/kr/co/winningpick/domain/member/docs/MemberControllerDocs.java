@@ -94,7 +94,7 @@ public interface MemberControllerDocs {
     })
     kr.co.winningpick.global.response.ApiResponse<ResponseReissue> reissue(RequestReissue request);
 
-    @Operation(summary = "내 정보 조회", description = "로그인한 회원의 기본 정보(id, 이메일, 닉네임)를 조회합니다.")
+    @Operation(summary = "내 정보 조회", description = "로그인한 회원의 정보(id, 이메일, 닉네임, 최애 구단 id, 알림 설정 여부)를 조회합니다.")
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공"),
