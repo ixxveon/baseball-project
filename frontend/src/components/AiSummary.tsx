@@ -1,104 +1,123 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useTargetGame } from '../hooks/useTargetGame';
+import { fetchGameAnalysis, GameAnalysisData } from '../api/analysisApi';
+import AnalysisScreen from './AnalysisScreen';
 
 interface AiSummaryProps {
-    onOpenModal?: () => void;
+    favoriteTeam: string;
 }
 
-export default function AiSummary({ onOpenModal }: AiSummaryProps): React.JSX.Element {
+interface SummaryItem {
+    label: string;
+    content: string;
+}
+
+function SummaryRow({ label, content }: SummaryItem): React.JSX.Element {
     return (
-        <div className="ai-summary-card" style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '16px',
-            padding: '24px',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            boxSizing: 'border-box',
-            height: '100%'
-        }}>
+        <div className="ai-summary-row">
+            <div className="ai-summary-row-bar" />
             <div>
-                {/* 상단 타이틀 */}
-                <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span>🤖</span> AI 분석 요약
-                </h3>
-
-                {/* 리스트 아이템 4개 */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div>
-                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
-                            👤 선발 투수 우세
-                        </div>
-                        <p style={{ margin: 0, fontSize: '13px', color: '#64748b', lineHeight: '1.5' }}>
-                            LG 선발 투수의 최근 3경기 ERA가 2.45로 두산 선발(4.31)보다 우세합니다.
-                        </p>
-                    </div>
-
-                    <div>
-                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
-                            ✏️ 타선 흐름 우세
-                        </div>
-                        <p style={{ margin: 0, fontSize: '13px', color: '#64748b', lineHeight: '1.5' }}>
-                            LG의 최근 5경기 팀 OPS가 0.812로 두산(0.721)보다 좋습니다.
-                        </p>
-                    </div>
-
-                    <div>
-                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
-                            🏠 홈 경기 이점
-                        </div>
-                        <p style={{ margin: 0, fontSize: '13px', color: '#64748b', lineHeight: '1.5' }}>
-                            LG는 잠실야구장에서 올 시즌 68%의 승률을 기록 중입니다.
-                        </p>
-                    </div>
-
-                    <div>
-                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
-                            ☀️ 날씨 분석
-                        </div>
-                        <p style={{ margin: 0, fontSize: '13px', color: '#64748b', lineHeight: '1.5' }}>
-                            맑고 기온 28℃, 바람 2m/s로 야구 관람에 최적의 날씨입니다.
-                        </p>
-                    </div>
-                </div>
+                <div className="ai-summary-row-label">{label}</div>
+                <p className="ai-summary-row-content">{content}</p>
             </div>
+        </div>
+    );
+}
 
-            {/* 하단 채우기 영역: AI 종합 총평 + 모달 버튼 */}
-            <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{
-                    backgroundColor: '#f8fafc',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '10px',
-                    padding: '12px 14px',
-                    fontSize: '13px',
-                    color: '#334155',
-                    fontWeight: '600',
-                    lineHeight: '1.4'
-                }}>
-                    💡 <span style={{ color: '#e11d48', fontWeight: '800' }}>AI 종합:</span> 홈 이점과 선발 우세로 LG 승리가 매우 유력한 경기입니다.
-                </div>
+export default function AiSummary({ favoriteTeam }: AiSummaryProps): React.JSX.Element {
+    const { targetGame, loading: gameLoading } = useTargetGame(favoriteTeam);
+    const [data, setData] = useState<GameAnalysisData | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
+    const [showFullReport, setShowFullReport] = useState<boolean>(false);
 
-                {onOpenModal && (
-                    <button
-                        type="button"
-                        onClick={onOpenModal}
-                        style={{
-                            width: '100%',
-                            padding: '12px',
-                            backgroundColor: '#0f172a',
-                            color: '#ffffff',
-                            border: 'none',
-                            borderRadius: '10px',
-                            fontSize: '13px',
-                            fontWeight: '700',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        AI 전력 분석 전체 보고서 보기 →
-                    </button>
+    useEffect(() => {
+        if (gameLoading) return;
+
+        if (!targetGame) {
+            setData(null);
+            setError(null);
+            setLoading(false);
+            return;
+        }
+
+        let cancelled = false;
+        setLoading(true);
+        setError(null);
+
+        fetchGameAnalysis(String(targetGame.gameId))
+            .then((result) => {
+                if (cancelled) return;
+                setData(result);
+                setLoading(false);
+            })
+            .catch(() => {
+                if (cancelled) return;
+                setError('AI 분석 데이터를 불러오는 데 실패했습니다.');
+                setLoading(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [targetGame, gameLoading]);
+
+    const noGame = !gameLoading && !loading && !error && !targetGame;
+
+    const items: SummaryItem[] = data ? [
+        { label: '선발 투수 분석', content: data.summary.pitcherComparison },
+        { label: '타선 흐름', content: data.summary.battingComparison },
+        { label: '상대전적', content: data.summary.headToHead },
+        { label: '날씨', content: data.summary.weatherComment },
+    ] : [];
+
+    return (
+        <div className="ai-summary-card">
+            <div>
+                <h3 className="ai-summary-title">AI 분석 요약</h3>
+
+                {(gameLoading || loading) && (
+                    <p className="ai-summary-status">분석 중입니다...</p>
+                )}
+
+                {error && (
+                    <p className="ai-summary-error">{error}</p>
+                )}
+
+                {noGame && (
+                    <p className="ai-summary-status">표시할 예정 경기가 없습니다.</p>
+                )}
+
+                {!gameLoading && !loading && !error && data && (
+                    <div>
+                        {items.map((item) => (
+                            <SummaryRow key={item.label} label={item.label} content={item.content} />
+                        ))}
+                    </div>
                 )}
             </div>
+
+            {!gameLoading && !loading && !error && data && (
+                <div className="ai-summary-footer">
+                    <div className="ai-summary-verdict">
+                        <span className="ai-summary-verdict-label">AI 종합</span>{' '}
+                        홈팀 예상 승률 {data.homeWinProb}%, 예상 스코어 {data.scorePredict}
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={() => setShowFullReport(true)}
+                        className="ai-summary-detail-btn"
+                    >
+                        상세분석 보기 →
+                    </button>
+                </div>
+            )}
+
+            <AnalysisScreen
+                gameId={showFullReport && targetGame ? String(targetGame.gameId) : null}
+                onClose={() => setShowFullReport(false)}
+            />
         </div>
     );
 }

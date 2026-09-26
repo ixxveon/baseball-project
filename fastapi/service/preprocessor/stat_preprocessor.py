@@ -80,10 +80,18 @@ class RosterHtmlParser:
         for tr in soup.select("table.tData tbody tr"):
             tds = tr.find_all("td")
             score_txt = tds[5].get_text(strip=True)
-            if score_txt == "vs":
+            if score_txt in ("vs", "-:-"):
                 home_score = away_score = None
             else:
                 home_score, away_score = (int(x) for x in score_txt.split(":"))
+
+            status_txt = tds[7].get_text(strip=True)
+            if status_txt == "경기종료":
+                status = "FINISHED"
+            elif status_txt == "우천취소":
+                status = "CANCELED"
+            else:
+                status = "SCHEDULED"
 
             games.append({
                 "game_id": int(tds[0].get_text(strip=True)),
@@ -92,7 +100,7 @@ class RosterHtmlParser:
                 "stadium_id": stadium_index[tds[3].get_text(strip=True)],
                 "home_team_id": abbr_to_id[tds[4].get_text(strip=True)],
                 "away_team_id": abbr_to_id[tds[6].get_text(strip=True)],
-                "status": "FINISHED" if tds[7].get_text(strip=True) == "경기종료" else "SCHEDULED",
+                "status": status,
                 "is_weather_warning": tds[8].get_text(strip=True) == "우천특보",
                 "home_score": home_score,
                 "away_score": away_score,
@@ -262,6 +270,31 @@ class DatabaseSaver:
         import psycopg2
         return psycopg2.connect(**self.db_config)
 
+    DAILY_BATCH_LOCK_ID = 727501001
+
+    def try_acquire_daily_batch_lock(self):
+        if self.dry_run:
+            return None
+
+        conn = self._connect()
+        conn.autocommit = True
+        with conn.cursor() as cur:
+            cur.execute("SELECT pg_try_advisory_lock(%s);", (self.DAILY_BATCH_LOCK_ID,))
+            acquired = cur.fetchone()[0]
+
+        if not acquired:
+            conn.close()
+            return None
+        return conn
+
+    @staticmethod
+    def release_daily_batch_lock(conn) -> None:
+        if conn is None:
+            return
+        with conn.cursor() as cur:
+            cur.execute("SELECT pg_advisory_unlock(%s);", (DatabaseSaver.DAILY_BATCH_LOCK_ID,))
+        conn.close()
+
     def save_teams(self, teams: list[dict], stadium_index: dict[str, int]):
         stadium_id_to_name = {sid: name for name, sid in stadium_index.items()}
         stadium_id_to_coords = {}
@@ -329,6 +362,36 @@ class DatabaseSaver:
         except Exception as e:
             print(f"DB 저장 중 오류 발생: {e}")
             raise
+
+    def has_run_for(self, run_date) -> bool:
+        """이 날짜(경기가 열렸던 날) 배치가 이미 실행됐는지 확인 - 중복 실행 방지용."""
+        if self.dry_run:
+            return False
+
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute("SELECT 1 FROM batch_run_log WHERE run_date = %s;", (run_date,))
+            return cur.fetchone() is not None
+
+    def get_last_run_date(self):
+        if self.dry_run:
+            return None
+
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute("SELECT MAX(run_date) FROM batch_run_log;")
+            row = cur.fetchone()
+            return row[0] if row else None
+
+    def record_run(self, run_date) -> None:
+        if self.dry_run:
+            print(f"[DRY-RUN] batch_run_log 기록 스킵: {run_date}")
+            return
+
+        with self._connect() as conn, conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO batch_run_log (run_date) VALUES (%s) ON CONFLICT DO NOTHING;",
+                (run_date,),
+            )
+        print(f"배치 실행 기록 완료: {run_date}")
 
     def save_daily_rosters(self, pitchers: list[dict], hitters: list[dict]):
         pitcher_params = [
@@ -458,21 +521,9 @@ def run_daily_update(dataset_dir: str, db_config: dict[str, Any], dry_run: bool 
 
 
 if __name__ == "__main__":
-    import os
+    from core.config import settings
 
-    def _required_env(name: str) -> str:
-        value = os.environ.get(name)
-        if not value:
-            raise RuntimeError(f"필수 환경변수 {name}가 설정되지 않았습니다.")
-        return value
-
-    DB_CONFIG = {
-        "host": os.environ.get("PGHOST", "localhost"),
-        "port": os.environ.get("PGPORT", "5432"),
-        "dbname": os.environ.get("PGDATABASE", "winningpick"),
-        "user": os.environ.get("PGUSER", "postgres"),
-        "password": _required_env("PGPASSWORD"),
-    }
+    DB_CONFIG = settings.db_config()
 
     run_initial_load(
         dataset_dir="dataset",
