@@ -94,7 +94,9 @@ export default function PostDetail({ post, comments, onBack, onAddComment, onEdi
                 </form>
 
                 <div className="post-comment-list">
-                    {comments.length > 0 ? (
+                    {isCommentsLoading ? (
+                        <p className="post-empty">댓글을 불러오는 중...</p>
+                    ) : comments.length > 0 ? (
                         comments.map((comment) => (
                             <div key={comment.id} className="post-comment-item">
                                 <div className="post-comment-top">
