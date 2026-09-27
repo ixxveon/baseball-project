@@ -7,7 +7,7 @@ export function getCurrentMemberId(): number | null {
     }
 
     try {
-        const payload = token.split('.')[1];
+        const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
         const decoded = JSON.parse(atob(payload)) as { sub?: string };
         return decoded.sub ? Number(decoded.sub) : null;
     } catch {
