@@ -10,7 +10,9 @@ VALUES
     (9002, 'seed.user2@winningpick.seed', '불펜은진리', 'LOCAL', NULL, false, now(), now()),
     (9003, 'seed.user3@winningpick.seed', '치맥필수', 'LOCAL', NULL, false, now(), now()),
     (9004, 'seed.user4@winningpick.seed', '9회말영웅', 'LOCAL', NULL, false, now(), now()),
-    (9005, 'seed.user5@winningpick.seed', '외야직관러', 'LOCAL', NULL, false, now(), now())
+    (9005, 'seed.user5@winningpick.seed', '외야직관러', 'LOCAL', NULL, false, now(), now()),
+    -- 개발용 로그인 계정 (test@example.com / password1234). 비밀번호는 BCrypt 해시로 저장한다.
+    (9006, 'test@example.com', '테스트유저', 'LOCAL', '$2b$10$suiEZt39.BVxtROEAG8snu3VZTy5XRKbUou0LwOS6OGRKn7dFa6/.', false, now(), now())
 ON CONFLICT DO NOTHING;
 
 INSERT INTO community_posts (post_id, game_id, user_id, category, title, content, created_at, updated_at)
