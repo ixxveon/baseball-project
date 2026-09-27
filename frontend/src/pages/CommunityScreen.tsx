@@ -167,9 +167,9 @@ export default function CommunityScreen(): React.JSX.Element {
         }
     };
 
-    const handleAddComment = async (content: string): Promise<void> => {
+    const handleAddComment = async (content: string): Promise<boolean> => {
         if (selectedPostId === null) {
-            return;
+            return false;
         }
 
         try {
@@ -178,8 +178,10 @@ export default function CommunityScreen(): React.JSX.Element {
             setPosts((prev) => prev.map((post) => (
                 post.id === selectedPostId ? { ...post, commentCount: post.commentCount + 1 } : post
             )));
+            return true;
         } catch {
             window.alert('댓글 등록에 실패했어요. 잠시 후 다시 시도해주세요');
+            return false;
         }
     };
 
@@ -233,7 +235,7 @@ export default function CommunityScreen(): React.JSX.Element {
                     post={selectedPost}
                     comments={comments.filter((comment) => comment.postId === selectedPost.id)}
                     onBack={() => window.history.back()}
-                    onAddComment={(content) => { void handleAddComment(content); }}
+                    onAddComment={handleAddComment}
                     onEdit={goToEdit}
                     onDelete={() => { void handleDeletePost(); }}
                     onDeleteComment={(commentId) => { void handleDeleteComment(commentId); }}

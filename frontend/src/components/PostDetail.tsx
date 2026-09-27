@@ -7,7 +7,7 @@ interface PostDetailProps {
     post: CommunityPost;
     comments: PostComment[];
     onBack: () => void;
-    onAddComment: (content: string) => void;
+    onAddComment: (content: string) => Promise<boolean>;
     onEdit: () => void;
     onDelete: () => void;
     onDeleteComment: (commentId: number) => void;
@@ -43,7 +43,7 @@ export default function PostDetail({ post, comments, onBack, onAddComment, onEdi
         }
     };
 
-    const handleSubmitComment = (e: React.FormEvent<HTMLFormElement>): void => {
+    const handleSubmitComment = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
         e.preventDefault();
 
         const trimmed = commentInput.trim();
@@ -51,8 +51,10 @@ export default function PostDetail({ post, comments, onBack, onAddComment, onEdi
             return;
         }
 
-        onAddComment(trimmed);
-        setCommentInput('');
+        const isCreated = await onAddComment(trimmed);
+        if (isCreated) {
+            setCommentInput('');
+        }
     };
 
     return (
@@ -83,7 +85,7 @@ export default function PostDetail({ post, comments, onBack, onAddComment, onEdi
             <div className="post-comment-section">
                 <h3 className="post-comment-title">댓글 {comments.length}</h3>
 
-                <form className="post-comment-form" onSubmit={handleSubmitComment}>
+                <form className="post-comment-form" onSubmit={(e) => { void handleSubmitComment(e); }}>
                     <input
                         type="text"
                         value={commentInput}
