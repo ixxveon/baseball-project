@@ -22,6 +22,7 @@ export default function CommunityScreen(): React.JSX.Element {
     const [viewMode, setViewMode] = useState<ViewMode>('list');
     const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [isCommentsLoading, setIsCommentsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
 
     useEffect(() => {
@@ -60,6 +61,7 @@ export default function CommunityScreen(): React.JSX.Element {
         let cancelled = false;
 
         async function loadComments(): Promise<void> {
+            setIsCommentsLoading(true);
             try {
                 const data = await getComments(selectedPostId as number);
                 if (!cancelled) {
@@ -68,6 +70,10 @@ export default function CommunityScreen(): React.JSX.Element {
             } catch {
                 if (!cancelled) {
                     setComments([]);
+                }
+            } finally {
+                if (!cancelled) {
+                    setIsCommentsLoading(false);
                 }
             }
         }
@@ -231,6 +237,7 @@ export default function CommunityScreen(): React.JSX.Element {
                     onEdit={goToEdit}
                     onDelete={() => { void handleDeletePost(); }}
                     onDeleteComment={(commentId) => { void handleDeleteComment(commentId); }}
+                    isCommentsLoading={isCommentsLoading}
                 />
             </div>
         );
@@ -240,7 +247,7 @@ export default function CommunityScreen(): React.JSX.Element {
         <div className="community-container">
             <div className="community-header">
                 <h1 className="community-title">커뮤니티</h1>
-                <button type="button" className="write-btn" onClick={goToWrite}>글쓰기</button>
+                <button type="button" className="write-btn" onClick={goToWrite} disabled={isLoading}>글쓰기</button>
             </div>
 
             <div className="community-category-tabs">

@@ -11,6 +11,7 @@ interface PostDetailProps {
     onEdit: () => void;
     onDelete: () => void;
     onDeleteComment: (commentId: number) => void;
+    isCommentsLoading: boolean;
 }
 
 const CATEGORY_LABEL: Record<PostCategory, string> = {
@@ -25,7 +26,7 @@ const CATEGORY_CLASS: Record<PostCategory, string> = {
     ETC: 'etc',
 };
 
-export default function PostDetail({ post, comments, onBack, onAddComment, onEdit, onDelete, onDeleteComment }: PostDetailProps): React.JSX.Element {
+export default function PostDetail({ post, comments, onBack, onAddComment, onEdit, onDelete, onDeleteComment, isCommentsLoading }: PostDetailProps): React.JSX.Element {
     const [commentInput, setCommentInput] = useState<string>('');
     const currentMemberId = getCurrentMemberId();
     const isAuthor = post.authorId === currentMemberId;
@@ -89,7 +90,7 @@ export default function PostDetail({ post, comments, onBack, onAddComment, onEdi
                         onChange={(e) => setCommentInput(e.target.value)}
                         placeholder="댓글을 입력해주세요"
                     />
-                    <button type="submit" className="post-comment-submit">등록</button>
+                    <button type="submit" className="post-comment-submit" disabled={isCommentsLoading}>등록</button>
                 </form>
 
                 <div className="post-comment-list">
