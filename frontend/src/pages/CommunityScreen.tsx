@@ -231,7 +231,7 @@ export default function CommunityScreen(): React.JSX.Element {
             <div className="community-container">
                 <PostDetail
                     post={selectedPost}
-                    comments={comments}
+                    comments={comments.filter((comment) => comment.postId === selectedPost.id)}
                     onBack={() => window.history.back()}
                     onAddComment={(content) => { void handleAddComment(content); }}
                     onEdit={goToEdit}
