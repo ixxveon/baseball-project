@@ -12,16 +12,31 @@ import org.springframework.stereotype.Service;
 
 import java.util.Map;
 
+/**
+ * 구글을 제외한(OIDC가 아닌) 소셜 로그인 제공자를 처리한다.
+ * Spring Security는 OIDC가 아닌 provider를 전부 이 서비스 하나로 라우팅하므로, registrationId로 분기한다.
+ */
 @Service
 @RequiredArgsConstructor
-public class KakaoOAuth2UserService extends DefaultOAuth2UserService {
+public class SocialOAuth2UserService extends DefaultOAuth2UserService {
 
     private final MemberRepository memberRepository;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         OAuth2User oAuth2User = super.loadUser(userRequest);
+        String registrationId = userRequest.getClientRegistration().getRegistrationId();
 
+        if ("naver".equals(registrationId)) {
+            loadNaverUser(oAuth2User);
+        } else {
+            loadKakaoUser(oAuth2User);
+        }
+
+        return oAuth2User;
+    }
+
+    private void loadKakaoUser(OAuth2User oAuth2User) {
         Object idAttribute = oAuth2User.getAttribute("id");
         String socialId = String.valueOf(idAttribute);
 
@@ -34,7 +49,16 @@ public class KakaoOAuth2UserService extends DefaultOAuth2UserService {
 
         memberRepository.findBySocialIdAndProvider(socialId, ProviderType.KAKAO)
                 .orElseGet(() -> memberRepository.save(Member.createSocialMember(email, nickname, ProviderType.KAKAO, socialId)));
+    }
 
-        return oAuth2User;
+    private void loadNaverUser(OAuth2User oAuth2User) {
+        Map<String, Object> response = oAuth2User.getAttribute("response");
+
+        String socialId = (String) response.get("id");
+        String email = (String) response.get("email");
+        String nickname = (String) response.get("name");
+
+        memberRepository.findBySocialIdAndProvider(socialId, ProviderType.NAVER)
+                .orElseGet(() -> memberRepository.save(Member.createSocialMember(email, nickname, ProviderType.NAVER, socialId)));
     }
 }
