@@ -7,10 +7,12 @@ import CommunityScreen from './pages/CommunityScreen';
 import type { TabType } from './types';
 
 const ACTIVE_TAB_STORAGE_KEY = 'activeTab';
+const VALID_TABS: TabType[] = ['home', 'recommend', 'analysis', 'ranking', 'community'];
 
 function getInitialTab(): TabType {
     try {
-        return (sessionStorage.getItem(ACTIVE_TAB_STORAGE_KEY) as TabType | null) ?? 'home';
+        const stored = sessionStorage.getItem(ACTIVE_TAB_STORAGE_KEY);
+        return VALID_TABS.includes(stored as TabType) ? (stored as TabType) : 'home';
     } catch {
         return 'home';
     }
