@@ -1,25 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import GameCard from './GameCard';
 import AnalysisScreen from './AnalysisScreen';
-import { fetchUpcomingGames, UpcomingGame } from '../api/gamesApi';
+import { fetchUpcomingGames } from '../api/gamesApi';
 
 export default function PickGames(): React.JSX.Element {
-    const [games, setGames] = useState<UpcomingGame[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
+    const { data: games = [], isLoading, isError } = useQuery({
+        queryKey: ['upcomingGames'],
+        queryFn: fetchUpcomingGames,
+    });
     const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
-
-    useEffect(() => {
-        fetchUpcomingGames()
-            .then((result) => {
-                setGames(result);
-                setLoading(false);
-            })
-            .catch(() => {
-                setError('경기 목록을 불러오는 데 실패했습니다.');
-                setLoading(false);
-            });
-    }, []);
 
     return (
         <section className="pick-section">
@@ -27,8 +17,8 @@ export default function PickGames(): React.JSX.Element {
                 <h2>이번 달 직관 추천 경기</h2>
             </div>
 
-            {loading && <p>불러오는 중...</p>}
-            {error && <p>{error}</p>}
+            {isLoading && <p>불러오는 중...</p>}
+            {isError && <p>경기 목록을 불러오는 데 실패했습니다.</p>}
 
             <div className="game-grid-container">
                 {games.map((game) => (

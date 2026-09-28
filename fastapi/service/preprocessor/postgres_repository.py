@@ -1,10 +1,11 @@
-import os
 from datetime import datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
 import psycopg2
 import psycopg2.extras
+
+from core.config import settings
 
 PREDICTION_WINDOW_DAYS = 14
 
@@ -17,21 +18,8 @@ class PostgresPredictionRepository:
     def __init__(self, dsn: str | None = None):
         self._dsn_override = dsn
 
-    @staticmethod
-    def _dsn_from_env() -> str:
-        password = os.environ.get("PGPASSWORD")
-        if not password:
-            raise RuntimeError("필수 환경변수 PGPASSWORD가 설정되지 않았습니다.")
-        return (
-            f"host={os.environ.get('PGHOST', 'localhost')} "
-            f"port={os.environ.get('PGPORT', '5432')} "
-            f"dbname={os.environ.get('PGDATABASE', 'winningpick')} "
-            f"user={os.environ.get('PGUSER', 'postgres')} "
-            f"password={password}"
-        )
-
     def _connect(self):
-        dsn = self._dsn_override or self._dsn_from_env()
+        dsn = self._dsn_override or settings.db_dsn()
         return psycopg2.connect(dsn)
 
     def get_matchup_stats(self, game_id: int) -> dict[str, Any]:
@@ -163,17 +151,28 @@ class PostgresPredictionRepository:
         ]
 
     def save_prediction(
-            self, game_id: int, home_win_prob: float, result_json: dict[str, Any], recommendation_score: int,
+            self,
+            game_id: int,
+            home_win_prob: float,
+            result_json: dict[str, Any],
+            recommendation_score: int,
+            weather_adjustment: int,
     ) -> None:
         import json
 
         with self._connect() as conn, conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO ai_predictions (game_id, home_win_prob, result_json, recommendation_score)
-                VALUES (%s, %s, %s, %s);
+                INSERT INTO ai_predictions (game_id, home_win_prob, result_json, recommendation_score, weather_adjustment)
+                VALUES (%s, %s, %s, %s, %s);
                 """,
-                (game_id, home_win_prob, json.dumps(result_json, ensure_ascii=False), recommendation_score),
+                (
+                    game_id,
+                    home_win_prob,
+                    json.dumps(result_json, ensure_ascii=False),
+                    recommendation_score,
+                    weather_adjustment,
+                ),
             )
 
     def get_cached_prediction(self, game_id: int) -> dict[str, Any] | None:
@@ -181,7 +180,7 @@ class PostgresPredictionRepository:
         with self._connect() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
                 """
-                SELECT result_json, recommendation_score, created_at
+                SELECT result_json, recommendation_score, home_win_prob, weather_adjustment, created_at
                 FROM ai_predictions
                 WHERE game_id = %s
                 ORDER BY created_at DESC
@@ -198,7 +197,12 @@ class PostgresPredictionRepository:
         if row["created_at"].date() != today:
             return None
 
-        return {"result_json": row["result_json"], "recommendation_score": row["recommendation_score"]}
+        return {
+            "result_json": row["result_json"],
+            "recommendation_score": row["recommendation_score"],
+            "home_win_prob": float(row["home_win_prob"]),
+            "weather_adjustment": row["weather_adjustment"],
+        }
 
     def get_recent_team_record(self, team_id: int, limit: int = 10) -> dict[str, Any]:
         """이 팀의 최근 N경기(완료된 경기만) 승/패, 평균 득점/실점."""
@@ -240,7 +244,8 @@ class PostgresPredictionRepository:
 
     def get_upcoming_games(self) -> list[dict[str, Any]]:
         """오늘부터 PREDICTION_WINDOW_DAYS일 이내의 예정/완료 경기 목록.
-        오늘 배치가 미리 계산해둔 recommendation_score가 있으면 같이 내려준다 (없으면 None)."""
+        오늘 배치가 미리 계산해둔 recommendation_score(홈팀 기준)가 있으면 같이 내려주고,
+        원정팀 기준 점수를 다시 계산할 수 있도록 home_win_prob/weather_adjustment도 같이 내려준다."""
         today = datetime.now(tz=ZoneInfo("Asia/Seoul")).date()
         window_end = today + timedelta(days=PREDICTION_WINDOW_DAYS)
 
@@ -250,12 +255,12 @@ class PostgresPredictionRepository:
                 SELECT g.game_id, g.match_date, g.match_time,
                        g.home_team_id, ht.name AS home_team_name,
                        g.away_team_id, at.name AS away_team_name,
-                       p.recommendation_score
+                       p.recommendation_score, p.home_win_prob, p.weather_adjustment
                 FROM games g
                          JOIN teams ht ON ht.team_id = g.home_team_id
                          JOIN teams at ON at.team_id = g.away_team_id
                     LEFT JOIN LATERAL (
-                    SELECT recommendation_score
+                    SELECT recommendation_score, home_win_prob, weather_adjustment
                     FROM ai_predictions
                     WHERE game_id = g.game_id AND created_at::date = %s
                     ORDER BY created_at DESC

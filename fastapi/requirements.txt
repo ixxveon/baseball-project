@@ -9,4 +9,3 @@ ruff==0.16.5
 anthropic==1.6.0
 APScheduler==3.11.3
 httpx==0.28.1
-httpx2==2.13.0

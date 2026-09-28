@@ -98,6 +98,9 @@ export default function LoginPage(): React.JSX.Element {
                 아직 계정이 없으신가요?{' '}
                 <Link to="/signup" className="auth-switch-link">회원가입</Link>
             </p>
+            <p className="auth-switch-text">
+                <Link to="/forgot-password" className="auth-switch-link">비밀번호를 잊으셨나요?</Link>
+            </p>
         </AuthLayout>
     );
 }

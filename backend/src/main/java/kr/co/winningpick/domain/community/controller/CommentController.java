@@ -11,10 +11,11 @@ import kr.co.winningpick.domain.member.repository.MemberRepository;
 import kr.co.winningpick.global.exception.BusinessException;
 import kr.co.winningpick.global.exception.GlobalErrorCode;
 import kr.co.winningpick.global.response.ApiResponse;
+import kr.co.winningpick.global.response.ResponsePage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/community/posts/{postId}/comments")
@@ -26,8 +27,11 @@ public class CommentController implements CommentControllerDocs {
 
     @Override
     @GetMapping
-    public ApiResponse<List<ResponseComment>> getComments(@PathVariable Long postId) {
-        return ApiResponse.success(commentService.getComments(postId));
+    public ApiResponse<ResponsePage<ResponseComment>> getComments(
+            @PathVariable Long postId,
+            @PageableDefault(size = 10) Pageable pageable
+    ) {
+        return ApiResponse.success(commentService.getComments(postId, pageable));
     }
 
     @Override

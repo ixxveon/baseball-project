@@ -5,15 +5,10 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import kr.co.winningpick.domain.member.dto.request.RequestConfirmEmailVerification;
-import kr.co.winningpick.domain.member.dto.request.RequestLogin;
-import kr.co.winningpick.domain.member.dto.request.RequestSendEmailVerification;
-import kr.co.winningpick.domain.member.dto.request.RequestSignup;
-import kr.co.winningpick.domain.member.dto.response.ResponseEmailVerification;
-import kr.co.winningpick.domain.member.dto.response.ResponseLogin;
-import kr.co.winningpick.domain.member.dto.response.ResponseNicknameAvailability;
-import kr.co.winningpick.domain.member.dto.response.ResponseSignup;
+import kr.co.winningpick.domain.member.dto.request.*;
+import kr.co.winningpick.domain.member.dto.response.*;
 
 @Tag(name = "Member", description = "회원 관련 API")
 public interface MemberControllerDocs {
@@ -59,4 +54,32 @@ public interface MemberControllerDocs {
                         {"success":false,"message":"이메일 또는 비밀번호가 올바르지 않습니다.","data":null}""")))
     })
     kr.co.winningpick.global.response.ApiResponse<ResponseLogin> login(RequestLogin request);
+
+    @Operation(summary = "비밀번호 재설정", description = "이메일 인증이 완료된 계정의 비밀번호를 재설정합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "재설정 성공"),
+            @ApiResponse(responseCode = "400", description = "이메일 인증 미완료",
+                    content = @Content(examples = @ExampleObject(value = """
+                        {"success":false,"message":"이메일 인증을 완료해주세요","data":null}""")))
+    })
+    kr.co.winningpick.global.response.ApiResponse<Void> resetPassword(RequestResetPassword request);
+
+    @Operation(summary = "Access Token 재발급", description = "Refresh Token으로 새 Access Token을 발급받습니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "재발급 성공"),
+            @ApiResponse(responseCode = "401", description = "유효하지 않거나 만료된 Refresh Token",
+                    content = @Content(examples = @ExampleObject(value = """
+                        {"success":false,"message":"유효하지 않은 리프레시 토큰입니다","data":null}""")))
+    })
+    kr.co.winningpick.global.response.ApiResponse<ResponseReissue> reissue(RequestReissue request);
+
+    @Operation(summary = "로그아웃", description = "서버에 저장된 Refresh Token을 무효화합니다.")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "로그아웃 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 필요",
+                    content = @Content(examples = @ExampleObject(value = """
+                    {"success":false,"message":"인증이 필요합니다","data":null}""")))
+    })
+    kr.co.winningpick.global.response.ApiResponse<Void> logout(Long memberId);
 }

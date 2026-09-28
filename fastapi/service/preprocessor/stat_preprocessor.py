@@ -521,21 +521,9 @@ def run_daily_update(dataset_dir: str, db_config: dict[str, Any], dry_run: bool 
 
 
 if __name__ == "__main__":
-    import os
+    from core.config import settings
 
-    def _required_env(name: str) -> str:
-        value = os.environ.get(name)
-        if not value:
-            raise RuntimeError(f"필수 환경변수 {name}가 설정되지 않았습니다.")
-        return value
-
-    DB_CONFIG = {
-        "host": os.environ.get("PGHOST", "localhost"),
-        "port": os.environ.get("PGPORT", "5432"),
-        "dbname": os.environ.get("PGDATABASE", "winningpick"),
-        "user": os.environ.get("PGUSER", "postgres"),
-        "password": _required_env("PGPASSWORD"),
-    }
+    DB_CONFIG = settings.db_config()
 
     run_initial_load(
         dataset_dir="dataset",

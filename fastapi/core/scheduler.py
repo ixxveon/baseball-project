@@ -1,4 +1,3 @@
-import os
 import traceback
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -6,20 +5,11 @@ from zoneinfo import ZoneInfo
 from apscheduler.events import EVENT_JOB_ERROR
 from apscheduler.schedulers.background import BackgroundScheduler
 
+from core.config import settings
 from service.preprocessor.stat_preprocessor import DatabaseSaver, run_daily_update
 from service.services.prediction_service import PredictionService
 
 KST = ZoneInfo("Asia/Seoul")
-
-
-def _db_config() -> dict[str, str]:
-    return {
-        "host": os.environ.get("PGHOST", "localhost"),
-        "port": os.environ.get("PGPORT", "5432"),
-        "dbname": os.environ.get("PGDATABASE", "winningpick"),
-        "user": os.environ.get("PGUSER", "postgres"),
-        "password": os.environ.get("PGPASSWORD", ""),
-    }
 
 
 def _precompute_predictions() -> None:
@@ -33,18 +23,17 @@ def _precompute_predictions() -> None:
         try:
             service.predict(game_id=g.gameId)
             success += 1
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             failures.append(e)
             print(f"[스케줄러] game_id={g.gameId} 사전계산 실패:\n{traceback.format_exc()}")
 
     print(f"[스케줄러] 사전계산 완료 - 성공 {success}건, 실패 {len(failures)}건")
 
     if failures:
-        raise ExceptionGroup(
+        raise RuntimeError(
             f"경기 사전계산 {len(failures)}건 실패 (대상 {len(games)}건 중) - "
-            "실패한 경기는 다음 배치에서 자동으로 재시도됩니다",
-            failures,
-        )
+            "실패한 경기는 다음 배치에서 자동으로 재시도됩니다"
+        ) from failures[0]
 
 
 def _pending_run_dates(db_saver: DatabaseSaver, target_date: date) -> list[date]:
@@ -64,7 +53,7 @@ def _pending_run_dates(db_saver: DatabaseSaver, target_date: date) -> list[date]
 
 def run_daily_batch_job() -> None:
     target_date = datetime.now(tz=KST).date() - timedelta(days=1)
-    db_config = _db_config()
+    db_config = settings.db_config()
     db_saver = DatabaseSaver(db_config, dry_run=False)
 
     lock_conn = db_saver.try_acquire_daily_batch_lock()

@@ -63,7 +63,8 @@ class UpcomingGameSchema(BaseModel):
     homeTeamName: str
     awayTeamId: int
     awayTeamName: str
-    recommendationScore: int | None = None  # 오늘 배치가 미리 계산해뒀으면 값, 아니면 None
+    recommendationScore: int | None = None  # 홈팀 기준. 오늘 배치가 미리 계산해뒀으면 값, 아니면 None
+    awayRecommendationScore: int | None = None  # 원정팀 기준. 위와 동일 조건
 
 
 class RecentRecordSchema(BaseModel):

@@ -9,6 +9,7 @@ export interface UpcomingGame {
     awayTeamId: number;
     awayTeamName: string;
     recommendationScore: number | null;
+    awayRecommendationScore: number | null;
 }
 
 export interface RecentRecord {
