@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Header from './components/Header';
 import HomeScreen from './pages/HomeScreen';
 import RecommendScreen from './pages/RecommendScreen';
@@ -8,31 +9,34 @@ import type { TabType } from './types';
 
 export default function App(): React.JSX.Element {
     const [activeTab, setActiveTab] = useState<TabType>('home');
+    const [queryClient] = useState(() => new QueryClient());
 
     return (
-        <div className="dashboard-container">
-            <Header activeTab={activeTab} onTabChange={setActiveTab} />
+        <QueryClientProvider client={queryClient}>
+            <div className="dashboard-container">
+                <Header activeTab={activeTab} onTabChange={setActiveTab} />
 
-            <main className="dashboard-main">
-                {/* 1. 홈 화면 */}
-                {activeTab === 'home' && <HomeScreen />}
+                <main className="dashboard-main">
+                    {/* 1. 홈 화면 */}
+                    {activeTab === 'home' && <HomeScreen />}
 
-                {/* 2. 직관추천 화면 */}
-                {activeTab === 'recommend' && <RecommendScreen />}
+                    {/* 2. 직관추천 화면 */}
+                    {activeTab === 'recommend' && <RecommendScreen />}
 
-                {/* 3. 랭킹 화면 */}
-                {activeTab === 'ranking' && <RankingPage />}
+                    {/* 3. 랭킹 화면 */}
+                    {activeTab === 'ranking' && <RankingPage />}
 
-                {/* 4. 커뮤니티 화면 */}
-                {activeTab === 'community' && <CommunityScreen />}
+                    {/* 4. 커뮤니티 화면 */}
+                    {activeTab === 'community' && <CommunityScreen />}
 
-                {/* 5. 기타 메뉴 준비 중 표시 */}
-                {activeTab !== 'home' && activeTab !== 'recommend' && activeTab !== 'ranking' && activeTab !== 'community' && (
-                    <div className="tab-placeholder" style={{ padding: '48px', textAlign: 'center', color: '#64748b' }}>
-                        <h2>{activeTab} 페이지 준비 중입니다.</h2>
-                    </div>
-                )}
-            </main>
-        </div>
+                    {/* 5. 기타 메뉴 준비 중 표시 */}
+                    {activeTab !== 'home' && activeTab !== 'recommend' && activeTab !== 'ranking' && activeTab !== 'community' && (
+                        <div className="tab-placeholder" style={{ padding: '48px', textAlign: 'center', color: '#64748b' }}>
+                            <h2>{activeTab} 페이지 준비 중입니다.</h2>
+                        </div>
+                    )}
+                </main>
+            </div>
+        </QueryClientProvider>
     );
 }
