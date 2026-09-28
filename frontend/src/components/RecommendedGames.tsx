@@ -10,11 +10,19 @@ interface RecommendedGamesProps {
 export default function RecommendedGames({
                                              favoriteTeam,
                                          }: RecommendedGamesProps): React.JSX.Element {
-    const { targetGame, loading, isToday } = useTargetGame(favoriteTeam);
+    const { targetGame, loading, isToday, error } = useTargetGame(favoriteTeam);
     const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
 
     if (loading) {
         return <div className="recommended-card">불러오는 중...</div>;
+    }
+
+    if (error) {
+        return (
+            <div className="recommended-card">
+                경기 정보를 불러오는 데 실패했습니다.
+            </div>
+        );
     }
 
     if (!targetGame) {
@@ -27,6 +35,10 @@ export default function RecommendedGames({
 
     const isFavoriteHome = targetGame.homeTeamName === favoriteTeam;
     const isFavoriteAway = targetGame.awayTeamName === favoriteTeam;
+
+    const favoriteRecommendationScore = isFavoriteAway
+        ? targetGame.awayRecommendationScore
+        : targetGame.recommendationScore;
 
     const homeTeamLogo = TEAM_LOGOS[targetGame.homeTeamName];
     const awayTeamLogo = TEAM_LOGOS[targetGame.awayTeamName];
@@ -72,7 +84,7 @@ export default function RecommendedGames({
                 <div className="metric-item">
                     <div className="metric-label">직관 추천 점수</div>
                     <div className="metric-value green">
-                        {targetGame.recommendationScore !== null ? `${targetGame.recommendationScore}점` : '계산중'}
+                        {favoriteRecommendationScore !== null ? `${favoriteRecommendationScore}점` : '계산중'}
                     </div>
                 </div>
             </div>

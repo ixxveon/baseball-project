@@ -4,6 +4,7 @@ from core.llm_service import LLMGenerationError, LLMService
 from core.recommendation_score import (
     calculate_recommendation_score,
     calculate_weather_adjustment,
+    win_prob_for_team,
 )
 from core.weather_service import WeatherService
 from service.preprocessor.postgres_repository import PostgresPredictionRepository
@@ -37,6 +38,7 @@ class PredictionRepository(Protocol):
             home_win_prob: float,
             result_json: dict[str, Any],
             recommendation_score: int,
+            weather_adjustment: int,
     ) -> None:
         ...
 
@@ -130,6 +132,7 @@ class PredictionService:
                     home_win_prob=result.homeWinProb,
                     result_json=result.model_dump(),
                     recommendation_score=recommendation_score,
+                    weather_adjustment=weather_adjustment,
                 )
             except LLMGenerationError:
                 result = LLMService.get_fallback_response()
@@ -154,9 +157,24 @@ class PredictionService:
                 awayTeamId=g["away_team_id"],
                 awayTeamName=g["away_team_name"],
                 recommendationScore=g.get("recommendation_score"),
+                awayRecommendationScore=self._away_recommendation_score(g),
             )
             for g in raw_games
         ]
+
+    @staticmethod
+    def _away_recommendation_score(g: dict[str, Any]) -> int | None:
+        home_win_prob = g.get("home_win_prob")
+        weather_adjustment = g.get("weather_adjustment")
+        if home_win_prob is None or weather_adjustment is None:
+            return None
+
+        away_win_prob = win_prob_for_team(
+            home_win_prob=float(home_win_prob),
+            my_team_id=g["away_team_id"],
+            home_team_id=g["home_team_id"],
+        )
+        return calculate_recommendation_score(away_win_prob, weather_adjustment)
 
     def get_recent_team_record(self, team_id: int) -> RecentRecordSchema:
         raw = self.repository.get_recent_team_record(team_id, limit=10)

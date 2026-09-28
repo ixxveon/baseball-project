@@ -25,14 +25,14 @@ function SummaryRow({ label, content }: SummaryItem): React.JSX.Element {
 }
 
 export default function AiSummary({ favoriteTeam }: AiSummaryProps): React.JSX.Element {
-    const { targetGame, loading: gameLoading } = useTargetGame(favoriteTeam);
+    const { targetGame, loading: gameLoading, error: gameError } = useTargetGame(favoriteTeam);
     const [data, setData] = useState<GameAnalysisData | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [showFullReport, setShowFullReport] = useState<boolean>(false);
 
     useEffect(() => {
-        if (gameLoading) return;
+        if (gameLoading || gameError) return;
 
         if (!targetGame) {
             setData(null);
@@ -60,9 +60,9 @@ export default function AiSummary({ favoriteTeam }: AiSummaryProps): React.JSX.E
         return () => {
             cancelled = true;
         };
-    }, [targetGame, gameLoading]);
+    }, [targetGame, gameLoading, gameError]);
 
-    const noGame = !gameLoading && !loading && !error && !targetGame;
+    const noGame = !gameLoading && !gameError && !loading && !error && !targetGame;
 
     const items: SummaryItem[] = data ? [
         { label: '선발 투수 분석', content: data.summary.pitcherComparison },
@@ -76,11 +76,15 @@ export default function AiSummary({ favoriteTeam }: AiSummaryProps): React.JSX.E
             <div>
                 <h3 className="ai-summary-title">AI 분석 요약</h3>
 
-                {(gameLoading || loading) && (
+                {!gameError && (gameLoading || loading) && (
                     <p className="ai-summary-status">분석 중입니다...</p>
                 )}
 
-                {error && (
+                {gameError && (
+                    <p className="ai-summary-error">경기 목록을 불러오는 데 실패했습니다.</p>
+                )}
+
+                {!gameError && error && (
                     <p className="ai-summary-error">{error}</p>
                 )}
 
@@ -88,7 +92,7 @@ export default function AiSummary({ favoriteTeam }: AiSummaryProps): React.JSX.E
                     <p className="ai-summary-status">표시할 예정 경기가 없습니다.</p>
                 )}
 
-                {!gameLoading && !loading && !error && data && (
+                {!gameLoading && !gameError && !loading && !error && data && (
                     <div>
                         {items.map((item) => (
                             <SummaryRow key={item.label} label={item.label} content={item.content} />
@@ -97,7 +101,7 @@ export default function AiSummary({ favoriteTeam }: AiSummaryProps): React.JSX.E
                 )}
             </div>
 
-            {!gameLoading && !loading && !error && data && (
+            {!gameLoading && !gameError && !loading && !error && data && (
                 <div className="ai-summary-footer">
                     <div className="ai-summary-verdict">
                         <span className="ai-summary-verdict-label">AI 종합</span>{' '}
