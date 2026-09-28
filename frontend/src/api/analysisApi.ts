@@ -1,43 +1,49 @@
-export interface GameAnalysisData {
+import axiosInstance from './axiosInstance';
 
-    gameId: string;
-
-    summary: {
-
-        pitcherComparison: string;
-
-        battingComparison: string;
-
-        homeAdvantage: string;
-
-        weatherImpact: string;
-
-    };
-
-    winRate: number;
-
-    scorePredict: string;
-
+export interface GameAnalysisSummary {
+    pitcherComparison: string;
+    battingComparison: string;
+    homeAdvantage: string;
+    headToHead: string;
+    keyPlayer: string;
+    weatherComment: string;
 }
 
+export interface GameAnalysisData {
+    gameId: number;
+    homeWinProb: number;
+    scorePredict: string;
+    summary: GameAnalysisSummary;
+}
 
+interface ApiResponse<T> {
+    success: boolean;
+    status: number;
+    message: string;
+    data: T;
+}
+
+interface PredictionResultData {
+    gameId: number;
+    result: {
+        homeWinProb: number;
+        scorePredict: string;
+        summary: GameAnalysisSummary;
+    };
+}
 
 export async function fetchGameAnalysis(gameId: string): Promise<GameAnalysisData> {
+    const response = await axiosInstance.post<ApiResponse<PredictionResultData>>(
+        '/ai/predict',
+        { gameId: Number(gameId) },
+    );
 
-// 백엔드 Python AI API 엔드포인트 URL
+    const { gameId: id, result } = response.data.data;
 
-    const response = await fetch(`http://localhost:8000/api/analysis/${gameId}`);
-
-
-
-    if (!response.ok) {
-
-        throw new Error('경기 분석 데이터를 불러오는 데 실패했습니다.');
-
-    }
-
-
-
-    return response.json();
-
+    return {
+        gameId: id,
+        homeWinProb: result.homeWinProb,
+        scorePredict: result.scorePredict,
+        summary: result.summary,
+    };
 }

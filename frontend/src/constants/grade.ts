@@ -1,4 +1,4 @@
-export const RecommendationGrade = {
+    export const RecommendationGrade = {
     S: 'S',
     A: 'A',
     B: 'B',
