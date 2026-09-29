@@ -22,7 +22,7 @@ public record ResponsePost(
                 post.getCategory(),
                 post.getTitle(),
                 post.getContent(),
-                post.getAuthor().getNickname(),
+                post.getAuthor().getDisplayNickname(),
                 post.getCreatedAt(),
                 (int) commentCount
         );

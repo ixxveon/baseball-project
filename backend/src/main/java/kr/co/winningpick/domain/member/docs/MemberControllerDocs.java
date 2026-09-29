@@ -103,4 +103,19 @@ public interface MemberControllerDocs {
                     {"success":false,"message":"인증이 필요합니다","data":null}""")))
     })
     kr.co.winningpick.global.response.ApiResponse<Void> logout(Long memberId);
+
+    @Operation(summary = "회원 탈퇴", description = "로그인한 회원을 탈퇴 처리합니다. 작성했던 게시글/댓글은 삭제되지 않고 작성자가 '탈퇴한 회원'으로 표시됩니다.")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "탈퇴 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 필요",
+                    content = @Content(examples = @ExampleObject(value = """
+                    {"success":false,"message":"인증이 필요합니다","data":null}"""))),
+            @ApiResponse(responseCode = "404", description = "존재하지 않거나 이미 탈퇴한 회원",
+                    content = @Content(examples = @ExampleObject(value = """
+                    {"success":false,"message":"존재하지 않는 회원입니다.","data":null}""")))
+    })
+    kr.co.winningpick.global.response.ApiResponse<Void> withdraw(
+            @Parameter(hidden = true) @RequestAttribute(name = "memberId", required = false) Long memberId
+    );
 }

@@ -111,6 +111,10 @@ public class MemberService {
         Member member = memberRepository.findByEmail(request.email())
                 .orElseThrow(() -> new BusinessException(MemberErrorCode.LOGIN_FAILED));
 
+        if (member.isWithdrawn()) {
+            throw new BusinessException(MemberErrorCode.LOGIN_FAILED);
+        }
+
         if (!passwordEncoder.matches(request.password(), member.getPassword())) {
             throw new BusinessException(MemberErrorCode.LOGIN_FAILED);
         }
@@ -144,6 +148,19 @@ public class MemberService {
     }
 
     public void logout(Long memberId) {
+        stringRedisTemplate.delete(refreshTokenKey(memberId));
+    }
+
+    @Transactional
+    public void withdraw(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
+
+        if (member.isWithdrawn()) {
+            throw new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND);
+        }
+
+        member.withdraw();
         stringRedisTemplate.delete(refreshTokenKey(memberId));
     }
 

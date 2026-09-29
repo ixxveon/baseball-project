@@ -181,4 +181,51 @@ class MemberServiceTest {
         assertThat(response.accessToken()).isEqualTo("access-token");
         assertThat(response.refreshToken()).isEqualTo("refresh-token");
     }
+
+    @Test
+    void 탈퇴한_회원은_로그인할_수_없다() {
+        Member member = Member.createLocalMember("test@example.com", "nickname", "encodedPassword");
+        ReflectionTestUtils.setField(member, "id", 1L);
+        member.withdraw();
+        when(memberRepository.findByEmail("test@example.com")).thenReturn(Optional.of(member));
+
+        assertThatThrownBy(() -> memberService.login(new RequestLogin("test@example.com", "rawPassword")))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", MemberErrorCode.LOGIN_FAILED);
+    }
+
+    @Test
+    void 탈퇴하면_상태가_바뀌고_닉네임과_이메일이_익명화된다() {
+        Member member = Member.createLocalMember("test@example.com", "nickname", "encodedPassword");
+        ReflectionTestUtils.setField(member, "id", 1L);
+        when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+
+        memberService.withdraw(1L);
+
+        assertThat(member.isWithdrawn()).isTrue();
+        assertThat(member.getDisplayNickname()).isEqualTo("탈퇴한 회원");
+        assertThat(member.getEmail()).isNotEqualTo("test@example.com");
+        verify(stringRedisTemplate).delete("refresh-token:1");
+    }
+
+    @Test
+    void 존재하지_않는_회원을_탈퇴시키려_하면_예외를_던진다() {
+        when(memberRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> memberService.withdraw(1L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", MemberErrorCode.MEMBER_NOT_FOUND);
+    }
+
+    @Test
+    void 이미_탈퇴한_회원을_다시_탈퇴시키려_하면_예외를_던진다() {
+        Member member = Member.createLocalMember("test@example.com", "nickname", "encodedPassword");
+        ReflectionTestUtils.setField(member, "id", 1L);
+        member.withdraw();
+        when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+
+        assertThatThrownBy(() -> memberService.withdraw(1L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", MemberErrorCode.MEMBER_NOT_FOUND);
+    }
 }
