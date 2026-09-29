@@ -71,3 +71,7 @@ export async function login(request: LoginRequest): Promise<LoginResponse> {
     const response = await axiosInstance.post<ApiResponse<LoginResponse>>('/members/login', request);
     return response.data.data;
 }
+
+export async function withdraw(): Promise<void> {
+    await axiosInstance.delete('/members/me');
+}

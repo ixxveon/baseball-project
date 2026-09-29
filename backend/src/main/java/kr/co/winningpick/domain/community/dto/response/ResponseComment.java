@@ -15,7 +15,7 @@ public record ResponseComment(
         return new ResponseComment(
                 comment.getId(),
                 comment.getPost().getId(),
-                comment.getAuthor().getNickname(),
+                comment.getAuthor().getDisplayNickname(),
                 comment.getContent(),
                 comment.getCreatedAt()
         );

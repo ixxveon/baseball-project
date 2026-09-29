@@ -102,4 +102,14 @@ public class MemberController implements MemberControllerDocs {
         memberService.logout(memberId);
         return ApiResponse.success(null);
     }
+
+    @Override
+    @DeleteMapping("/me")
+    public ApiResponse<Void> withdraw(@RequestAttribute(name = "memberId", required = false) Long memberId) {
+        if (memberId == null) {
+            throw new BusinessException(GlobalErrorCode.UNAUTHORIZED);
+        }
+        memberService.withdraw(memberId);
+        return ApiResponse.success(null);
+    }
 }
