@@ -16,11 +16,9 @@ public class RankingService {
 
     private final RankingRepository rankingRepository;
 
-    // 1위부터 순서대로 랭킹을 쭉 가져오는 기능!
     public List<ResponseRanking> getRankings() {
-        return rankingRepository.findAllByOrderByTeamRankAsc()
-                .stream()
+        return rankingRepository.findAllByOrderByTeamRankAsc().stream()
                 .map(ResponseRanking::from)
-                .collect(Collectors.toList());
+                .toList();
     }
 }

@@ -26,7 +26,7 @@ public record ResponseRanking(
                 ranking.getLosses(),
                 ranking.getWinRate(),
                 ranking.getGameDiff(),
-                ranking.getStreak()
+                ranking.getStreak() != null ? ranking.getStreak() : "-"
         );
     }
 }

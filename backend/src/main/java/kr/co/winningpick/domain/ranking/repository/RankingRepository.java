@@ -5,9 +5,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface RankingRepository extends JpaRepository<Ranking, Long> {
-    // 순위(teamRank)를 기준으로 오름차순(1위부터) 정렬해서 가져오는 명령어입니다!
+
+    // 팀 이름으로 기존 순위 정보 찾기 (업데이트용)
+    Optional<Ranking> findByTeamName(String teamName);
+
+    // 1위부터 10위까지 순위순 정렬 조회
     List<Ranking> findAllByOrderByTeamRankAsc();
 }
