@@ -1,11 +1,32 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { HeaderProps, TabType } from '../types';
+import { getMyInfo } from '../api/memberApi';
 import { clearAccessToken, getAccessToken } from '../utils/tokenStorage';
 
 export default function Header({ activeTab, onTabChange }: HeaderProps): React.JSX.Element {
     const navigate = useNavigate();
     const isLoggedIn = Boolean(getAccessToken());
+    const [nickname, setNickname] = useState<string>('');
+
+    useEffect(() => {
+        if (!isLoggedIn) {
+            return;
+        }
+
+        let cancelled = false;
+        getMyInfo()
+            .then((info) => {
+                if (!cancelled) {
+                    setNickname(info.nickname);
+                }
+            })
+            .catch(() => setNickname(''));
+
+        return () => {
+            cancelled = true;
+        };
+    }, [isLoggedIn]);
 
     const navItems: { id: TabType; label: string }[] = [
         { id: 'home', label: '홈' },
@@ -144,7 +165,7 @@ export default function Header({ activeTab, onTabChange }: HeaderProps): React.J
                                     <circle cx="12" cy="8" r="4" />
                                     <path d="M4 20c0-4 3.5-7 8-7s8 3 8 7" />
                                 </svg>
-                                <span>마이페이지</span>
+                                <span>{nickname ? `${nickname}님` : '마이페이지'}</span>
                             </Link>
                             <button
                                 type="button"
