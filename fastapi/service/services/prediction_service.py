@@ -228,7 +228,7 @@ class PredictionService:
                 lon=raw_stats["stadium_longitude"],
                 target_date=raw_stats["match_date"],
             )
-        except Exception:  # noqa: BLE001 - 날씨 조회 실패는 예측 전체를 막을 이유가 없음(중립 처리)
+        except Exception:
             return None
 
         if forecast is None:
