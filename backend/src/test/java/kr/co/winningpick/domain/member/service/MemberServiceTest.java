@@ -3,6 +3,7 @@ package kr.co.winningpick.domain.member.service;
 import kr.co.winningpick.domain.member.dto.request.RequestLogin;
 import kr.co.winningpick.domain.member.dto.request.RequestSignup;
 import kr.co.winningpick.domain.member.dto.response.ResponseLogin;
+import kr.co.winningpick.domain.member.dto.response.ResponseMyInfo;
 import kr.co.winningpick.domain.member.dto.response.ResponseSignup;
 import kr.co.winningpick.domain.member.entity.Member;
 import kr.co.winningpick.domain.member.exception.MemberErrorCode;
@@ -180,5 +181,27 @@ class MemberServiceTest {
 
         assertThat(response.accessToken()).isEqualTo("access-token");
         assertThat(response.refreshToken()).isEqualTo("refresh-token");
+    }
+
+    @Test
+    void 내_정보를_조회하면_id_이메일_닉네임을_반환한다() {
+        Member member = Member.createLocalMember("test@example.com", "nickname", "encodedPassword");
+        ReflectionTestUtils.setField(member, "id", 1L);
+        when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+
+        ResponseMyInfo response = memberService.getMyInfo(1L);
+
+        assertThat(response.id()).isEqualTo(1L);
+        assertThat(response.email()).isEqualTo("test@example.com");
+        assertThat(response.nickname()).isEqualTo("nickname");
+    }
+
+    @Test
+    void 존재하지_않는_회원의_정보를_조회하면_예외를_던진다() {
+        when(memberRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> memberService.getMyInfo(99L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", MemberErrorCode.MEMBER_NOT_FOUND);
     }
 }

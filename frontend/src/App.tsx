@@ -6,8 +6,29 @@ import RankingPage from './pages/RankingPage';
 import CommunityScreen from './pages/CommunityScreen';
 import type { TabType } from './types';
 
+const ACTIVE_TAB_STORAGE_KEY = 'activeTab';
+const VALID_TABS: TabType[] = ['home', 'recommend', 'analysis', 'ranking', 'community'];
+
+function getInitialTab(): TabType {
+    try {
+        const stored = sessionStorage.getItem(ACTIVE_TAB_STORAGE_KEY);
+        return VALID_TABS.includes(stored as TabType) ? (stored as TabType) : 'home';
+    } catch {
+        return 'home';
+    }
+}
+
 export default function App(): React.JSX.Element {
-    const [activeTab, setActiveTab] = useState<TabType>('home');
+    const [activeTab, setActiveTabState] = useState<TabType>(getInitialTab);
+
+    const setActiveTab = (tab: TabType): void => {
+        setActiveTabState(tab);
+        try {
+            sessionStorage.setItem(ACTIVE_TAB_STORAGE_KEY, tab);
+        } catch {
+            // sessionStorage 접근 불가 시(프라이빗 모드 등) 탭 상태 유지만 포기하고 무시
+        }
+    };
 
     return (
         <div className="dashboard-container">

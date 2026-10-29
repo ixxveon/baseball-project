@@ -9,6 +9,7 @@ import kr.co.winningpick.domain.member.dto.request.RequestSendEmailVerification;
 import kr.co.winningpick.domain.member.dto.request.RequestSignup;
 import kr.co.winningpick.domain.member.dto.response.ResponseEmailVerification;
 import kr.co.winningpick.domain.member.dto.response.ResponseLogin;
+import kr.co.winningpick.domain.member.dto.response.ResponseMyInfo;
 import kr.co.winningpick.domain.member.dto.response.ResponseNicknameAvailability;
 import kr.co.winningpick.domain.member.dto.response.ResponseReissue;
 import kr.co.winningpick.domain.member.dto.response.ResponseSignup;
@@ -91,6 +92,15 @@ public class MemberController implements MemberControllerDocs {
     @PostMapping("/reissue")
     public ApiResponse<ResponseReissue> reissue(@Valid @RequestBody RequestReissue request) {
         return ApiResponse.success(memberService.reissue(request.refreshToken()));
+    }
+
+    @Override
+    @GetMapping("/me")
+    public ApiResponse<ResponseMyInfo> getMyInfo(@RequestAttribute(name = "memberId", required = false) Long memberId) {
+        if (memberId == null) {
+            throw new BusinessException(GlobalErrorCode.UNAUTHORIZED);
+        }
+        return ApiResponse.success(memberService.getMyInfo(memberId));
     }
 
     @Override
