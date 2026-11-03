@@ -72,6 +72,10 @@ export async function login(request: LoginRequest): Promise<LoginResponse> {
     return response.data.data;
 }
 
+export async function withdraw(): Promise<void> {
+    await axiosInstance.delete('/members/me');
+}
+
 export interface MyInfoResponse {
     id: number;
     email: string;
