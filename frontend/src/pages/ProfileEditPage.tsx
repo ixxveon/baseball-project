@@ -1,39 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNicknameForm } from '../hooks/useNicknameForm';
 import { useTeamPreferenceForm } from '../hooks/useTeamPreferenceForm';
+import { usePasswordForm } from '../hooks/usePasswordForm';
 import { KBO_TEAMS } from '../constants/teams';
 
 export default function ProfileEditPage(): React.JSX.Element {
     const navigate = useNavigate();
     const nicknameForm = useNicknameForm();
     const preferenceForm = useTeamPreferenceForm();
-    const [currentPassword, setCurrentPassword] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-
-    // 📌 비밀번호 변경 핸들러 (영문, 숫자 포함 8자리 검사)
-    const handlePasswordChange = () => {
-        if (!currentPassword || !newPassword || !confirmPassword) {
-            alert('모든 비밀번호 항목을 입력해주세요.');
-            return;
-        }
-
-        // 비밀번호 정규식: 최소 8자리 이상, 영문(대소문자)과 숫자가 최소 1개씩 포함되어야 함
-        const passwordRegex = /^(?=.*[a-zA-Z])(?=.*[0-9]).{8,}$/;
-
-        if (!passwordRegex.test(newPassword)) {
-            alert('새 비밀번호는 영문과 숫자를 포함하여 8자리 이상으로 입력해주세요.');
-            return;
-        }
-
-        if (newPassword !== confirmPassword) {
-            alert('새 비밀번호와 비밀번호 확인이 일치하지 않습니다.');
-            return;
-        }
-
-        alert('비밀번호 변경 요청되었습니다! (API 연동 필요)');
-    };
+    const passwordForm = usePasswordForm();
 
     return (
         <div className="profile-edit-container">
@@ -135,9 +111,10 @@ export default function ProfileEditPage(): React.JSX.Element {
                         <input
                             type="password"
                             className="form-input"
-                            value={currentPassword}
-                            onChange={(e) => setCurrentPassword(e.target.value)}
+                            value={passwordForm.currentPassword}
+                            onChange={(e) => passwordForm.setCurrentPassword(e.target.value)}
                             placeholder="현재 사용 중인 비밀번호"
+                            autoComplete="current-password"
                         />
                     </div>
                     <div className="form-group">
@@ -145,9 +122,10 @@ export default function ProfileEditPage(): React.JSX.Element {
                         <input
                             type="password"
                             className="form-input"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
+                            value={passwordForm.newPassword}
+                            onChange={(e) => passwordForm.setNewPassword(e.target.value)}
                             placeholder="영문, 숫자 포함 8자리 이상"
+                            autoComplete="new-password"
                         />
                     </div>
                     <div className="form-group">
@@ -155,12 +133,16 @@ export default function ProfileEditPage(): React.JSX.Element {
                         <input
                             type="password"
                             className="form-input"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            value={passwordForm.confirmPassword}
+                            onChange={(e) => passwordForm.setConfirmPassword(e.target.value)}
                             placeholder="새 비밀번호를 다시 입력해주세요"
+                            autoComplete="new-password"
                         />
+                        {passwordForm.errorMessage && (
+                            <span className="field-message auth-error">{passwordForm.errorMessage}</span>
+                        )}
                     </div>
-                    <button className="btn-action btn-submit" onClick={handlePasswordChange}>비밀번호 변경하기</button>
+                    <button className="btn-action btn-submit" onClick={passwordForm.submitPassword}>비밀번호 변경하기</button>
                 </section>
             </div>
         </div>

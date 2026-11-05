@@ -80,6 +80,10 @@ public class Member {
         return this.status == MemberStatus.WITHDRAWN;
     }
 
+    public boolean hasPassword() {
+        return this.provider == ProviderType.LOCAL && this.password != null;
+    }
+
     // 탈퇴해도 이 회원이 쓴 게시글/댓글은 남기되, 작성자 표시는 익명으로 바꾼다.
     // email/nickname은 unique 제약이 있어서 그대로 두면 같은 이메일/닉네임으로 재가입이 막히므로,
     // 탈퇴 시점에 본인 id로만 유일한 값으로 바꿔 원래 값을 비워준다.

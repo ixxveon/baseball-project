@@ -117,6 +117,22 @@ public interface MemberControllerDocs {
     })
     kr.co.winningpick.global.response.ApiResponse<Void> logout(Long memberId);
 
+    @Operation(summary = "비밀번호 변경", description = "로그인한 회원이 현재 비밀번호를 확인한 뒤 새 비밀번호로 변경합니다. 변경 후 리프레시 토큰이 삭제되어 다시 로그인해야 합니다.")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "변경 성공"),
+            @ApiResponse(responseCode = "400", description = "현재 비밀번호 불일치, 기존과 같은 비밀번호, 소셜 로그인 회원, 형식 오류",
+                    content = @Content(examples = @ExampleObject(value = """
+                {"success":false,"message":"현재 비밀번호가 올바르지 않습니다","data":null}"""))),
+            @ApiResponse(responseCode = "401", description = "인증 필요",
+                    content = @Content(examples = @ExampleObject(value = """
+                {"success":false,"message":"인증이 필요합니다","data":null}""")))
+    })
+    kr.co.winningpick.global.response.ApiResponse<Void> changePassword(
+            @Parameter(hidden = true) @RequestAttribute(name = "memberId", required = false) Long memberId,
+            RequestChangePassword request
+    );
+
     @Operation(summary = "회원 탈퇴", description = "로그인한 회원을 탈퇴 처리합니다. 작성했던 게시글/댓글은 삭제되지 않고 작성자가 '탈퇴한 회원'으로 표시됩니다.")
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
