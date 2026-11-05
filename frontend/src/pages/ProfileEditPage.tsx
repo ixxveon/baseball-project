@@ -1,26 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useNicknameForm } from '../hooks/useNicknameForm';
+import { useTeamPreferenceForm } from '../hooks/useTeamPreferenceForm';
+import { KBO_TEAMS } from '../constants/teams';
 
 export default function ProfileEditPage(): React.JSX.Element {
     const navigate = useNavigate();
-
-    // 상태 관리
-    const [nickname, setNickname] = useState('위닝요정');
+    const nicknameForm = useNicknameForm();
+    const preferenceForm = useTeamPreferenceForm();
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-
-    // 📌 닉네임 변경 핸들러 (2~10자 검사)
-    const handleNicknameChange = () => {
-        const trimmedNickname = nickname.trim();
-
-        if (trimmedNickname.length < 2 || trimmedNickname.length > 10) {
-            alert('닉네임은 2~10자로 입력해주세요.');
-            return;
-        }
-
-        alert(`닉네임이 '${trimmedNickname}'(으)로 변경 요청되었습니다! (API 연동 필요)`);
-    };
 
     // 📌 비밀번호 변경 핸들러 (영문, 숫자 포함 8자리 검사)
     const handlePasswordChange = () => {
@@ -69,6 +59,10 @@ export default function ProfileEditPage(): React.JSX.Element {
           .btn-check:hover { background: #e5e7eb; }
           .btn-submit { width: 100%; background: #111827; color: #fff; margin-top: 8px; font-size: 15px; }
           .btn-submit:hover { background: #1f2937; }
+          .form-group > .form-input { width: 100%; box-sizing: border-box; }
+          .toggle-row { display: flex; align-items: center; gap: 10px; font-size: 15px; color: #374151; cursor: pointer; }
+          .form-input.input-error { border-color: #e71937; }
+          .field-message { display: block; margin-top: 6px; }
         `}
             </style>
 
@@ -86,16 +80,51 @@ export default function ProfileEditPage(): React.JSX.Element {
                         <div className="input-wrap">
                             <input
                                 id="nickname"
+                                ref={nicknameForm.inputRef}
                                 type="text"
-                                className="form-input"
-                                value={nickname}
-                                onChange={(e) => setNickname(e.target.value)}
+                                className={`form-input${nicknameForm.message?.type === 'error' ? ' input-error' : ''}`}
+                                value={nicknameForm.nickname}
+                                onChange={(e) => nicknameForm.changeInput(e.target.value)}
                                 placeholder="2~10자 이내로 입력해주세요"
                             />
-                            <button className="btn-action btn-check" onClick={() => alert('사용 가능한 닉네임입니다. (API 연동 필요)')}>중복 확인</button>
+                            <button className="btn-action btn-check" onClick={nicknameForm.checkNickname}>중복 확인</button>
                         </div>
+                        {nicknameForm.message && (
+                            <span className={`field-message ${nicknameForm.message.type === 'error' ? 'auth-error' : 'auth-success'}`}>
+                                {nicknameForm.message.text}
+                            </span>
+                        )}
                     </div>
-                    <button className="btn-action btn-submit" onClick={handleNicknameChange}>닉네임 변경하기</button>
+                    <button className="btn-action btn-submit" onClick={nicknameForm.changeNickname}>닉네임 변경하기</button>
+                </section>
+
+                <section className="edit-section">
+                    <h2 className="section-title">응원 설정</h2>
+                    <div className="form-group">
+                        <label className="form-label" htmlFor="favoriteTeam">최애 구단</label>
+                        <select
+                            id="favoriteTeam"
+                            className="form-input"
+                            value={preferenceForm.favoriteTeamId ?? ''}
+                            onChange={(e) => preferenceForm.setFavoriteTeamId(e.target.value ? Number(e.target.value) : null)}
+                        >
+                            <option value="">구단을 선택해주세요</option>
+                            {KBO_TEAMS.map((team) => (
+                                <option key={team.id} value={team.id}>{team.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="form-group">
+                        <label className="toggle-row">
+                            <input
+                                type="checkbox"
+                                checked={preferenceForm.pushAlarm}
+                                onChange={(e) => preferenceForm.setPushAlarm(e.target.checked)}
+                            />
+                            <span>경기 알림 받기</span>
+                        </label>
+                    </div>
+                    <button className="btn-action btn-submit" onClick={preferenceForm.savePreference}>설정 저장하기</button>
                 </section>
 
                 {/* 2. 비밀번호 변경 섹션 */}
