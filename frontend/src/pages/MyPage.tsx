@@ -116,6 +116,7 @@ export default function MyPage(): React.JSX.Element {
                         <div className="stat-card">
                             <div className="stat-label">직관 승률</div>
                             <div className="stat-value accent">{winRate}%</div>
+                            <div className="stat-sub">무승부 제외 기준</div>
                         </div>
                         <div className="stat-card">
                             <div className="stat-label">전적</div>
