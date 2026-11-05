@@ -1,10 +1,17 @@
-import { useState } from 'react';
+import { useRef, useState, type RefObject } from 'react';
 import { checkNicknameAvailability, updateProfile } from '../api/memberApi';
 import { getApiErrorMessage } from '../utils/apiError';
 
+interface NicknameMessage {
+    type: 'error' | 'success';
+    text: string;
+}
+
 interface NicknameForm {
     nickname: string;
-    setNickname: (nickname: string) => void;
+    changeInput: (nickname: string) => void;
+    message: NicknameMessage | null;
+    inputRef: RefObject<HTMLInputElement | null>;
     checkNickname: () => Promise<void>;
     changeNickname: () => Promise<void>;
 }
@@ -12,12 +19,24 @@ interface NicknameForm {
 export function useNicknameForm(): NicknameForm {
     const [nickname, setNickname] = useState('');
     const [checkedNickname, setCheckedNickname] = useState<string | null>(null);
+    const [message, setMessage] = useState<NicknameMessage | null>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    const showError = (text: string): void => {
+        setMessage({ type: 'error', text });
+        inputRef.current?.focus();
+    };
+
+    const changeInput = (value: string): void => {
+        setNickname(value);
+        setMessage(null);
+    };
 
     const checkNickname = async (): Promise<void> => {
         const trimmedNickname = nickname.trim();
 
         if (trimmedNickname.length < 2 || trimmedNickname.length > 10) {
-            alert('닉네임은 2~10자로 입력해주세요.');
+            showError('닉네임은 2~10자로 입력해주세요');
             return;
         }
 
@@ -25,13 +44,13 @@ export function useNicknameForm(): NicknameForm {
             const available = await checkNicknameAvailability(trimmedNickname);
             if (available) {
                 setCheckedNickname(trimmedNickname);
-                alert('사용 가능한 닉네임입니다.');
+                setMessage({ type: 'success', text: '사용 가능한 닉네임이에요' });
             } else {
                 setCheckedNickname(null);
-                alert('이미 사용 중인 닉네임입니다.');
+                showError('이미 사용 중인 닉네임이에요');
             }
         } catch {
-            alert('중복 확인에 실패했어요. 잠시 후 다시 시도해주세요');
+            showError('중복 확인에 실패했어요. 잠시 후 다시 시도해주세요');
         }
     };
 
@@ -39,17 +58,18 @@ export function useNicknameForm(): NicknameForm {
         const trimmedNickname = nickname.trim();
 
         if (checkedNickname !== trimmedNickname) {
-            alert('닉네임 중복 확인을 해주세요.');
+            showError('닉네임 중복 확인을 해주세요');
             return;
         }
 
         try {
             await updateProfile({ nickname: trimmedNickname });
+            setMessage(null);
             alert('닉네임이 변경되었습니다.');
         } catch (error: unknown) {
             alert(getApiErrorMessage(error, '닉네임 변경에 실패했어요. 잠시 후 다시 시도해주세요'));
         }
     };
 
-    return { nickname, setNickname, checkNickname, changeNickname };
+    return { nickname, changeInput, message, inputRef, checkNickname, changeNickname };
 }

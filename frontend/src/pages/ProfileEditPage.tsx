@@ -61,6 +61,8 @@ export default function ProfileEditPage(): React.JSX.Element {
           .btn-submit:hover { background: #1f2937; }
           .form-group > .form-input { width: 100%; box-sizing: border-box; }
           .toggle-row { display: flex; align-items: center; gap: 10px; font-size: 15px; color: #374151; cursor: pointer; }
+          .form-input.input-error { border-color: #e71937; }
+          .field-message { display: block; margin-top: 6px; }
         `}
             </style>
 
@@ -78,14 +80,20 @@ export default function ProfileEditPage(): React.JSX.Element {
                         <div className="input-wrap">
                             <input
                                 id="nickname"
+                                ref={nicknameForm.inputRef}
                                 type="text"
-                                className="form-input"
+                                className={`form-input${nicknameForm.message?.type === 'error' ? ' input-error' : ''}`}
                                 value={nicknameForm.nickname}
-                                onChange={(e) => nicknameForm.setNickname(e.target.value)}
+                                onChange={(e) => nicknameForm.changeInput(e.target.value)}
                                 placeholder="2~10자 이내로 입력해주세요"
                             />
                             <button className="btn-action btn-check" onClick={nicknameForm.checkNickname}>중복 확인</button>
                         </div>
+                        {nicknameForm.message && (
+                            <span className={`field-message ${nicknameForm.message.type === 'error' ? 'auth-error' : 'auth-success'}`}>
+                                {nicknameForm.message.text}
+                            </span>
+                        )}
                     </div>
                     <button className="btn-action btn-submit" onClick={nicknameForm.changeNickname}>닉네임 변경하기</button>
                 </section>
