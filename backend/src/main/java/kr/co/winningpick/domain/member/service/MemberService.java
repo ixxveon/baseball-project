@@ -1,8 +1,6 @@
 package kr.co.winningpick.domain.member.service;
 
-import kr.co.winningpick.domain.member.dto.request.RequestLogin;
-import kr.co.winningpick.domain.member.dto.request.RequestResetPassword;
-import kr.co.winningpick.domain.member.dto.request.RequestSignup;
+import kr.co.winningpick.domain.member.dto.request.*;
 import kr.co.winningpick.domain.member.dto.response.ResponseLogin;
 import kr.co.winningpick.domain.member.dto.response.ResponseMyInfo;
 import kr.co.winningpick.domain.member.dto.response.ResponseReissue;
@@ -16,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import kr.co.winningpick.domain.member.dto.request.ProfileUpdateRequest;
 import org.springframework.transaction.annotation.Transactional;
 import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Profile;
@@ -217,5 +214,25 @@ public class MemberService {
                 .orElseThrow(() -> new BusinessException(MemberErrorCode.LOGIN_FAILED));
 
         member.changePassword(passwordEncoder.encode(request.newPassword()));
+    }
+
+    @Transactional
+    public void changePassword(Long memberId, RequestChangePassword request) {
+        Member member = memberRepository.findById(memberId)
+                .filter(found -> !found.isWithdrawn())
+                .orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
+
+        if (!member.hasPassword()) {
+            throw new BusinessException(MemberErrorCode.PASSWORD_CHANGE_NOT_ALLOWED);
+        }
+        if (!passwordEncoder.matches(request.currentPassword(), member.getPassword())) {
+            throw new BusinessException(MemberErrorCode.INVALID_CURRENT_PASSWORD);
+        }
+        if (passwordEncoder.matches(request.newPassword(), member.getPassword())) {
+            throw new BusinessException(MemberErrorCode.SAME_AS_CURRENT_PASSWORD);
+        }
+
+        member.changePassword(passwordEncoder.encode(request.newPassword()));
+        stringRedisTemplate.delete(refreshTokenKey(memberId));
     }
 }
