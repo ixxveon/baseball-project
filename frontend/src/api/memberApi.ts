@@ -80,6 +80,8 @@ export interface MyInfoResponse {
     id: number;
     email: string;
     nickname: string;
+    favoriteTeamId: number | null;
+    pushAlarmEnabled: boolean;
 }
 
 export async function getMyInfo(): Promise<MyInfoResponse> {

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { updateProfile } from '../api/memberApi';
+import { useEffect, useState } from 'react';
+import { getMyInfo, updateProfile } from '../api/memberApi';
 import { getApiErrorMessage } from '../utils/apiError';
 
 interface TeamPreferenceForm {
@@ -13,6 +13,17 @@ interface TeamPreferenceForm {
 export function useTeamPreferenceForm(): TeamPreferenceForm {
     const [favoriteTeamId, setFavoriteTeamId] = useState<number | null>(null);
     const [pushAlarm, setPushAlarm] = useState(false);
+
+    useEffect(() => {
+        getMyInfo()
+            .then((info) => {
+                setFavoriteTeamId(info.favoriteTeamId);
+                setPushAlarm(info.pushAlarmEnabled);
+            })
+            .catch(() => {
+                alert('내 정보를 불러오지 못했어요. 잠시 후 다시 시도해주세요');
+            });
+    }, []);
 
     const savePreference = async (): Promise<void> => {
         if (favoriteTeamId === null) {
