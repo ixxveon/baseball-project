@@ -1,15 +1,12 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { mockStats, mockHistory } from '../data/mockMyPage';
-import { withdraw } from '../api/memberApi';
-import { clearAccessToken } from '../utils/tokenStorage';
 import { useMyInfo } from '../hooks/useMyInfo';
 import { KBO_TEAMS } from '../constants/teams';
 
 export default function MyPage(): React.JSX.Element {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
-    const [isWithdrawing, setIsWithdrawing] = useState<boolean>(false);
     const myInfo = useMyInfo();
     const favoriteTeamName = KBO_TEAMS.find((team) => team.id === myInfo?.favoriteTeamId)?.name ?? '미설정';
     const joinDate = myInfo ? myInfo.createdAt.slice(0, 10).replace(/-/g, '.') : '-';
@@ -44,25 +41,6 @@ export default function MyPage(): React.JSX.Element {
 
     const handleEditProfile = () => {
         navigate('/profile-edit');
-    };
-
-    const handleDeleteAccount = async (): Promise<void> => {
-        const confirmDelete = window.confirm("정말 탈퇴하시겠어요? 탈퇴 후에는 로그인할 수 없고, 작성한 게시글과 댓글은 '탈퇴한 회원'으로 표시되어 남아요.");
-        if (!confirmDelete || isWithdrawing) {
-            return;
-        }
-
-        setIsWithdrawing(true);
-        try {
-            await withdraw();
-            clearAccessToken();
-            alert("회원 탈퇴가 완료되었습니다.");
-            navigate('/', { replace: true });
-        } catch {
-            alert("회원 탈퇴에 실패했어요. 잠시 후 다시 시도해주세요");
-        } finally {
-            setIsWithdrawing(false);
-        }
     };
 
     return (
@@ -112,10 +90,6 @@ export default function MyPage(): React.JSX.Element {
           .result-tag { font-size: 14px; font-weight: 800; padding: 6px 12px; border-radius: 8px; }
           .res-win { background: #fef2f2; color: #E6002D; }
           .res-lose { background: #f3f4f6; color: #6b7280; }
-          .danger-zone { margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
-          .danger-text { font-size: 13px; color: #6b7280; }
-          .btn-delete-account { background: transparent; border: none; color: #ef4444; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 4px; }
-          .btn-delete-account:hover { color: #b91c1c; }
         `}
             </style>
 
@@ -196,17 +170,6 @@ export default function MyPage(): React.JSX.Element {
                         ))}
                     </div>
                 </section>
-
-                <div className="danger-zone">
-                    <span className="danger-text">더 이상 위닝PICK을 이용하지 않으시겠어요?</span>
-                    <button
-                        className="btn-delete-account"
-                        onClick={() => { void handleDeleteAccount(); }}
-                        disabled={isWithdrawing}
-                    >
-                        회원 탈퇴
-                    </button>
-                </div>
             </div>
         </div>
     );
