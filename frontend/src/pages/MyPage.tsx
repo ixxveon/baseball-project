@@ -45,7 +45,7 @@ export default function MyPage(): React.JSX.Element {
     };
 
     const handleDeleteAccount = async (): Promise<void> => {
-        const confirmDelete = window.confirm("정말로 탈퇴하시겠습니까? 직관 기록과 승률 배지가 모두 삭제됩니다.");
+        const confirmDelete = window.confirm("정말로 탈퇴하시겠습니까? 탈퇴 후에는 로그인할 수 없고, 작성한 게시글과 댓글은 '탈퇴한 회원'으로 표시되어 남아요.");
         if (!confirmDelete || isWithdrawing) {
             return;
         }
