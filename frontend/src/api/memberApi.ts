@@ -86,3 +86,13 @@ export async function getMyInfo(): Promise<MyInfoResponse> {
     const response = await axiosInstance.get<ApiResponse<MyInfoResponse>>('/members/me');
     return response.data.data;
 }
+
+export interface ProfileUpdateRequest {
+    nickname?: string;
+    favoriteTeamId?: number;
+    pushAlarm?: boolean;
+}
+
+export async function updateProfile(request: ProfileUpdateRequest): Promise<void> {
+    await axiosInstance.patch('/members/profile', request);
+}
