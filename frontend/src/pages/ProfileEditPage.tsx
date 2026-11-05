@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNicknameForm } from '../hooks/useNicknameForm';
+import { useTeamPreferenceForm } from '../hooks/useTeamPreferenceForm';
+import { KBO_TEAMS } from '../constants/teams';
 
 export default function ProfileEditPage(): React.JSX.Element {
     const navigate = useNavigate();
     const nicknameForm = useNicknameForm();
+    const preferenceForm = useTeamPreferenceForm();
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -56,6 +59,8 @@ export default function ProfileEditPage(): React.JSX.Element {
           .btn-check:hover { background: #e5e7eb; }
           .btn-submit { width: 100%; background: #111827; color: #fff; margin-top: 8px; font-size: 15px; }
           .btn-submit:hover { background: #1f2937; }
+          .form-group > .form-input { width: 100%; box-sizing: border-box; }
+          .toggle-row { display: flex; align-items: center; gap: 10px; font-size: 15px; color: #374151; cursor: pointer; }
         `}
             </style>
 
@@ -83,6 +88,35 @@ export default function ProfileEditPage(): React.JSX.Element {
                         </div>
                     </div>
                     <button className="btn-action btn-submit" onClick={nicknameForm.changeNickname}>닉네임 변경하기</button>
+                </section>
+
+                <section className="edit-section">
+                    <h2 className="section-title">응원 설정</h2>
+                    <div className="form-group">
+                        <label className="form-label" htmlFor="favoriteTeam">최애 구단</label>
+                        <select
+                            id="favoriteTeam"
+                            className="form-input"
+                            value={preferenceForm.favoriteTeamId ?? ''}
+                            onChange={(e) => preferenceForm.setFavoriteTeamId(e.target.value ? Number(e.target.value) : null)}
+                        >
+                            <option value="">구단을 선택해주세요</option>
+                            {KBO_TEAMS.map((team) => (
+                                <option key={team.id} value={team.id}>{team.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="form-group">
+                        <label className="toggle-row">
+                            <input
+                                type="checkbox"
+                                checked={preferenceForm.pushAlarm}
+                                onChange={(e) => preferenceForm.setPushAlarm(e.target.checked)}
+                            />
+                            <span>경기 알림 받기</span>
+                        </label>
+                    </div>
+                    <button className="btn-action btn-submit" onClick={preferenceForm.savePreference}>설정 저장하기</button>
                 </section>
 
                 {/* 2. 비밀번호 변경 섹션 */}
