@@ -82,6 +82,7 @@ export interface MyInfoResponse {
     nickname: string;
     favoriteTeamId: number | null;
     pushAlarmEnabled: boolean;
+    createdAt: string;
 }
 
 export async function getMyInfo(): Promise<MyInfoResponse> {

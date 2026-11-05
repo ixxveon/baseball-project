@@ -1,16 +1,18 @@
-// frontend/src/pages/MyPage.tsx
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-// 📌 핵심: 옆방(data 폴더)에서 데이터를 가져오라는 포스트잇 한 줄!
-import { mockProfile, mockStats, mockHistory } from '../data/mockMyPage';
+import { mockStats, mockHistory } from '../data/mockMyPage';
 import { withdraw } from '../api/memberApi';
 import { clearAccessToken } from '../utils/tokenStorage';
+import { useMyInfo } from '../hooks/useMyInfo';
+import { KBO_TEAMS } from '../constants/teams';
 
 export default function MyPage(): React.JSX.Element {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
     const [isWithdrawing, setIsWithdrawing] = useState<boolean>(false);
+    const myInfo = useMyInfo();
+    const favoriteTeamName = KBO_TEAMS.find((team) => team.id === myInfo?.favoriteTeamId)?.name ?? '미설정';
+    const joinDate = myInfo ? myInfo.createdAt.slice(0, 10).replace(/-/g, '.') : '-';
 
     const calculateWinRate = (wins: number, losses: number) => {
         const totalDecisions = wins + losses;
@@ -125,19 +127,19 @@ export default function MyPage(): React.JSX.Element {
                     <div className="profile-info-grid">
                         <div className="info-item">
                             <div className="info-label">닉네임</div>
-                            <div className="info-value">{mockProfile.nickname}</div>
+                            <div className="info-value">{myInfo?.nickname ?? '-'}</div>
                         </div>
                         <div className="info-item">
                             <div className="info-label">응원팀</div>
-                            <div className="info-value" style={{ color: '#E6002D' }}>{mockProfile.favoriteTeam}</div>
+                            <div className="info-value" style={{ color: '#E6002D' }}>{favoriteTeamName}</div>
                         </div>
                         <div className="info-item">
                             <div className="info-label">계정 이메일</div>
-                            <div className="info-value">{mockProfile.email}</div>
+                            <div className="info-value">{myInfo?.email ?? '-'}</div>
                         </div>
                         <div className="info-item">
                             <div className="info-label">가입일</div>
-                            <div className="info-value">{mockProfile.joinDate}</div>
+                            <div className="info-value">{joinDate}</div>
                         </div>
                     </div>
                     <button className="btn-edit-profile" onClick={handleEditProfile}>프로필 수정하기</button>
