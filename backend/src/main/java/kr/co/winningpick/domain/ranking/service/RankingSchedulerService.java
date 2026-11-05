@@ -3,6 +3,7 @@ package kr.co.winningpick.domain.ranking.service;
 import kr.co.winningpick.domain.ranking.entity.Ranking;
 import kr.co.winningpick.domain.ranking.repository.RankingRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.InputStream;
 import java.util.*;
 
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class RankingSchedulerService {
@@ -127,14 +129,11 @@ public class RankingSchedulerService {
                 // 3. 일괄 저장
                 rankingRepository.saveAll(rankingsToSave);
 
-                System.out.println("=========================================================");
-                System.out.println("KBO 랭킹 데이터 10건이 DB(rankings)에 성공적으로 저장되었습니다.");
-                System.out.println("=========================================================");
+                log.info("KBO 랭킹 데이터 10건이 DB(rankings)에 성공적으로 저장되었습니다.");
             }
 
         } catch (Exception e) {
-            System.err.println("HTML 파싱 및 DB 저장 중 오류 발생: " + e.getMessage());
-            e.printStackTrace();
+            log.error("HTML 파싱 및 DB 저장 중 오류 발생: {}", e.getMessage(), e);
             throw new RuntimeException("KBO 랭킹 데이터 업데이트 중 오류가 발생했습니다.", e);
         }
     }
