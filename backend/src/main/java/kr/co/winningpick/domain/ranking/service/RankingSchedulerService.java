@@ -2,6 +2,7 @@ package kr.co.winningpick.domain.ranking.service;
 
 import kr.co.winningpick.domain.ranking.entity.Ranking;
 import kr.co.winningpick.domain.ranking.repository.RankingRepository;
+import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -16,14 +17,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.InputStream;
 import java.util.*;
 
+@RequiredArgsConstructor
 @Service
 public class RankingSchedulerService {
 
     private final RankingRepository rankingRepository;
-
-    public RankingSchedulerService(RankingRepository rankingRepository) {
-        this.rankingRepository = rankingRepository;
-    }
 
     /**
      * 서버 시작 시 즉시 1회 실행 + 매일 밤 23:30 자동 스케줄링
@@ -55,8 +53,20 @@ public class RankingSchedulerService {
                 }
 
                 String[] scores = scoreText.split(":");
-                int homeScore = Integer.parseInt(scores[0].trim());
-                int awayScore = Integer.parseInt(scores[1].trim());
+                if (scores.length < 2) {
+                    continue;
+                }
+
+                String homeScoreStr = scores[0].trim();
+                String awayScoreStr = scores[1].trim();
+
+                // 점수에 '-' 등의 문자가 섞여있으면 안전하게 건너뜁니다.
+                if (!homeScoreStr.matches("\\d+") || !awayScoreStr.matches("\\d+")) {
+                    continue;
+                }
+
+                int homeScore = Integer.parseInt(homeScoreStr);
+                int awayScore = Integer.parseInt(awayScoreStr);
 
                 statMap.putIfAbsent(homeTeam, new TeamStat(homeTeam));
                 statMap.putIfAbsent(awayTeam, new TeamStat(awayTeam));
@@ -125,6 +135,7 @@ public class RankingSchedulerService {
         } catch (Exception e) {
             System.err.println("HTML 파싱 및 DB 저장 중 오류 발생: " + e.getMessage());
             e.printStackTrace();
+            throw new RuntimeException("KBO 랭킹 데이터 업데이트 중 오류가 발생했습니다.", e);
         }
     }
 

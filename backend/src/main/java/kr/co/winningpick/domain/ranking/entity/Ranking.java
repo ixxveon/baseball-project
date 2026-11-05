@@ -25,14 +25,4 @@ public class Ranking {
     private Double gameDiff; // 게임차
     private String streak; // 최근 흐름 (연승/연패)
 
-
-    public void update(Integer teamRank, Integer games, Integer wins, Integer draws, Integer losses, Double winRate, Double gameDiff) {
-        this.teamRank = teamRank;
-        this.games = wins + draws + losses;
-        this.wins = wins;
-        this.draws = draws;
-        this.losses = losses;
-        this.winRate = winRate;
-        this.gameDiff = gameDiff;
-    }
 }
