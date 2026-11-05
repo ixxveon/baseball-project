@@ -8,6 +8,8 @@ import kr.co.winningpick.domain.member.dto.response.ResponseSignup;
 import kr.co.winningpick.domain.member.entity.Member;
 import kr.co.winningpick.domain.member.exception.MemberErrorCode;
 import kr.co.winningpick.domain.member.repository.MemberRepository;
+import kr.co.winningpick.domain.member.dto.request.RequestChangePassword;
+import kr.co.winningpick.domain.member.type.ProviderType;
 import kr.co.winningpick.global.exception.BusinessException;
 import kr.co.winningpick.global.util.JwtProvider;
 import org.junit.jupiter.api.Test;
@@ -248,6 +250,64 @@ class MemberServiceTest {
         when(memberRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> memberService.getMyInfo(99L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", MemberErrorCode.MEMBER_NOT_FOUND);
+    }
+    @Test
+    void 비밀번호를_변경하면_새_비밀번호로_저장되고_리프레시_토큰이_삭제된다() {
+        Member member = Member.createLocalMember("test@example.com", "nickname", "encodedPassword");
+        ReflectionTestUtils.setField(member, "id", 1L);
+        when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+        when(passwordEncoder.matches("currentPassword1", "encodedPassword")).thenReturn(true);
+        when(passwordEncoder.matches("newPassword1", "encodedPassword")).thenReturn(false);
+        when(passwordEncoder.encode("newPassword1")).thenReturn("encodedNewPassword");
+
+        memberService.changePassword(1L, new RequestChangePassword("currentPassword1", "newPassword1"));
+
+        assertThat(member.getPassword()).isEqualTo("encodedNewPassword");
+        verify(stringRedisTemplate).delete("refresh-token:1");
+    }
+
+    @Test
+    void 현재_비밀번호가_틀리면_비밀번호를_변경할_수_없다() {
+        Member member = Member.createLocalMember("test@example.com", "nickname", "encodedPassword");
+        when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+        when(passwordEncoder.matches("wrongPassword1", "encodedPassword")).thenReturn(false);
+
+        assertThatThrownBy(() -> memberService.changePassword(1L, new RequestChangePassword("wrongPassword1", "newPassword1")))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", MemberErrorCode.INVALID_CURRENT_PASSWORD);
+    }
+
+    @Test
+    void 새_비밀번호가_현재_비밀번호와_같으면_변경할_수_없다() {
+        Member member = Member.createLocalMember("test@example.com", "nickname", "encodedPassword");
+        when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+        when(passwordEncoder.matches("currentPassword1", "encodedPassword")).thenReturn(true);
+
+        assertThatThrownBy(() -> memberService.changePassword(1L, new RequestChangePassword("currentPassword1", "currentPassword1")))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", MemberErrorCode.SAME_AS_CURRENT_PASSWORD);
+    }
+
+    @Test
+    void 소셜_로그인_회원은_비밀번호를_변경할_수_없다() {
+        Member member = Member.createSocialMember("test@example.com", "nickname", ProviderType.KAKAO, "social-id");
+        when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+
+        assertThatThrownBy(() -> memberService.changePassword(1L, new RequestChangePassword("currentPassword1", "newPassword1")))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", MemberErrorCode.PASSWORD_CHANGE_NOT_ALLOWED);
+    }
+
+    @Test
+    void 탈퇴한_회원은_비밀번호를_변경할_수_없다() {
+        Member member = Member.createLocalMember("test@example.com", "nickname", "encodedPassword");
+        ReflectionTestUtils.setField(member, "id", 1L);
+        member.withdraw();
+        when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+
+        assertThatThrownBy(() -> memberService.changePassword(1L, new RequestChangePassword("currentPassword1", "newPassword1")))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", MemberErrorCode.MEMBER_NOT_FOUND);
     }
