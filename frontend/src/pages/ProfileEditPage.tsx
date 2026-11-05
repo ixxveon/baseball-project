@@ -1,57 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AxiosError } from 'axios';
-import { checkNicknameAvailability, updateProfile } from '../api/memberApi';
+import { useNicknameForm } from '../hooks/useNicknameForm';
 
 export default function ProfileEditPage(): React.JSX.Element {
     const navigate = useNavigate();
-
-    const [nickname, setNickname] = useState('');
-    const [checkedNickname, setCheckedNickname] = useState<string | null>(null);
+    const nicknameForm = useNicknameForm();
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-
-    const handleNicknameCheck = async (): Promise<void> => {
-        const trimmedNickname = nickname.trim();
-
-        if (trimmedNickname.length < 2 || trimmedNickname.length > 10) {
-            alert('닉네임은 2~10자로 입력해주세요.');
-            return;
-        }
-
-        try {
-            const available = await checkNicknameAvailability(trimmedNickname);
-            if (available) {
-                setCheckedNickname(trimmedNickname);
-                alert('사용 가능한 닉네임입니다.');
-            } else {
-                setCheckedNickname(null);
-                alert('이미 사용 중인 닉네임입니다.');
-            }
-        } catch {
-            alert('중복 확인에 실패했어요. 잠시 후 다시 시도해주세요');
-        }
-    };
-
-    const handleNicknameChange = async (): Promise<void> => {
-        const trimmedNickname = nickname.trim();
-
-        if (checkedNickname !== trimmedNickname) {
-            alert('닉네임 중복 확인을 해주세요.');
-            return;
-        }
-
-        try {
-            await updateProfile({ nickname: trimmedNickname });
-            alert('닉네임이 변경되었습니다.');
-        } catch (error: unknown) {
-            const message = error instanceof AxiosError
-                ? (error.response?.data as { message?: string } | undefined)?.message
-                : undefined;
-            alert(message ?? '닉네임 변경에 실패했어요. 잠시 후 다시 시도해주세요');
-        }
-    };
 
     // 📌 비밀번호 변경 핸들러 (영문, 숫자 포함 8자리 검사)
     const handlePasswordChange = () => {
@@ -119,14 +75,14 @@ export default function ProfileEditPage(): React.JSX.Element {
                                 id="nickname"
                                 type="text"
                                 className="form-input"
-                                value={nickname}
-                                onChange={(e) => setNickname(e.target.value)}
+                                value={nicknameForm.nickname}
+                                onChange={(e) => nicknameForm.setNickname(e.target.value)}
                                 placeholder="2~10자 이내로 입력해주세요"
                             />
-                            <button className="btn-action btn-check" onClick={handleNicknameCheck}>중복 확인</button>
+                            <button className="btn-action btn-check" onClick={nicknameForm.checkNickname}>중복 확인</button>
                         </div>
                     </div>
-                    <button className="btn-action btn-submit" onClick={handleNicknameChange}>닉네임 변경하기</button>
+                    <button className="btn-action btn-submit" onClick={nicknameForm.changeNickname}>닉네임 변경하기</button>
                 </section>
 
                 {/* 2. 비밀번호 변경 섹션 */}
