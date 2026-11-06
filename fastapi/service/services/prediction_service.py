@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Protocol
 
 from core.llm_service import LLMGenerationError, LLMService
@@ -26,6 +27,8 @@ from service.schemas.prediction_schema import (
     WeatherSchema,
     WinPredictionResultSchema,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class PredictionRepository(Protocol):
@@ -228,7 +231,8 @@ class PredictionService:
                 lon=raw_stats["stadium_longitude"],
                 target_date=raw_stats["match_date"],
             )
-        except Exception:
+        except Exception:  # noqa: BLE001
+            logger.exception("날씨 정보 조회 실패")
             return None
 
         if forecast is None:
