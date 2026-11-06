@@ -4,6 +4,7 @@ import kr.co.winningpick.domain.member.dto.request.RequestLogin;
 import kr.co.winningpick.domain.member.dto.request.RequestResetPassword;
 import kr.co.winningpick.domain.member.dto.request.RequestSignup;
 import kr.co.winningpick.domain.member.dto.response.ResponseLogin;
+import kr.co.winningpick.domain.member.dto.response.ResponseMyInfo;
 import kr.co.winningpick.domain.member.dto.response.ResponseReissue;
 import kr.co.winningpick.domain.member.dto.response.ResponseSignup;
 import kr.co.winningpick.domain.member.entity.Member;
@@ -15,6 +16,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import kr.co.winningpick.domain.member.dto.request.ProfileUpdateRequest;
+import org.springframework.transaction.annotation.Transactional;
+import jakarta.annotation.PostConstruct;
+import org.springframework.context.annotation.Profile;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
@@ -31,6 +37,18 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+
+    // 👇 서버가 켜질 때 자동으로 실행되어 테스트용 1번 회원을 만들어주는 마법의 코드입니다.
+    @Value("${spring.profiles.active:}")
+    private String activeProfile; //로컬환경에서만 실행
+    @PostConstruct
+    public void initTestUser() {
+        // 👇 3. 현재 환경이 "local"일 때만, 그리고 회원이 없을 때만 실행되도록 if문으로 꽉 묶었습니다.
+        if ("local".equals(activeProfile) && memberRepository.count() == 0) {
+            Member dummyUser = Member.createLocalMember("test@test.com", "기존승요", passwordEncoder.encode("1234"));
+            memberRepository.save(dummyUser);
+        }
+    }
 
     public void sendEmailVerification(String email) {
         String code = generateVerificationCode();
@@ -94,6 +112,10 @@ public class MemberService {
         Member member = memberRepository.findByEmail(request.email())
                 .orElseThrow(() -> new BusinessException(MemberErrorCode.LOGIN_FAILED));
 
+        if (member.isWithdrawn()) {
+            throw new BusinessException(MemberErrorCode.LOGIN_FAILED);
+        }
+
         if (!passwordEncoder.matches(request.password(), member.getPassword())) {
             throw new BusinessException(MemberErrorCode.LOGIN_FAILED);
         }
@@ -126,13 +148,63 @@ public class MemberService {
         return new ResponseReissue(newAccessToken, expiresAt);
     }
 
+    public ResponseMyInfo getMyInfo(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
+        return ResponseMyInfo.from(member);
+    }
+
     public void logout(Long memberId) {
+        stringRedisTemplate.delete(refreshTokenKey(memberId));
+    }
+
+    @Transactional
+    public void withdraw(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
+
+        if (member.isWithdrawn()) {
+            throw new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND);
+        }
+
+        member.withdraw();
         stringRedisTemplate.delete(refreshTokenKey(memberId));
     }
 
     private String refreshTokenKey(Long memberId) {
         return "refresh-token:" + memberId;
     }
+
+    @Transactional
+    public void updateProfile(Long memberId, ProfileUpdateRequest request) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
+
+        // 1. 닉네임 변경 (입력값이 있고, 기존 닉네임과 다를 경우에만 실행)
+        if (request.nickname() != null && !request.nickname().equals(member.getNickname())) {
+
+            if (memberRepository.existsByNickname(request.nickname())) {
+                throw new BusinessException(MemberErrorCode.DUPLICATE_NICKNAME);
+            }
+            member.changeNickname(request.nickname());
+        }
+
+        // 2. 최애 구단 변경 (teamRepository 대신 숫자 범위로 검사)
+        if (request.favoriteTeamId() != null) {
+            // 한국 프로야구 구단(1~10번) 범위를 벗어나면 에러 발생
+            if (request.favoriteTeamId() < 1 || request.favoriteTeamId() > 10) {
+                throw new BusinessException(MemberErrorCode.INVALID_TEAM_ID);
+            }
+            // 2. 검사를 무사히 통과했을 때만 회원 정보 업데이트
+            member.changeFavoriteTeam(request.favoriteTeamId());
+        }
+
+        // 3. 알림 설정 변경
+        if (request.pushAlarm() != null) {
+            member.changePushAlarm(request.pushAlarm());
+        }
+    }
+
 
     @Transactional
     public void resetPassword(RequestResetPassword request) {

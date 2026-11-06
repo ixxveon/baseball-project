@@ -12,6 +12,7 @@ public record ResponsePost(
         String title,
         String content,
         String author,
+        Long authorId,
         LocalDateTime createdAt,
         Integer commentCount
 ) {
@@ -22,7 +23,8 @@ public record ResponsePost(
                 post.getCategory(),
                 post.getTitle(),
                 post.getContent(),
-                post.getAuthor().getNickname(),
+                post.getAuthor().getDisplayNickname(),
+                post.getAuthor().getId(),
                 post.getCreatedAt(),
                 (int) commentCount
         );

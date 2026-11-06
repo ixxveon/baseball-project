@@ -71,3 +71,18 @@ export async function login(request: LoginRequest): Promise<LoginResponse> {
     const response = await axiosInstance.post<ApiResponse<LoginResponse>>('/members/login', request);
     return response.data.data;
 }
+
+export async function withdraw(): Promise<void> {
+    await axiosInstance.delete('/members/me');
+}
+
+export interface MyInfoResponse {
+    id: number;
+    email: string;
+    nickname: string;
+}
+
+export async function getMyInfo(): Promise<MyInfoResponse> {
+    const response = await axiosInstance.get<ApiResponse<MyInfoResponse>>('/members/me');
+    return response.data.data;
+}
