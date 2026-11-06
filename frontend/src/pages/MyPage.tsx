@@ -1,13 +1,16 @@
 // frontend/src/pages/MyPage.tsx
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // 📌 핵심: 옆방(data 폴더)에서 데이터를 가져오라는 포스트잇 한 줄!
 import { mockProfile, mockStats, mockHistory } from '../data/mockMyPage';
+import { withdraw } from '../api/memberApi';
+import { clearAccessToken } from '../utils/tokenStorage';
 
 export default function MyPage(): React.JSX.Element {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
+    const [isWithdrawing, setIsWithdrawing] = useState<boolean>(false);
 
     const calculateWinRate = (wins: number, losses: number) => {
         const totalDecisions = wins + losses;
@@ -41,10 +44,22 @@ export default function MyPage(): React.JSX.Element {
         navigate('/profile-edit');
     };
 
-    const handleDeleteAccount = () => {
+    const handleDeleteAccount = async (): Promise<void> => {
         const confirmDelete = window.confirm("정말로 탈퇴하시겠습니까? 직관 기록과 승률 배지가 모두 삭제됩니다.");
-        if (confirmDelete) {
-            alert("회원 탈퇴 요청이 접수되었습니다. (API 연동 필요)");
+        if (!confirmDelete || isWithdrawing) {
+            return;
+        }
+
+        setIsWithdrawing(true);
+        try {
+            await withdraw();
+            clearAccessToken();
+            alert("회원 탈퇴가 완료되었습니다.");
+            navigate('/', { replace: true });
+        } catch {
+            alert("회원 탈퇴에 실패했어요. 잠시 후 다시 시도해주세요");
+        } finally {
+            setIsWithdrawing(false);
         }
     };
 
@@ -182,7 +197,13 @@ export default function MyPage(): React.JSX.Element {
 
                 <div className="danger-zone">
                     <span className="danger-text">더 이상 위닝PICK을 이용하지 않으시겠어요?</span>
-                    <button className="btn-delete-account" onClick={handleDeleteAccount}>회원 탈퇴</button>
+                    <button
+                        className="btn-delete-account"
+                        onClick={() => { void handleDeleteAccount(); }}
+                        disabled={isWithdrawing}
+                    >
+                        회원 탈퇴
+                    </button>
                 </div>
             </div>
         </div>

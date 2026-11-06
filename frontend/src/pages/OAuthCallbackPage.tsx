@@ -11,7 +11,7 @@ export default function OAuthCallbackPage(): React.JSX.Element {
 
         if (token) {
             saveAccessToken(token);
-            navigate('/mypage');
+            navigate('/', { replace: true });
         } else {
             navigate('/login');
         }

@@ -1,12 +1,23 @@
 package kr.co.winningpick.domain.member.docs;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import kr.co.winningpick.domain.member.dto.request.ProfileUpdateRequest;
+import kr.co.winningpick.domain.member.dto.request.RequestConfirmEmailVerification;
+import kr.co.winningpick.domain.member.dto.request.RequestLogin;
+import kr.co.winningpick.domain.member.dto.request.RequestSendEmailVerification;
+import kr.co.winningpick.domain.member.dto.request.RequestSignup;
+import kr.co.winningpick.domain.member.dto.response.ResponseEmailVerification;
+import kr.co.winningpick.domain.member.dto.response.ResponseLogin;
+import kr.co.winningpick.domain.member.dto.response.ResponseNicknameAvailability;
+import kr.co.winningpick.domain.member.dto.response.ResponseSignup;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import kr.co.winningpick.domain.member.dto.request.*;
 import kr.co.winningpick.domain.member.dto.response.*;
 
@@ -64,6 +75,16 @@ public interface MemberControllerDocs {
     })
     kr.co.winningpick.global.response.ApiResponse<Void> resetPassword(RequestResetPassword request);
 
+    @Operation(summary = "프로필 수정", description = "닉네임, 최애 구단, 알림 설정 중 일부 또는 전체를 수정합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "프로필 수정 성공"),
+            @ApiResponse(responseCode = "400", description = "중복된 닉네임 등 잘못된 요청")
+    })
+    kr.co.winningpick.global.response.ApiResponse<Void> updateProfile(
+            @Parameter(hidden = true) @RequestAttribute(name = "memberId", required = false) Long memberId,
+            ProfileUpdateRequest request
+    );
+
     @Operation(summary = "Access Token 재발급", description = "Refresh Token으로 새 Access Token을 발급받습니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "재발급 성공"),
@@ -72,6 +93,19 @@ public interface MemberControllerDocs {
                         {"success":false,"message":"유효하지 않은 리프레시 토큰입니다","data":null}""")))
     })
     kr.co.winningpick.global.response.ApiResponse<ResponseReissue> reissue(RequestReissue request);
+
+    @Operation(summary = "내 정보 조회", description = "로그인한 회원의 정보(id, 이메일, 닉네임, 최애 구단 id, 알림 설정 여부)를 조회합니다.")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 필요",
+                    content = @Content(examples = @ExampleObject(value = """
+                    {"success":false,"message":"인증이 필요합니다","data":null}"""))),
+            @ApiResponse(responseCode = "404", description = "회원을 찾을 수 없음",
+                    content = @Content(examples = @ExampleObject(value = """
+                    {"success":false,"message":"회원을 찾을 수 없습니다","data":null}""")))
+    })
+    kr.co.winningpick.global.response.ApiResponse<ResponseMyInfo> getMyInfo(Long memberId);
 
     @Operation(summary = "로그아웃", description = "서버에 저장된 Refresh Token을 무효화합니다.")
     @SecurityRequirement(name = "bearerAuth")
@@ -82,4 +116,19 @@ public interface MemberControllerDocs {
                     {"success":false,"message":"인증이 필요합니다","data":null}""")))
     })
     kr.co.winningpick.global.response.ApiResponse<Void> logout(Long memberId);
+
+    @Operation(summary = "회원 탈퇴", description = "로그인한 회원을 탈퇴 처리합니다. 작성했던 게시글/댓글은 삭제되지 않고 작성자가 '탈퇴한 회원'으로 표시됩니다.")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "탈퇴 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 필요",
+                    content = @Content(examples = @ExampleObject(value = """
+                    {"success":false,"message":"인증이 필요합니다","data":null}"""))),
+            @ApiResponse(responseCode = "404", description = "존재하지 않거나 이미 탈퇴한 회원",
+                    content = @Content(examples = @ExampleObject(value = """
+                    {"success":false,"message":"존재하지 않는 회원입니다.","data":null}""")))
+    })
+    kr.co.winningpick.global.response.ApiResponse<Void> withdraw(
+            @Parameter(hidden = true) @RequestAttribute(name = "memberId", required = false) Long memberId
+    );
 }

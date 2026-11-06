@@ -41,7 +41,7 @@ export default function LoginPage(): React.JSX.Element {
         try {
             const { accessToken } = await login(form);
             saveAccessToken(accessToken);
-            navigate('/mypage');
+            navigate('/', { replace: true });
         } catch (error: unknown) {
             if (error instanceof AxiosError && error.response) {
                 const responseData = error.response.data as { message?: string };
