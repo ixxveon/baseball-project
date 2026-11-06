@@ -231,7 +231,7 @@ class PredictionService:
                 lon=raw_stats["stadium_longitude"],
                 target_date=raw_stats["match_date"],
             )
-        except Exception:  # noqa: BLE001
+        except Exception:
             logger.exception("날씨 정보 조회 실패")
             return None
 
