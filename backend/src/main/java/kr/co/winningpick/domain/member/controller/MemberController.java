@@ -2,11 +2,7 @@ package kr.co.winningpick.domain.member.controller;
 
 import jakarta.validation.Valid;
 import kr.co.winningpick.domain.member.docs.MemberControllerDocs;
-import kr.co.winningpick.domain.member.dto.request.RequestConfirmEmailVerification;
-import kr.co.winningpick.domain.member.dto.request.RequestLogin;
-import kr.co.winningpick.domain.member.dto.request.RequestReissue;
-import kr.co.winningpick.domain.member.dto.request.RequestSendEmailVerification;
-import kr.co.winningpick.domain.member.dto.request.RequestSignup;
+import kr.co.winningpick.domain.member.dto.request.*;
 import kr.co.winningpick.domain.member.dto.response.ResponseEmailVerification;
 import kr.co.winningpick.domain.member.dto.response.ResponseLogin;
 import kr.co.winningpick.domain.member.dto.response.ResponseMyInfo;
@@ -19,8 +15,6 @@ import kr.co.winningpick.global.exception.GlobalErrorCode;
 import kr.co.winningpick.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import kr.co.winningpick.domain.member.dto.request.ProfileUpdateRequest;
-import kr.co.winningpick.domain.member.dto.request.RequestResetPassword;
 
 @RestController
 @RequestMapping("/api/v1/members")
@@ -110,6 +104,18 @@ public class MemberController implements MemberControllerDocs {
             throw new BusinessException(GlobalErrorCode.UNAUTHORIZED);
         }
         memberService.logout(memberId);
+        return ApiResponse.success(null);
+    }
+
+    @Override
+    @PatchMapping("/me/password")
+    public ApiResponse<Void> changePassword(
+            @RequestAttribute(name = "memberId", required = false) Long memberId,
+            @Valid @RequestBody RequestChangePassword request) {
+        if (memberId == null) {
+            throw new BusinessException(GlobalErrorCode.UNAUTHORIZED);
+        }
+        memberService.changePassword(memberId, request);
         return ApiResponse.success(null);
     }
 

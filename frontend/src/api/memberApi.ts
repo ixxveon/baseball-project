@@ -99,3 +99,12 @@ export interface ProfileUpdateRequest {
 export async function updateProfile(request: ProfileUpdateRequest): Promise<void> {
     await axiosInstance.patch('/members/profile', request);
 }
+
+export interface PasswordChangeRequest {
+    currentPassword: string;
+    newPassword: string;
+}
+
+export async function changePassword(request: PasswordChangeRequest): Promise<void> {
+    await axiosInstance.patch('/members/me/password', request);
+}
