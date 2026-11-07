@@ -18,7 +18,7 @@ export default function ProfileEditPage(): React.JSX.Element {
             <style>
                 {`
           .profile-edit-container { background-color: #F4F6F8; min-height: 100vh; font-family: 'Pretendard', sans-serif; padding-bottom: 80px; }
-          .header-nav { background: #fff; padding: 16px 20px; display: flex; align-items: center; border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; z-index: 10; }
+          .header-nav { background: #fff; padding: 16px 20px; display: flex; align-items: center; border-bottom: 1px solid #e5e7eb; position: sticky; top: 64px; z-index: 10; }
           .btn-back { background: none; border: none; font-size: 20px; cursor: pointer; color: #111827; padding: 4px; display: flex; align-items: center; justify-content: center; }
           .header-title { font-size: 18px; font-weight: 700; color: #111827; flex: 1; text-align: center; margin-right: 24px; }
           
