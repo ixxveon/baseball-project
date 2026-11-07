@@ -23,6 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -60,6 +61,8 @@ class MemberServiceTest {
     @Test
     void 인증번호를_발송하면_Redis에_저장한다() {
         when(stringRedisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.setIfAbsent(eq("email-verification-cooldown:test@example.com"), eq("1"), any(Duration.class)))
+                .thenReturn(true);
 
         memberService.sendEmailVerification("test@example.com");
 
@@ -74,12 +77,15 @@ class MemberServiceTest {
         boolean result = memberService.confirmEmailVerification("test@example.com", "123456");
 
         assertThat(result).isTrue();
+        verify(stringRedisTemplate).delete(List.of(
+                "email-verification:test@example.com", "email-verification-attempts:test@example.com"));
     }
 
     @Test
     void 저장된_코드와_다르면_false를_반환한다() {
         when(stringRedisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get("email-verification:test@example.com")).thenReturn("123456");
+        when(valueOperations.increment("email-verification-attempts:test@example.com")).thenReturn(1L);
 
         boolean result = memberService.confirmEmailVerification("test@example.com", "000000");
 
