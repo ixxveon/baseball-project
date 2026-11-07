@@ -4,12 +4,14 @@ import { useNicknameForm } from '../hooks/useNicknameForm';
 import { useTeamPreferenceForm } from '../hooks/useTeamPreferenceForm';
 import { usePasswordForm } from '../hooks/usePasswordForm';
 import { KBO_TEAMS } from '../constants/teams';
+import { useWithdraw } from '../hooks/useWithdraw';
 
 export default function ProfileEditPage(): React.JSX.Element {
     const navigate = useNavigate();
     const nicknameForm = useNicknameForm();
     const preferenceForm = useTeamPreferenceForm();
     const passwordForm = usePasswordForm();
+    const withdrawAction = useWithdraw();
 
     return (
         <div className="profile-edit-container">
@@ -39,6 +41,8 @@ export default function ProfileEditPage(): React.JSX.Element {
           .toggle-row { display: flex; align-items: center; gap: 10px; font-size: 15px; color: #374151; cursor: pointer; }
           .form-input.input-error { border-color: #e71937; }
           .field-message { display: block; margin-top: 6px; }
+          .btn-withdraw { align-self: center; background: none; border: none; color: #9ca3af; font-size: 13px; text-decoration: underline; text-underline-offset: 3px; padding: 8px; }
+          .btn-withdraw:hover { color: #6b7280; }
         `}
             </style>
 
@@ -144,6 +148,13 @@ export default function ProfileEditPage(): React.JSX.Element {
                     </div>
                     <button className="btn-action btn-submit" onClick={passwordForm.submitPassword}>비밀번호 변경하기</button>
                 </section>
+                <button
+                    className="btn-withdraw"
+                    onClick={() => { void withdrawAction.withdrawAccount(); }}
+                    disabled={withdrawAction.isWithdrawing}
+                >
+                    회원 탈퇴
+                </button>
             </div>
         </div>
     );

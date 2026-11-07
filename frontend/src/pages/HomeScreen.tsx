@@ -4,9 +4,11 @@ import AiSummary from '../components/AiSummary';
 import RecentSummary from '../components/RecentSummary';
 import ReservationsLinks from '../components/ReservationsLinks';
 import NoticeBoard from '../components/NoticeBoard';
+import { useTargetGame } from '../hooks/useTargetGame';
 
 export default function HomeScreen(): React.JSX.Element {
     const [favoriteTeam, setFavoriteTeam] = useState<string>("LG 트윈스");
+    const { favoriteTeamId } = useTargetGame(favoriteTeam);
 
     const handleTeamChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         setFavoriteTeam(e.target.value);
@@ -35,7 +37,7 @@ export default function HomeScreen(): React.JSX.Element {
                     >
                         <option value="LG 트윈스">LG 트윈스</option>
                         <option value="두산 베어스">두산 베어스</option>
-                        <option value="기아 타이거즈">기아 타이거즈</option>
+                        <option value="KIA 타이거즈">KIA 타이거즈</option>
                         <option value="삼성 라이온즈">삼성 라이온즈</option>
                         <option value="롯데 자이언츠">롯데 자이언츠</option>
                         <option value="한화 이글스">한화 이글스</option>
@@ -48,14 +50,13 @@ export default function HomeScreen(): React.JSX.Element {
             </div>
 
             <div className="dashboard-grid-main">
-                {/* 기존 <RecommendedGames />에서 응원팀 전달 */}
                 <RecommendedGames favoriteTeam={favoriteTeam} />
 
-                <AiSummary />
+                <AiSummary favoriteTeam={favoriteTeam} />
             </div>
 
             <div className="dashboard-grid-sub">
-                <RecentSummary />
+                <RecentSummary teamId={favoriteTeamId} />
                 <ReservationsLinks />
             </div>
         </div>
