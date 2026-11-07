@@ -24,4 +24,5 @@ public class Ranking {
     private Double winRate; // 승률
     private Double gameDiff; // 게임차
     private String streak; // 최근 흐름 (연승/연패)
+
 }
