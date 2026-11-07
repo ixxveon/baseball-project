@@ -26,7 +26,10 @@ public interface MemberControllerDocs {
 
     @Operation(summary = "이메일 인증번호 발송", description = "입력한 이메일로 6자리 인증번호를 발송합니다. 인증번호는 5분간 유효합니다.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "발송 성공")
+            @ApiResponse(responseCode = "200", description = "발송 성공"),
+            @ApiResponse(responseCode = "503", description = "메일 서버 오류로 발송 실패",
+                    content = @Content(examples = @ExampleObject(value = """
+                            {"success":false,"message":"인증번호 메일 발송에 실패했습니다. 잠시 후 다시 시도해주세요","data":null}""")))
     })
     kr.co.winningpick.global.response.ApiResponse<Void> sendEmailVerification(RequestSendEmailVerification request);
 

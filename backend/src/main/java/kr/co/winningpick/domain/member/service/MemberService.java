@@ -11,6 +11,8 @@ import kr.co.winningpick.domain.member.repository.MemberRepository;
 import kr.co.winningpick.global.exception.BusinessException;
 import kr.co.winningpick.global.util.JwtProvider;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.mail.MailException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Random;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MemberService {
@@ -34,6 +37,7 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    private final VerificationCodeSender verificationCodeSender;
 
     // 👇 서버가 켜질 때 자동으로 실행되어 테스트용 1번 회원을 만들어주는 마법의 코드입니다.
     @Value("${spring.profiles.active:}")
@@ -50,7 +54,14 @@ public class MemberService {
     public void sendEmailVerification(String email) {
         String code = generateVerificationCode();
         stringRedisTemplate.opsForValue().set(verificationKey(email), code, VERIFICATION_CODE_TTL);
-        // TODO: 이메일 발송은 다음 단계에서 연결
+
+        try {
+            verificationCodeSender.send(email, code);
+        } catch (MailException e) {
+            stringRedisTemplate.delete(verificationKey(email));
+            log.warn("인증번호 메일 발송 실패. email={}", email, e);
+            throw new BusinessException(MemberErrorCode.EMAIL_SEND_FAILED);
+        }
     }
 
     public boolean confirmEmailVerification(String email, String code) {

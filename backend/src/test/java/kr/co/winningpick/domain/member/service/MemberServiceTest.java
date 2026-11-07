@@ -54,6 +54,9 @@ class MemberServiceTest {
     @InjectMocks
     private MemberService memberService;
 
+    @Mock
+    private VerificationCodeSender verificationCodeSender;
+
     @Test
     void 인증번호를_발송하면_Redis에_저장한다() {
         when(stringRedisTemplate.opsForValue()).thenReturn(valueOperations);
