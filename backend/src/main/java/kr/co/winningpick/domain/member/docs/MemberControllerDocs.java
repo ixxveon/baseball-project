@@ -26,7 +26,13 @@ public interface MemberControllerDocs {
 
     @Operation(summary = "이메일 인증번호 발송", description = "입력한 이메일로 6자리 인증번호를 발송합니다. 인증번호는 5분간 유효합니다.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "발송 성공")
+            @ApiResponse(responseCode = "200", description = "발송 성공"),
+            @ApiResponse(responseCode = "503", description = "메일 서버 오류로 발송 실패",
+                    content = @Content(examples = @ExampleObject(value = """
+                            {"success":false,"message":"인증번호 메일 발송에 실패했습니다. 잠시 후 다시 시도해주세요","data":null}"""))),
+            @ApiResponse(responseCode = "429", description = "60초 안에 다시 요청함",
+                    content = @Content(examples = @ExampleObject(value = """
+                            {"success":false,"message":"인증번호는 1분 후에 다시 요청할 수 있습니다","data":null}""")))
     })
     kr.co.winningpick.global.response.ApiResponse<Void> sendEmailVerification(RequestSendEmailVerification request);
 
@@ -35,7 +41,10 @@ public interface MemberControllerDocs {
             @ApiResponse(responseCode = "200", description = "확인 요청 성공 (data.verified로 실제 일치 여부 확인)"),
             @ApiResponse(responseCode = "400", description = "해당 이메일로 발송된 인증번호가 없거나 만료됨",
                     content = @Content(examples = @ExampleObject(value = """
-                            {"success":false,"message":"인증번호가 만료되었거나 존재하지 않습니다.","data":null}""")))
+                            {"success":false,"message":"인증번호가 만료되었거나 존재하지 않습니다.","data":null}"""))),
+            @ApiResponse(responseCode = "429", description = "인증번호 5회 이상 틀림 (인증번호 삭제됨, 재발송 필요)",
+                    content = @Content(examples = @ExampleObject(value = """
+                            {"success":false,"message":"인증번호 입력 횟수를 초과했습니다. 인증번호를 다시 발송해주세요","data":null}""")))
     })
     kr.co.winningpick.global.response.ApiResponse<ResponseEmailVerification> confirmEmailVerification(RequestConfirmEmailVerification request);
 

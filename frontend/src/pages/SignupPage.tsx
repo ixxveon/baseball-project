@@ -5,14 +5,12 @@ import AuthLayout from '../layouts/AuthLayout';
 import SocialLoginButtons from '../components/SocialLoginButtons';
 import {
     checkNicknameAvailability,
-    confirmEmailVerification,
-    sendEmailVerification,
     signup,
     type SignupValidationErrors
 } from '../api/memberApi';
+import { useEmailVerification } from '../hooks/useEmailVerification';
 
 type NicknameCheckStatus = 'idle' | 'checking' | 'available' | 'duplicate';
-type EmailVerifyStatus = 'idle' | 'sent' | 'verified';
 
 interface FormState {
     email: string;
@@ -61,8 +59,8 @@ export default function SignupPage(): React.JSX.Element {
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const [nicknameCheckStatus, setNicknameCheckStatus] = useState<NicknameCheckStatus>('idle');
     const [checkedNickname, setCheckedNickname] = useState<string>('');
-    const [emailVerifyStatus, setEmailVerifyStatus] = useState<EmailVerifyStatus>('idle');
-    const [verificationCode, setVerificationCode] = useState<string>('');
+    const emailVerification = useEmailVerification(setSubmitError);
+    const emailVerifyStatus = emailVerification.status;
 
     const handleChange = (field: keyof FormState) => (
         e: React.ChangeEvent<HTMLInputElement>,
@@ -75,30 +73,7 @@ export default function SignupPage(): React.JSX.Element {
         }
 
         if (field === 'email') {
-            setEmailVerifyStatus('idle');
-            setVerificationCode('');
-        }
-    };
-
-    const handleSendVerification = async (): Promise<void> => {
-        try {
-            await sendEmailVerification(form.email);
-            setEmailVerifyStatus('sent');
-        } catch {
-            setSubmitError('인증번호 발송에 실패했어요. 다시 시도해주세요.');
-        }
-    };
-
-    const handleConfirmVerification = async (): Promise<void> => {
-        try {
-            const verified = await confirmEmailVerification(form.email, verificationCode);
-            if (verified) {
-                setEmailVerifyStatus('verified');
-            } else {
-                setSubmitError('인증번호가 올바르지 않아요');
-            }
-        } catch {
-            setSubmitError('인증 확인에 실패했어요. 다시 시도해주세요');
+            emailVerification.reset();
         }
     };
 
@@ -190,10 +165,10 @@ export default function SignupPage(): React.JSX.Element {
                         <button
                             type="button"
                             className="auth-check-btn"
-                            onClick={handleSendVerification}
-                            disabled={emailVerifyStatus !== 'idle'}
+                            onClick={() => { void emailVerification.sendCode(form.email); }}
+                            disabled={emailVerifyStatus === 'verified' || emailVerification.isSending}
                         >
-                            인증번호 발송
+                            {emailVerification.sendButtonLabel}
                         </button>
                     </div>
                     {errors.email && <span className="auth-error">{errors.email}</span>}
@@ -206,15 +181,15 @@ export default function SignupPage(): React.JSX.Element {
                             <input
                                 id="verificationCode"
                                 type="text"
-                                value={verificationCode}
-                                onChange={(e) => setVerificationCode(e.target.value)}
+                                value={emailVerification.code}
+                                onChange={(e) => emailVerification.setCode(e.target.value)}
                                 placeholder="인증번호 6자리"
                                 disabled={emailVerifyStatus === 'verified'}
                             />
                             <button
                                 type="button"
                                 className="auth-check-btn"
-                                onClick={handleConfirmVerification}
+                                onClick={() => { void emailVerification.confirmCode(form.email); }}
                                 disabled={emailVerifyStatus === 'verified'}
                             >
                                 확인

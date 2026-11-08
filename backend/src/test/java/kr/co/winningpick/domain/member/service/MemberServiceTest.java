@@ -19,10 +19,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.mail.MailSendException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,6 +32,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -54,9 +58,14 @@ class MemberServiceTest {
     @InjectMocks
     private MemberService memberService;
 
+    @Mock
+    private VerificationCodeSender verificationCodeSender;
+
     @Test
     void 인증번호를_발송하면_Redis에_저장한다() {
         when(stringRedisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.setIfAbsent(eq("email-verification-cooldown:test@example.com"), eq("1"), any(Duration.class)))
+                .thenReturn(true);
 
         memberService.sendEmailVerification("test@example.com");
 
@@ -71,12 +80,15 @@ class MemberServiceTest {
         boolean result = memberService.confirmEmailVerification("test@example.com", "123456");
 
         assertThat(result).isTrue();
+        verify(stringRedisTemplate).delete(List.of(
+                "email-verification:test@example.com", "email-verification-attempts:test@example.com"));
     }
 
     @Test
     void 저장된_코드와_다르면_false를_반환한다() {
         when(stringRedisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get("email-verification:test@example.com")).thenReturn("123456");
+        when(valueOperations.increment("email-verification-attempts:test@example.com")).thenReturn(1L);
 
         boolean result = memberService.confirmEmailVerification("test@example.com", "000000");
 
@@ -91,6 +103,46 @@ class MemberServiceTest {
         assertThatThrownBy(() -> memberService.confirmEmailVerification("test@example.com", "123456"))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", MemberErrorCode.VERIFICATION_CODE_EXPIRED);
+    }
+
+    @Test
+    void 일분_안에_다시_발송을_요청하면_예외를_던지고_메일을_보내지_않는다() {
+        when(stringRedisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.setIfAbsent(eq("email-verification-cooldown:test@example.com"), eq("1"), any(Duration.class)))
+                .thenReturn(false);
+
+        assertThatThrownBy(() -> memberService.sendEmailVerification("test@example.com"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", MemberErrorCode.VERIFICATION_RESEND_TOO_SOON);
+        verify(verificationCodeSender, never()).send(anyString(), anyString());
+    }
+
+    @Test
+    void 메일_발송에_실패하면_인증번호와_재전송_제한을_지운다() {
+        when(stringRedisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.setIfAbsent(eq("email-verification-cooldown:test@example.com"), eq("1"), any(Duration.class)))
+                .thenReturn(true);
+        doThrow(new MailSendException("메일 서버 연결 실패"))
+                .when(verificationCodeSender).send(eq("test@example.com"), anyString());
+
+        assertThatThrownBy(() -> memberService.sendEmailVerification("test@example.com"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", MemberErrorCode.EMAIL_SEND_FAILED);
+        verify(stringRedisTemplate).delete(List.of(
+                "email-verification:test@example.com", "email-verification-cooldown:test@example.com"));
+    }
+
+    @Test
+    void 인증번호를_다섯_번째로_틀리면_인증번호를_지우고_예외를_던진다() {
+        when(stringRedisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("email-verification:test@example.com")).thenReturn("123456");
+        when(valueOperations.increment("email-verification-attempts:test@example.com")).thenReturn(5L);
+
+        assertThatThrownBy(() -> memberService.confirmEmailVerification("test@example.com", "000000"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", MemberErrorCode.VERIFICATION_ATTEMPTS_EXCEEDED);
+        verify(stringRedisTemplate).delete(List.of(
+                "email-verification:test@example.com", "email-verification-attempts:test@example.com"));
     }
 
     @Test
