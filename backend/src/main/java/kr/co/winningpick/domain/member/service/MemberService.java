@@ -11,29 +11,34 @@ import kr.co.winningpick.domain.member.repository.MemberRepository;
 import kr.co.winningpick.global.exception.BusinessException;
 import kr.co.winningpick.global.util.JwtProvider;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.mail.MailException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import jakarta.annotation.PostConstruct;
-import org.springframework.context.annotation.Profile;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Random;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MemberService {
 
     private static final Duration VERIFICATION_CODE_TTL = Duration.ofMinutes(5);
     private static final Duration VERIFIED_STATUS_TTL = Duration.ofMinutes(30);
+    private static final Duration RESEND_COOLDOWN = Duration.ofSeconds(60);
+    private static final int MAX_VERIFY_ATTEMPTS = 5;
     private final StringRedisTemplate stringRedisTemplate;
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    private final VerificationCodeSender verificationCodeSender;
 
     // 👇 서버가 켜질 때 자동으로 실행되어 테스트용 1번 회원을 만들어주는 마법의 코드입니다.
     @Value("${spring.profiles.active:}")
@@ -48,9 +53,19 @@ public class MemberService {
     }
 
     public void sendEmailVerification(String email) {
+        acquireResendCooldown(email);
+
         String code = generateVerificationCode();
         stringRedisTemplate.opsForValue().set(verificationKey(email), code, VERIFICATION_CODE_TTL);
-        // TODO: 이메일 발송은 다음 단계에서 연결
+        stringRedisTemplate.delete(attemptKey(email));
+
+        try {
+            verificationCodeSender.send(email, code);
+        } catch (MailException e) {
+            stringRedisTemplate.delete(List.of(verificationKey(email), resendCooldownKey(email)));
+            log.warn("인증번호 메일 발송 실패. email={}", email, e);
+            throw new BusinessException(MemberErrorCode.EMAIL_SEND_FAILED);
+        }
     }
 
     public boolean confirmEmailVerification(String email, String code) {
@@ -60,12 +75,36 @@ public class MemberService {
             throw new BusinessException(MemberErrorCode.VERIFICATION_CODE_EXPIRED);
         }
 
-        boolean verified = savedCode.equals(code);
-        if (verified) {
-            stringRedisTemplate.opsForValue().set(verifiedKey(email), "true", VERIFIED_STATUS_TTL);
+        if (!savedCode.equals(code)) {
+            recordFailedAttempt(email);
+            return false;
         }
 
-        return verified;
+        stringRedisTemplate.delete(List.of(verificationKey(email), attemptKey(email)));
+        stringRedisTemplate.opsForValue().set(verifiedKey(email), "true", VERIFIED_STATUS_TTL);
+        return true;
+    }
+
+    private void acquireResendCooldown(String email) {
+        Boolean acquired = stringRedisTemplate.opsForValue()
+                .setIfAbsent(resendCooldownKey(email), "1", RESEND_COOLDOWN);
+        if (!Boolean.TRUE.equals(acquired)) {
+            throw new BusinessException(MemberErrorCode.VERIFICATION_RESEND_TOO_SOON);
+        }
+    }
+
+    private void recordFailedAttempt(String email) {
+        Long attempts = stringRedisTemplate.opsForValue().increment(attemptKey(email));
+        if (attempts == null) {
+            return;
+        }
+        if (attempts == 1) {
+            stringRedisTemplate.expire(attemptKey(email), VERIFICATION_CODE_TTL);
+        }
+        if (attempts >= MAX_VERIFY_ATTEMPTS) {
+            stringRedisTemplate.delete(List.of(verificationKey(email), attemptKey(email)));
+            throw new BusinessException(MemberErrorCode.VERIFICATION_ATTEMPTS_EXCEEDED);
+        }
     }
 
     private String verifiedKey(String email) {
@@ -74,6 +113,14 @@ public class MemberService {
 
     private String verificationKey(String email) {
         return "email-verification:" + email;
+    }
+
+    private String resendCooldownKey(String email) {
+        return "email-verification-cooldown:" + email;
+    }
+
+    private String attemptKey(String email) {
+        return "email-verification-attempts:" + email;
     }
 
     private String generateVerificationCode() {
