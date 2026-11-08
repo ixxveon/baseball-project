@@ -1,5 +1,3 @@
-export type TabType = 'home' | 'recommend' | 'analysis' | 'ranking' | 'community';
-
 export interface GamePick {
     id: number;
     date: string;
@@ -12,11 +10,6 @@ export interface GamePick {
     stars: string;
     selected: boolean;
     grade: 'S' | 'A' | 'B' | 'C';
-}
-
-export interface HeaderProps {
-    activeTab: TabType;
-    onTabChange: (tab: TabType) => void;
 }
 
 export interface GameCardProps {
