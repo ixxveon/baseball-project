@@ -15,6 +15,8 @@ class Settings(BaseSettings):
 
     openweather_api_key: str | None = Field(None, alias="OPENWEATHER_API_KEY")
 
+    anthropic_api_key: str | None = Field(None, alias="ANTHROPIC_API_KEY")
+
     cors_allow_origins: str = Field("http://localhost:5173", alias="CORS_ALLOW_ORIGINS")
 
     @property
@@ -30,6 +32,11 @@ class Settings(BaseSettings):
         if not self.openweather_api_key:
             raise RuntimeError("필수 환경변수 OPENWEATHER_API_KEY가 설정되지 않았습니다.")
         return self.openweather_api_key
+
+    def require_anthropic_api_key(self) -> str:
+        if not self.anthropic_api_key:
+            raise RuntimeError("필수 환경변수 ANTHROPIC_API_KEY가 설정되지 않았습니다.")
+        return self.anthropic_api_key
 
     def db_config(self) -> dict[str, str]:
         return {
