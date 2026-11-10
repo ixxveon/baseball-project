@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Header from './components/Header';
 import HomeScreen from './pages/HomeScreen';
-import RecommendScreen from './pages/RecommendScreen';
+
+import DirectRecommendPage from './pages/DirectRecommendPage';
 import RankingPage from './pages/RankingPage';
 import CommunityScreen from './pages/CommunityScreen';
 import type { TabType } from './types';
@@ -42,7 +43,7 @@ const setActiveTab = (tab: TabType): void => {
                     {activeTab === 'home' && <HomeScreen />}
 
                     {/* 2. 직관추천 화면 */}
-                    {activeTab === 'recommend' && <RecommendScreen />}
+                    {activeTab === 'recommend' && <DirectRecommendPage />} {/* 👈 DirectRecommendPage로 교체 */}
 
                     {/* 3. 랭킹 화면 */}
                     {activeTab === 'ranking' && <RankingPage />}
