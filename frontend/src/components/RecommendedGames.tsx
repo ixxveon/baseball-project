@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import AnalysisScreen from './AnalysisScreen';
-import TeamBox from './game/TeamBox';
+import TeamBox from './TeamBox.tsx';
 import { useTargetGame } from '../hooks/useTargetGame';
 
 interface RecommendedGamesProps {

@@ -1,6 +1,6 @@
 import React from 'react';
-import { KBO_TEAMS } from '../../constants/teams';
-import type { TeamName } from '../../constants/teams';
+import { KBO_TEAMS } from '../constants/teams.ts';
+import type { TeamName } from '../constants/teams.ts';
 
 interface FavoriteTeamSelectorProps {
     value: TeamName;

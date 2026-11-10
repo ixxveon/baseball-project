@@ -4,7 +4,7 @@ import AiSummary from '../components/AiSummary';
 import RecentSummary from '../components/RecentSummary';
 import ReservationsLinks from '../components/ReservationsLinks';
 import NoticeBoard from '../components/NoticeBoard';
-import FavoriteTeamSelector from '../components/team/FavoriteTeamSelector';
+import FavoriteTeamSelector from '../components/FavoriteTeamSelector.tsx';
 import { DEFAULT_FAVORITE_TEAM } from '../constants/teams';
 import type { TeamName } from '../constants/teams';
 import { useTargetGame } from '../hooks/useTargetGame';

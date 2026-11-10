@@ -1,5 +1,5 @@
 import React from 'react';
-import { TEAM_LOGOS } from '../../constants/teamLogos';
+import { TEAM_LOGOS } from '../constants/teamLogos.ts';
 
 interface TeamBoxProps {
     side: 'HOME' | 'AWAY';
