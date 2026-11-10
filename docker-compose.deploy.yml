@@ -21,6 +21,12 @@ services:
       SPRING_JPA_SHOW_SQL: "false"
       SERVER_FORWARD_HEADERS_STRATEGY: framework
       JWT_SECRET: ${JWT_SECRET}
+      SPRING_MAIL_HOST: smtp.gmail.com
+      SPRING_MAIL_PORT: "587"
+      SPRING_MAIL_USERNAME: ${MAIL_USERNAME}
+      SPRING_MAIL_PASSWORD: ${MAIL_PASSWORD}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "true"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "true"
     depends_on:
       - postgres
       - redis
@@ -34,6 +40,7 @@ services:
       PGUSER: ${POSTGRES_USER}
       PGPASSWORD: ${POSTGRES_PASSWORD}
       OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
     depends_on:
       - postgres
 
