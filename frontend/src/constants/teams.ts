@@ -10,3 +10,7 @@ export const KBO_TEAMS = [
     { id: 9, name: 'KIA 타이거즈' },
     { id: 10, name: '키움 히어로즈' },
 ] as const;
+
+export type TeamName = typeof KBO_TEAMS[number]['name'];
+
+export const DEFAULT_FAVORITE_TEAM: TeamName = '삼성 라이온즈';

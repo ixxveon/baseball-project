@@ -9,11 +9,11 @@ export interface RecommendedGame {
 }
 
 // Props로 데이터를 받거나, API state로 가져오는 상황 예시
-interface RecommendScreenProps {
+interface RecommendPageProps {
     games?: RecommendedGame[];
 }
 
-export const RecommendScreen: React.FC<RecommendScreenProps> = ({ games = [] }) => {
+export const RecommendPage: React.FC<RecommendPageProps> = ({ games = [] }) => {
 
     return (
         <div style={{ maxWidth: '1280px', width: '100%', margin: '0 auto', padding: '0 16px' }}>
@@ -48,4 +48,4 @@ export const RecommendScreen: React.FC<RecommendScreenProps> = ({ games = [] }) 
     );
 };
 
-export default RecommendScreen;
+export default RecommendPage;

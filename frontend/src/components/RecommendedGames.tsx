@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import AnalysisScreen from './AnalysisScreen';
+import TeamBox from './game/TeamBox';
 import { useTargetGame } from '../hooks/useTargetGame';
-import { TEAM_LOGOS } from '../constants/teamLogos';
 
 interface RecommendedGamesProps {
     favoriteTeam: string;
@@ -40,9 +40,6 @@ export default function RecommendedGames({
         ? targetGame.awayRecommendationScore
         : targetGame.recommendationScore;
 
-    const homeTeamLogo = TEAM_LOGOS[targetGame.homeTeamName];
-    const awayTeamLogo = TEAM_LOGOS[targetGame.awayTeamName];
-
     return (
         <div className="recommended-card">
             <div className="recommended-header">
@@ -53,31 +50,9 @@ export default function RecommendedGames({
             </div>
 
             <div className="matchup-container">
-                <div className={`team-box ${isFavoriteHome ? 'favorite-team' : ''}`}>
-                    <div className="home-away-label">HOME</div>
-                    <div className="team-logo">
-                        {homeTeamLogo ? (
-                            <img src={homeTeamLogo} alt={`${targetGame.homeTeamName} 로고`} />
-                        ) : (
-                            <span className="team-logo-fallback">{targetGame.homeTeamName}</span>
-                        )}
-                    </div>
-                    <div className="team-name">{targetGame.homeTeamName}</div>
-                </div>
-
+                <TeamBox side="HOME" teamName={targetGame.homeTeamName} isFavorite={isFavoriteHome} />
                 <div className="vs-text">VS</div>
-
-                <div className={`team-box ${isFavoriteAway ? 'favorite-team' : ''}`}>
-                    <div className="home-away-label">AWAY</div>
-                    <div className="team-logo">
-                        {awayTeamLogo ? (
-                            <img src={awayTeamLogo} alt={`${targetGame.awayTeamName} 로고`} />
-                        ) : (
-                            <span className="team-logo-fallback">{targetGame.awayTeamName}</span>
-                        )}
-                    </div>
-                    <div className="team-name">{targetGame.awayTeamName}</div>
-                </div>
+                <TeamBox side="AWAY" teamName={targetGame.awayTeamName} isFavorite={isFavoriteAway} />
             </div>
 
             <div className="metrics-container">
