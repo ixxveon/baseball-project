@@ -22,12 +22,21 @@ function formatDate(isoString: string): string {
     return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-export async function getPosts(gameId?: number): Promise<CommunityPost[]> {
+export interface PostPage {
+    posts: CommunityPost[];
+    totalPages: number;
+}
+
+export async function getPosts(page: number, size: number, category?: PostCategory): Promise<PostPage> {
     const response = await axiosInstance.get<ApiResponse<ResponsePage<CommunityPost>>>(
         '/community/posts',
-        { params: { gameId, size: 50 } },
+        { params: { page, size, category } },
     );
-    return response.data.data.content.map((post) => ({ ...post, createdAt: formatDate(post.createdAt) }));
+    const { content, totalPages } = response.data.data;
+    return {
+        posts: content.map((post) => ({ ...post, createdAt: formatDate(post.createdAt) })),
+        totalPages,
+    };
 }
 
 export async function getComments(postId: number): Promise<PostComment[]> {
