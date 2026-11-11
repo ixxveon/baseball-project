@@ -7,6 +7,7 @@ import kr.co.winningpick.domain.community.entity.Post;
 import kr.co.winningpick.domain.community.exception.PostErrorCode;
 import kr.co.winningpick.domain.community.repository.CommentRepository;
 import kr.co.winningpick.domain.community.repository.PostRepository;
+import kr.co.winningpick.domain.community.type.PostCategoryType;
 import kr.co.winningpick.domain.member.entity.Member;
 import kr.co.winningpick.global.exception.BusinessException;
 import kr.co.winningpick.global.response.ResponsePage;
@@ -26,8 +27,8 @@ public class PostService {
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
 
-    public ResponsePage<ResponsePost> getPosts(Long gameId, Pageable pageable) {
-        Page<Object[]> page = postRepository.findAllWithAuthorAndCommentCount(gameId, pageable);
+    public ResponsePage<ResponsePost> getPosts(Long gameId, PostCategoryType category, Pageable pageable) {
+        Page<Object[]> page = postRepository.findAllWithAuthorAndCommentCount(gameId, category, pageable);
         Page<ResponsePost> responsePage = page.map(row ->
                 ResponsePost.from((Post) row[0], (Long) row[1]));
         return ResponsePage.from(responsePage);

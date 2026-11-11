@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Pagination from '../components/Pagination';
 import PostCard from '../components/PostCard';
 import PostDetail from '../components/PostDetail';
 import PostWriteForm from '../components/PostWriteForm';
@@ -7,6 +8,8 @@ import type { CommunityPost, PostCategory, PostComment } from '../types';
 
 type CategoryFilter = PostCategory | 'ALL';
 type ViewMode = 'list' | 'detail' | 'write' | 'edit';
+
+const POSTS_PER_PAGE = 10;
 
 const CATEGORY_TABS: { id: CategoryFilter; label: string }[] = [
     { id: 'ALL', label: '전체' },
@@ -19,6 +22,9 @@ export default function CommunityScreen(): React.JSX.Element {
     const [posts, setPosts] = useState<CommunityPost[]>([]);
     const [comments, setComments] = useState<PostComment[]>([]);
     const [activeCategory, setActiveCategory] = useState<CategoryFilter>('ALL');
+    const [currentPage, setCurrentPage] = useState<number>(0);
+    const [totalPages, setTotalPages] = useState<number>(0);
+    const [refreshKey, setRefreshKey] = useState<number>(0);
     const [viewMode, setViewMode] = useState<ViewMode>('list');
     const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -32,9 +38,14 @@ export default function CommunityScreen(): React.JSX.Element {
             setIsLoading(true);
             setError('');
             try {
-                const data = await getPosts();
+                const result = await getPosts(
+                    currentPage,
+                    POSTS_PER_PAGE,
+                    activeCategory === 'ALL' ? undefined : activeCategory,
+                );
                 if (!cancelled) {
-                    setPosts(data);
+                    setPosts(result.posts);
+                    setTotalPages(result.totalPages);
                 }
             } catch {
                 if (!cancelled) {
@@ -51,7 +62,7 @@ export default function CommunityScreen(): React.JSX.Element {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [currentPage, activeCategory, refreshKey]);
 
     useEffect(() => {
         if (selectedPostId === null) {
@@ -104,9 +115,15 @@ export default function CommunityScreen(): React.JSX.Element {
         return () => window.removeEventListener('popstate', handlePopState);
     }, []);
 
-    const filteredPosts = activeCategory === 'ALL'
-        ? posts
-        : posts.filter((post) => post.category === activeCategory);
+    const handleChangeCategory = (category: CategoryFilter): void => {
+        setActiveCategory(category);
+        setCurrentPage(0);
+    };
+
+    const handleChangePage = (page: number): void => {
+        setCurrentPage(page);
+        window.scrollTo({ top: 0 });
+    };
 
     const selectedPost = posts.find((post) => post.id === selectedPostId) ?? null;
 
@@ -128,8 +145,10 @@ export default function CommunityScreen(): React.JSX.Element {
 
     const handleCreatePost = async (input: { category: PostCategory; title: string; content: string }): Promise<void> => {
         try {
-            const newPost = await createPost({ gameId: 0, ...input });
-            setPosts((prev) => [newPost, ...prev]);
+            await createPost({ gameId: 0, ...input });
+            setActiveCategory('ALL');
+            setCurrentPage(0);
+            setRefreshKey((prev) => prev + 1);
             window.history.back();
             window.alert('게시글이 등록되었습니다');
         } catch {
@@ -159,7 +178,11 @@ export default function CommunityScreen(): React.JSX.Element {
 
         try {
             await deletePost(selectedPostId);
-            setPosts((prev) => prev.filter((post) => post.id !== selectedPostId));
+            if (posts.length === 1 && currentPage > 0) {
+                setCurrentPage(currentPage - 1);
+            } else {
+                setRefreshKey((prev) => prev + 1);
+            }
             window.history.back();
             window.alert('게시글이 삭제되었습니다');
         } catch {
@@ -258,7 +281,7 @@ export default function CommunityScreen(): React.JSX.Element {
                         key={tab.id}
                         type="button"
                         className={`category-tab ${activeCategory === tab.id ? 'active' : ''}`}
-                        onClick={() => setActiveCategory(tab.id)}
+                        onClick={() => handleChangeCategory(tab.id)}
                     >
                         {tab.label}
                     </button>
@@ -270,8 +293,8 @@ export default function CommunityScreen(): React.JSX.Element {
                     <p className="post-empty">불러오는 중...</p>
                 ) : error ? (
                     <p className="post-empty">{error}</p>
-                ) : filteredPosts.length > 0 ? (
-                    filteredPosts.map((post) => (
+                ) : posts.length > 0 ? (
+                    posts.map((post) => (
                         <div key={post.id} onClick={() => handleSelectPost(post.id)}>
                             <PostCard post={post} />
                         </div>
@@ -280,6 +303,10 @@ export default function CommunityScreen(): React.JSX.Element {
                     <p className="post-empty">아직 작성된 게시글이 없어요</p>
                 )}
             </div>
+
+            {!isLoading && !error && (
+                <Pagination currentPage={currentPage} totalPages={totalPages} onChange={handleChangePage} />
+            )}
         </div>
     );
 }

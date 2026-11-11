@@ -6,6 +6,7 @@ import kr.co.winningpick.domain.community.dto.request.RequestCreatePost;
 import kr.co.winningpick.domain.community.dto.request.RequestUpdatePost;
 import kr.co.winningpick.domain.community.dto.response.ResponsePost;
 import kr.co.winningpick.domain.community.service.PostService;
+import kr.co.winningpick.domain.community.type.PostCategoryType;
 import kr.co.winningpick.domain.member.entity.Member;
 import kr.co.winningpick.domain.member.exception.MemberErrorCode;
 import kr.co.winningpick.domain.member.repository.MemberRepository;
@@ -32,9 +33,10 @@ public class PostController implements PostControllerDocs {
     @GetMapping
     public ApiResponse<ResponsePage<ResponsePost>> getPosts(
             @RequestParam(required = false) Long gameId,
+            @RequestParam(required = false) PostCategoryType category,
             @PageableDefault(size = 10) Pageable pageable
     ) {
-        return ApiResponse.success(postService.getPosts(gameId, pageable));
+        return ApiResponse.success(postService.getPosts(gameId, category, pageable));
     }
 
     @Override

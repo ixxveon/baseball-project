@@ -2,6 +2,7 @@
 
 import anthropic
 
+from core.config import settings
 from service.schemas.prediction_schema import (
     WinPredictionResultSchema,
     WinPredictionSummarySchema,
@@ -10,6 +11,8 @@ from service.schemas.prediction_schema import (
 FALLBACK_HOME_WIN_PROB = 50.0
 FALLBACK_SCORE_PREDICT = "-:-"
 FALLBACK_COMMENT = "AI 분석 서비스 연동이 일시적으로 지연되어 상세 분석을 제공할 수 없습니다."
+MAX_OUTPUT_TOKENS = 2048
+
 
 class LLMGenerationError(Exception):
     pass
@@ -23,20 +26,22 @@ class LLMService:
     @property
     def client(self) -> anthropic.Anthropic:
         if self._client is None:
-            self._client = anthropic.Anthropic()
+            self._client = anthropic.Anthropic(api_key=settings.require_anthropic_api_key())
         return self._client
 
     def generate_win_summary(self, system_prompt: str, user_prompt: str) -> WinPredictionResultSchema:
         try:
             response = self.client.messages.create(
                 model=self.model,
-                max_tokens=1024,
-                temperature=0.2,
+                max_tokens=MAX_OUTPUT_TOKENS,
                 system=system_prompt,
                 messages=[
                     {"role": "user", "content": user_prompt},
                 ],
             )
+
+            if response.stop_reason == "max_tokens":
+                raise LLMGenerationError("LLM 응답이 max_tokens에서 잘렸습니다.")
 
             content = "".join(
                 block.text for block in response.content if getattr(block, "type", None) == "text"

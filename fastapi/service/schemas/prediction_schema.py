@@ -109,6 +109,5 @@ T = TypeVar("T")
 
 class ApiResponse(BaseModel, Generic[T]):
     success: bool
-    status: int
     message: str
     data: T | None = None

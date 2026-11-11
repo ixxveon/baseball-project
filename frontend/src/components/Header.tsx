@@ -1,11 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import type { HeaderProps, TabType } from '../types';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { getMyInfo } from '../api/memberApi';
 import { clearAccessToken, getAccessToken } from '../utils/tokenStorage';
 
-export default function Header({ activeTab, onTabChange }: HeaderProps): React.JSX.Element {
+const NAV_ITEMS = [
+    { path: '/', label: '홈' },
+    { path: '/recommend', label: '직관 추천' },
+    { path: '/ranking', label: '랭킹' },
+    { path: '/community', label: '커뮤니티' },
+] as const;
+
+export default function Header(): React.JSX.Element {
     const navigate = useNavigate();
+    const { pathname } = useLocation();
     const isLoggedIn = Boolean(getAccessToken());
     const [nickname, setNickname] = useState<string>('');
 
@@ -27,13 +34,6 @@ export default function Header({ activeTab, onTabChange }: HeaderProps): React.J
             cancelled = true;
         };
     }, [isLoggedIn]);
-
-    const navItems: { id: TabType; label: string }[] = [
-        { id: 'home', label: '홈' },
-        { id: 'recommend', label: '직관 추천' },
-        { id: 'ranking', label: '랭킹' },
-        { id: 'community', label: '커뮤니티' },
-    ];
 
     const handleLogout = (): void => {
         clearAccessToken();
@@ -63,7 +63,7 @@ export default function Header({ activeTab, onTabChange }: HeaderProps): React.J
                 {/* 좌측 로고 */}
                 <div
                     className="logo"
-                    onClick={() => onTabChange('home')}
+                    onClick={() => navigate('/')}
                     style={{
                         fontSize: '20px',
                         fontWeight: '900',
@@ -81,13 +81,13 @@ export default function Header({ activeTab, onTabChange }: HeaderProps): React.J
 
                 {/* 중앙 탭 메뉴 */}
                 <nav className="nav-tabs" style={{ display: 'flex', gap: '32px', height: '100%' }}>
-                    {navItems.map((item) => {
-                        const isActive = activeTab === item.id;
+                    {NAV_ITEMS.map((item) => {
+                        const isActive = pathname === item.path;
                         return (
                             <button
-                                key={item.id}
+                                key={item.path}
                                 type="button"
-                                onClick={() => onTabChange(item.id)}
+                                onClick={() => navigate(item.path)}
                                 style={{
                                     position: 'relative',
                                     display: 'flex',

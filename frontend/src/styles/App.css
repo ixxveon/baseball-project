@@ -1245,6 +1245,36 @@ button {
     gap: 12px;
 }
 
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 24px;
+}
+
+.pagination-btn {
+    min-width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.pagination-btn.active {
+    background: #111317;
+    color: #ffffff;
+    border-color: #111317;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
 .post-card {
     display: flex;
     flex-direction: column;

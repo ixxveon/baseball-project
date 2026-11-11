@@ -1,6 +1,7 @@
 package kr.co.winningpick.domain.community.repository;
 
 import kr.co.winningpick.domain.community.entity.Post;
+import kr.co.winningpick.domain.community.type.PostCategoryType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -19,8 +20,15 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             value = "SELECT p, (SELECT COUNT(c) FROM Comment c WHERE c.post = p) " +
                     "FROM Post p JOIN FETCH p.author " +
                     "WHERE (:gameId IS NULL OR p.gameId = :gameId) " +
+                    "AND (:category IS NULL OR p.category = :category) " +
                     "ORDER BY p.createdAt DESC, p.id DESC",
-            countQuery = "SELECT COUNT(p) FROM Post p WHERE (:gameId IS NULL OR p.gameId = :gameId)"
+            countQuery = "SELECT COUNT(p) FROM Post p " +
+                    "WHERE (:gameId IS NULL OR p.gameId = :gameId) " +
+                    "AND (:category IS NULL OR p.category = :category)"
     )
-    Page<Object[]> findAllWithAuthorAndCommentCount(@Param("gameId") Long gameId, Pageable pageable);
+    Page<Object[]> findAllWithAuthorAndCommentCount(
+            @Param("gameId") Long gameId,
+            @Param("category") PostCategoryType category,
+            Pageable pageable
+    );
 }
