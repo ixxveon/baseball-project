@@ -37,3 +37,6 @@ fastapi/*.log
 # ==== Misc ====
 *.env
 .env
+
+# ==== Python ====
+venv/
