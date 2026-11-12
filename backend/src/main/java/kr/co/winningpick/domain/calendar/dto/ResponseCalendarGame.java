@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class CalendarGameResponse {
+public class ResponseCalendarGame {
     private Long gameId;
     private String matchDate;          // "2026-08-17"
     private String matchTime;          // "18:30"
@@ -24,16 +24,6 @@ public class CalendarGameResponse {
 
     // AI 상세 분석 요약 (모달 팝업용)
     private String scorePredict;       // "5:3"
-    private SummaryDto summary;
 
-    @Getter
-    @Builder
-    public static class SummaryDto {
-        private String pitcherComparison; // 투수 비교
-        private String battingComparison; // 타선 가중 생산력
-        private String homeAdvantage;     // 홈 이점
-        private String headToHead;        // 상대 전적
-        private String keyPlayer;         // 키플레이어
-        private String weatherComment;    // 날씨 서술
-    }
+    private ResponseCalendarSummary summary;
 }

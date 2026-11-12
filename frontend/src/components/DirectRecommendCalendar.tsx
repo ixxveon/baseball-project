@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axiosInstance from '../api/axiosInstance';
 
 export interface GameSummary {
     pitcherComparison: string;
@@ -15,14 +16,14 @@ export interface CalendarGame {
     matchTime: string;
     homeTeamName: string;
     awayTeamName: string;
-    myTeamScore: number;
-    myTeamWinProb: number;
-    weatherCondition: string;
-    isRain: boolean;
+    myTeamScore: number | null;
+    myTeamWinProb: number | null;
+    weatherCondition: string | null;
+    isRain: boolean | null;
     temperature?: number;
-    weatherAdjustment: number;
+    weatherAdjustment: number | null;
     scorePredict?: string;
-    summary?: GameSummary;
+    summary?: GameSummary | null;
 }
 
 const KBO_TEAMS = ['KIA', 'LG', '두산', 'KT', 'SSG', 'NC', '한화', '롯데', '삼성', '키움'];
@@ -41,10 +42,14 @@ export const DirectRecommendCalendar: React.FC = () => {
     const fetchCalendarData = async () => {
         setLoading(true);
         try {
-            const response = await fetch(
-                `/api/v1/calendar/recommendations?teamName=${selectedTeam}&yearMonth=${currentYearMonth}`
-            );
-            const data: CalendarGame[] = await response.json();
+            const response = await axiosInstance.get('/api/v1/calendar/recommendations', {
+                params: {
+                    teamName: selectedTeam,
+                    yearMonth: currentYearMonth,
+                },
+            });
+
+            const data: CalendarGame[] = response.data.data || response.data;
 
             const gameMap: Record<string, CalendarGame> = {};
             data.forEach((game) => {
@@ -66,6 +71,8 @@ export const DirectRecommendCalendar: React.FC = () => {
 
     const renderDays = () => {
         const [year, month] = currentYearMonth.split('-').map(Number);
+
+        // 🛠️ 수정 완료: month - 1 로 정상적인 월 인덱스 계산
         const firstDay = new Date(year, month - 1, 1).getDay();
         const daysInMonth = new Date(year, month, 0).getDate();
 
@@ -110,7 +117,6 @@ export const DirectRecommendCalendar: React.FC = () => {
                         (() => {
                             const isHome = game.homeTeamName === selectedTeam;
                             const opponent = isHome ? game.awayTeamName : game.homeTeamName;
-                            const style = getTrafficLightStyle(game.myTeamScore);
 
                             return (
                                 <div
@@ -127,25 +133,47 @@ export const DirectRecommendCalendar: React.FC = () => {
                                     }}
                                 >
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#0f172a' }}>
-                      <span style={{ color: '#64748b', fontWeight: 'normal' }}>{isHome ? 'VS' : '@'}</span> {opponent}
-                    </span>
-                                        <span
-                                            style={{
-                                                fontSize: '11px',
-                                                padding: '2px 7px',
-                                                borderRadius: '12px',
-                                                fontWeight: 800,
-                                                backgroundColor: style.bg,
-                                                color: style.color,
-                                            }}
-                                        >
-                      {game.myTeamScore}점
-                    </span>
+                                        <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#0f172a' }}>
+                                          <span style={{ color: '#64748b', fontWeight: 'normal' }}>{isHome ? 'VS' : '@'}</span> {opponent}
+                                        </span>
+
+                                        {/* 🛠️ 수정 완료: 점수가 null이면 "분석 전" 뱃지, 아니면 점수와 트래픽라이트 색상 적용 */}
+                                        {game.myTeamScore !== null && game.myTeamScore !== undefined ? (
+                                            (() => {
+                                                const style = getTrafficLightStyle(game.myTeamScore);
+                                                return (
+                                                    <span
+                                                        style={{
+                                                            fontSize: '11px',
+                                                            padding: '2px 7px',
+                                                            borderRadius: '12px',
+                                                            fontWeight: 800,
+                                                            backgroundColor: style.bg,
+                                                            color: style.color,
+                                                        }}
+                                                    >
+                                                        {game.myTeamScore}점
+                                                    </span>
+                                                );
+                                            })()
+                                        ) : (
+                                            <span
+                                                style={{
+                                                    fontSize: '11px',
+                                                    padding: '2px 7px',
+                                                    borderRadius: '12px',
+                                                    fontWeight: 800,
+                                                    backgroundColor: '#94a3b8',
+                                                    color: '#ffffff',
+                                                }}
+                                            >
+                                                분석 전
+                                            </span>
+                                        )}
                                     </div>
 
                                     <div style={{ fontSize: '11px', color: '#334155' }}>
-                                        승률: <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{game.myTeamWinProb}%</span>
+                                        승률: <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{game.myTeamWinProb !== null ? `${game.myTeamWinProb}%` : '-'}</span>
                                     </div>
 
                                     <div
@@ -158,11 +186,11 @@ export const DirectRecommendCalendar: React.FC = () => {
                                             paddingTop: '5px',
                                         }}
                                     >
-                                        <span>{game.weatherCondition}</span>
-                                        {game.weatherAdjustment !== 0 && (
+                                        <span>{game.weatherCondition || '날씨 정보 없음'}</span>
+                                        {game.weatherAdjustment !== null && game.weatherAdjustment !== 0 && (
                                             <span style={{ color: game.weatherAdjustment < 0 ? '#dc2626' : '#059669', fontWeight: 'bold' }}>
-                        날씨 {game.weatherAdjustment > 0 ? `+${game.weatherAdjustment}` : game.weatherAdjustment}
-                      </span>
+                                                날씨 {game.weatherAdjustment > 0 ? `+${game.weatherAdjustment}` : game.weatherAdjustment}
+                                            </span>
                                         )}
                                     </div>
                                 </div>
@@ -209,7 +237,7 @@ export const DirectRecommendCalendar: React.FC = () => {
                         🏟️ AI 직관 추천 캘린더
                     </h2>
                     <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>
-                        팀 승률과 날씨 보정치(-90~+5점)가 반영된 종합 추천 지수입니다.
+                        팀 승률과 날씨 보정치가 반영된 종합 추천 지수입니다.
                     </p>
                 </div>
 

@@ -1,7 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom';
 import Layout from '../components/Layout';
 import HomeScreen from '../pages/HomeScreen';
-import RecommendScreen from '../pages/RecommendScreen';
 import RankingPage from '../pages/RankingPage';
 import CommunityScreen from '../pages/CommunityScreen';
 import LoginPage from '../pages/LoginPage';
@@ -11,6 +10,7 @@ import PrivateRoute from '../components/PrivateRoute';
 import OAuthCallbackPage from '../pages/OAuthCallbackPage';
 import ProfileEditPage from '../pages/ProfileEditPage';
 import ForgotPasswordPage from '../pages/ForgotPasswordPage';
+import DirectRecommendCalendar from '../components/DirectRecommendCalendar';
 
 
 export const router = createBrowserRouter([
@@ -18,7 +18,7 @@ export const router = createBrowserRouter([
         element: <Layout />,
         children: [
             { path: '/', element: <HomeScreen /> },
-            { path: '/recommend', element: <RecommendScreen /> },
+            { path: '/recommend', element: <DirectRecommendCalendar /> },
             { path: '/ranking', element: <RankingPage /> },
             { path: '/community', element: <CommunityScreen /> },
             { path: '/mypage', element: <PrivateRoute><MyPage /></PrivateRoute> },

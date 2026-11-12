@@ -1,12 +1,13 @@
 package kr.co.winningpick.domain.calendar.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import kr.co.winningpick.domain.calendar.dto.CalendarGameResponse;
+import kr.co.winningpick.domain.calendar.dto.ResponseCalendarGame;
 import kr.co.winningpick.domain.calendar.repository.CalendarRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import kr.co.winningpick.domain.calendar.dto.ResponseCalendarSummary;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +21,7 @@ public class CalendarService {
 
     private final CalendarRepository calendarRepository;
 
-    public List<CalendarGameResponse> getRecommendedGames(String teamName, String yearMonth) {
+    public List<ResponseCalendarGame> getRecommendedGames(String teamName, String yearMonth) {
         if (yearMonth != null && yearMonth.contains("년")) {
             yearMonth = yearMonth.replace("년 ", "-").replace("월", "").trim();
             String[] parts = yearMonth.split("-");
@@ -36,7 +37,7 @@ public class CalendarService {
 
         log.info("👉 [캘린더 조회] DB에서 조회된 경기 수: {}개", rawGames.size());
 
-        List<CalendarGameResponse> responses = new ArrayList<>();
+        List<ResponseCalendarGame> responses = new ArrayList<>();
         ObjectMapper objectMapper = new ObjectMapper();
 
         for (Object obj : rawGames) {
@@ -44,23 +45,40 @@ public class CalendarService {
 
             String homeTeam = (String) row.get("homeTeamName");
             String awayTeam = (String) row.get("awayTeamName");
-            boolean isHome = homeTeam.contains(teamName);
 
-            double homeWinProb = ((Number) row.get("homeWinProb")).doubleValue();
-            double myTeamWinProb = isHome ? homeWinProb : (100.0 - homeWinProb);
-
-            int baseScore = ((Number) row.get("recommendationScore")).intValue();
-            int weatherAdj = ((Number) row.get("weatherAdjustment")).intValue();
-            int myTeamScore = isHome ? baseScore : (int) Math.round(myTeamWinProb + weatherAdj);
-
-            CalendarGameResponse.SummaryDto summary = null;
+            // AI 예측 결과가 존재하는지 확인 (recommendationScore나 resultJson 기준)
             Object resultJsonObj = row.get("resultJson");
-            if (resultJsonObj != null) {
+            Object recScoreObj = row.get("recommendationScore");
+
+            Integer myTeamScore = null;
+            Double myTeamWinProb = null;
+            String weatherCondition = null;
+            Boolean isRain = null;
+            Integer weatherAdjustment = null;
+            ResponseCalendarSummary summary = null;
+
+            // 예측 데이터가 존재할 때만 점수와 날씨, 요약을 계산함
+            if (recScoreObj != null && resultJsonObj != null) {
+                boolean isHome = homeTeam.contains(teamName);
+                double homeWinProb = ((Number) row.get("homeWinProb")).doubleValue();
+
+                // (참고: 기존 코드의 오타였던 마이너스 연산도 함께 수정했습니다)
+                myTeamWinProb = isHome ? homeWinProb : (100.0 - homeWinProb);
+                myTeamWinProb = Math.round(myTeamWinProb * 10.0) / 10.0;
+
+                int baseScore = ((Number) recScoreObj).intValue();
+                int weatherAdj = ((Number) row.get("weatherAdjustment")).intValue();
+
+                myTeamScore = isHome ? baseScore : (int) Math.round(myTeamWinProb + weatherAdj);
+                weatherAdjustment = weatherAdj;
+                weatherCondition = weatherAdj < -10 ? "비 예보" : "맑음";
+                isRain = weatherAdj < -20;
+
                 try {
                     String jsonStr = resultJsonObj.toString();
                     Map<String, Object> jsonMap = objectMapper.readValue(jsonStr, Map.class);
 
-                    summary = CalendarGameResponse.SummaryDto.builder()
+                    summary = ResponseCalendarSummary.builder()
                             .pitcherComparison((String) jsonMap.getOrDefault("pitcherComparison", "선발 투수 분석 정보가 없습니다."))
                             .battingComparison((String) jsonMap.getOrDefault("battingComparison", "타선 분석 정보가 없습니다."))
                             .homeAdvantage((String) jsonMap.getOrDefault("homeAdvantage", "홈 이점 분석 정보가 없습니다."))
@@ -73,21 +91,21 @@ public class CalendarService {
                 }
             }
 
-            responses.add(CalendarGameResponse.builder()
+            // 빌더에 전달 (데이터가 없으면 모두 null이 들어가서 프론트에서 "분석 전"으로 처리됨)
+            responses.add(ResponseCalendarGame.builder()
                     .gameId(((Number) row.get("gameId")).longValue())
                     .matchDate((String) row.get("matchDate"))
                     .matchTime(row.get("matchTime") != null ? row.get("matchTime").toString() : "18:30")
                     .homeTeamName(homeTeam)
                     .awayTeamName(awayTeam)
                     .myTeamScore(myTeamScore)
-                    .myTeamWinProb(Math.round(myTeamWinProb * 10.0) / 10.0)
-                    .weatherCondition(weatherAdj < -10 ? "비 예보" : "맑음")
-                    .isRain(weatherAdj < -20)
-                    .weatherAdjustment(weatherAdj)
+                    .myTeamWinProb(myTeamWinProb)
+                    .weatherCondition(weatherCondition)
+                    .isRain(isRain)
+                    .weatherAdjustment(weatherAdjustment)
                     .summary(summary)
                     .build());
         }
-
         return responses;
     }
 }
