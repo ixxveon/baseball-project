@@ -1,7 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import Layout from '../components/Layout';
-import HomeScreen from '../pages/HomeScreen';
-import RecommendScreen from '../pages/RecommendScreen';
+import HomePage from '../pages/HomePage';
+import RecommendPage from '../pages/RecommendPage';
 import RankingPage from '../pages/RankingPage';
 import CommunityScreen from '../pages/CommunityScreen';
 import LoginPage from '../pages/LoginPage';
@@ -16,8 +16,8 @@ export const router = createBrowserRouter([
     {
         element: <Layout />,
         children: [
-            { path: '/', element: <HomeScreen /> },
-            { path: '/recommend', element: <RecommendScreen /> },
+            { path: '/', element: <HomePage /> },
+            { path: '/recommend', element: <RecommendPage /> },
             { path: '/ranking', element: <RankingPage /> },
             { path: '/community', element: <CommunityScreen /> },
             { path: '/mypage', element: <PrivateRoute><MyPage /></PrivateRoute> },
