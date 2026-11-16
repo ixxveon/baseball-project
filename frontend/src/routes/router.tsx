@@ -11,6 +11,7 @@ import PrivateRoute from '../components/PrivateRoute';
 import OAuthCallbackPage from '../pages/OAuthCallbackPage';
 import ProfileEditPage from '../pages/ProfileEditPage';
 import ForgotPasswordPage from '../pages/ForgotPasswordPage';
+import NotFoundPage from '../pages/NotFoundPage';
 
 export const router = createBrowserRouter([
     {
@@ -22,6 +23,7 @@ export const router = createBrowserRouter([
             { path: '/community', element: <CommunityScreen /> },
             { path: '/mypage', element: <PrivateRoute><MyPage /></PrivateRoute> },
             { path: '/profile-edit', element: <PrivateRoute><ProfileEditPage /></PrivateRoute> },
+            { path: '*', element: <NotFoundPage /> },
         ],
     },
     { path: '/login', element: <LoginPage /> },
