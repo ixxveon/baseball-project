@@ -8,6 +8,7 @@ from core.recommendation_score import (
     win_prob_for_team,
 )
 from core.weather_service import WeatherService
+from core.win_probability import WinEstimate, estimate_win
 from service.preprocessor.postgres_repository import PostgresPredictionRepository
 from service.prompts.win_prediction_prompt import (
     WIN_PREDICTION_SYSTEM_PROMPT,
@@ -67,6 +68,9 @@ class PredictionService:
         self.weather_service = weather_service or WeatherService()
 
     def prepare_matchup_prompt(self, game_id: int) -> PreparePromptDataSchema:
+        return self._prepare(game_id)[0]
+
+    def _prepare(self, game_id: int) -> tuple[PreparePromptDataSchema, WinEstimate]:
         raw_stats = self.repository.get_matchup_stats(game_id)
 
         home_team = TeamStatSchema(
@@ -101,16 +105,28 @@ class PredictionService:
             weather=weather,
         )
 
-        user_prompt = build_llm_user_prompt(matchup_payload.model_dump())
+        estimate = estimate_win(
+            home_hitters=raw_stats["home_hitters"],
+            away_hitters=raw_stats["away_hitters"],
+            home_pitcher=raw_stats["home_pitcher"],
+            away_pitcher=raw_stats["away_pitcher"],
+        )
 
-        return PreparePromptDataSchema(
+        user_prompt = build_llm_user_prompt(matchup_payload.model_dump(), estimate.as_prompt_dict())
+
+        prompt_data = PreparePromptDataSchema(
             systemPrompt=WIN_PREDICTION_SYSTEM_PROMPT,
             userPrompt=user_prompt,
             preprocessedMatchup=matchup_payload,
         )
+        return prompt_data, estimate
 
     def predict(self, game_id: int) -> PredictionResultDataSchema:
-        prompt_data = self.prepare_matchup_prompt(game_id)
+        prompt_data, estimate = self._prepare(game_id)
+        calculated = {
+            "homeWinProb": estimate.home_win_prob,
+            "scorePredict": estimate.score_predict,
+        }
 
         weather = prompt_data.preprocessedMatchup.weather
         weather_adjustment = calculate_weather_adjustment(
@@ -125,10 +141,12 @@ class PredictionService:
             recommendation_score = cached["recommendation_score"]
         else:
             try:
-                result = self.llm_service.generate_win_summary(
+                llm_result = self.llm_service.generate_win_summary(
                     prompt_data.systemPrompt,
                     prompt_data.userPrompt,
                 )
+                # 승률/스코어는 서버 계산값으로 고정 (LLM이 복사하다 틀려도 덮어씀)
+                result = llm_result.model_copy(update=calculated)
                 recommendation_score = calculate_recommendation_score(result.homeWinProb, weather_adjustment)
                 self.repository.save_prediction(
                     game_id=game_id,
@@ -138,7 +156,8 @@ class PredictionService:
                     weather_adjustment=weather_adjustment,
                 )
             except LLMGenerationError:
-                result = LLMService.get_fallback_response()
+                # LLM이 실패해도 수치는 서버 계산값을 보여주고, 코멘트만 안내 문구로 대체 (저장은 안 함)
+                result = LLMService.get_fallback_response().model_copy(update=calculated)
                 recommendation_score = calculate_recommendation_score(result.homeWinProb, weather_adjustment)
 
         return PredictionResultDataSchema(

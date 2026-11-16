@@ -5,7 +5,6 @@ interface GameCardProps {
     game: UpcomingGame;
     onClick?: (gameId: number) => void;
 }
-
 export default function GameCard({ game, onClick }: GameCardProps): React.JSX.Element {
     const content = (
         <>
