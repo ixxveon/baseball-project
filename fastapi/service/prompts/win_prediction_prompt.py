@@ -1,4 +1,5 @@
 import json
+import re
 from typing import Any
 
 WIN_PREDICTION_SYSTEM_PROMPT = """
@@ -8,29 +9,29 @@ WIN_PREDICTION_SYSTEM_PROMPT = """
 입력 데이터는 다음과 같습니다.
 - homeTeam / awayTeam: 각 팀 선발투수(pitcher)
   - recent10Ip / recent10EarnedRuns: 최근 10경기 합산 이닝 / 자책점
-- headToHead: 두 팀의 시즌 상대전적 (homeWins / awayWins) - 이미 계산된 사실이므로 그대로 인용만 할 것
-- keyPlayers: 양 팀에서 미리 선정된 핵심 타자 1명씩 (side: home/away, recentWrc: 최근 10경기 wRC 증가분) - 그대로 활용할 것
+- headToHead: 두 팀의 시즌 상대전적 (홈팀 승수 homeWins / 원정팀 승수 awayWins) - 이미 계산된 사실이므로 숫자만 그대로 인용할 것
+- keyPlayers: 양 팀에서 미리 선정된 핵심 타자 1명씩 (side: home/away, 최근 10경기 wRC 증가분 recentWrc) - 그대로 활용할 것
 - weather: 경기 당일 예보 (temperature, humidity, condition) - null이면 예보가 아직 나오지 않은 것
-- calculated: 서버가 계산한 값 (이 값만 근거로 사용할 것)
-  - homeWinProb: 홈팀 승률(%), scorePredict: 예상 스코어 "홈:원정"
-  - homeExpectedRuns / awayExpectedRuns: 두 팀의 예상 득점
-  - homeWrcPerPa / awayWrcPerPa: 시즌과 최근 10경기를 함께 반영한 팀 타석당 wRC (최근 10경기에 더 큰 비중)
-  - homeRecentWrcPerPa / awayRecentWrcPerPa: 최근 10경기만의 팀 타석당 wRC
-  - homeStarterEra / awayStarterEra: 시즌과 최근 10경기를 함께 반영한 선발투수 ERA
-  - homeStarterRecentEra / awayStarterRecentEra: 최근 10경기 9이닝당 자책점
+- 서버 계산값: 서버가 계산한 값 (이 값만 근거로 사용할 것)
+  - 홈팀 승률(%), 예상 스코어(홈:원정)
+  - 홈팀 예상 득점, 원정팀 예상 득점
+  - 홈팀 / 원정팀 타선 종합 타석당 wRC: 시즌과 최근 10경기를 함께 반영한 값 (최근 10경기에 더 큰 비중)
+  - 홈팀 / 원정팀 타선 최근 10경기 타석당 wRC: 최근 10경기만의 값
+  - 홈팀 / 원정팀 선발 종합 ERA: 시즌과 최근 10경기를 함께 반영한 값
+  - 홈팀 / 원정팀 선발 최근 10경기 ERA: 최근 10경기 9이닝당 자책점
 
-아래 항목의 코멘트를 작성하세요. 숫자는 calculated와 입력에 있는 값만 사용하고, 없는 수치를 지어내지 마세요.
+아래 항목의 코멘트를 작성하세요. 숫자는 서버 계산값과 입력에 있는 값만 사용하고, 없는 수치를 지어내지 마세요.
 - pitcherComparison (2~3문장): 양 팀 선발투수의 최근 컨디션 비교.
-  최근 ERA(homeStarterRecentEra / awayStarterRecentEra)가 더 낮은 쪽이 우세하다고 명시하고,
+  '선발 최근 10경기 ERA'가 더 낮은 쪽이 우세하다고 명시하고,
   높은 쪽은 "실점 억제에 어려움을 겪고 있다"처럼 구체적으로 지적할 것
-- battingComparison (2~3문장): 양 팀 타선 비교. homeWrcPerPa / awayWrcPerPa와
-  최근 10경기 흐름(homeRecentWrcPerPa / awayRecentWrcPerPa)을 근거로 어느 팀이 우세한지 명시할 것
+- battingComparison (2~3문장): 양 팀 타선 비교. '타선 종합 타석당 wRC'와
+  '타선 최근 10경기 타석당 wRC'(최근 10경기 흐름)를 근거로 어느 팀이 우세한지 명시할 것
 - homeAdvantage (2~3문장): 홈팀이 홈 경기에서 갖는 일반적 이점에 대한 서술
   (구체적인 홈구장 승률 등 갖고 있지 않은 수치를 지어내지 말 것)
-- headToHead (1~2문장): headToHead.homeWins / awayWins 숫자를 그대로 인용해서
+- headToHead (1~2문장): 상대전적의 홈팀 승수 / 원정팀 승수 숫자를 그대로 인용해서
   "OO팀이 N승 M패로 우세/열세" 형태로 서술. 숫자를 임의로 바꾸지 말 것
 - keyPlayer (2~3문장): keyPlayers 목록의 두 선수를 소개하며,
-  recentWrc를 근거로 왜 이 경기의 키플레이어인지 서술. 목록에 없는 선수를 지어내지 말 것
+  최근 10경기 wRC 증가분을 근거로 왜 이 경기의 키플레이어인지 서술. 목록에 없는 선수를 지어내지 말 것
 - weatherComment (1~2문장, weather 값과 무관하게 절대 생략하지 말고 항상 채울 것):
   weather가 null이면 반드시 "아직 예보가 나오지 않았습니다"라고 정확히 쓸 것.
   weather가 있으면 condition / temperature / humidity를 그대로 서술할 것
@@ -39,12 +40,13 @@ WIN_PREDICTION_SYSTEM_PROMPT = """
 
 주의: 날씨는 weatherComment 항목에서만 언급하고, 그 외 어떤 항목에서도 날씨를 근거로 언급하지 마세요.
 항목마다 지정된 문장 수를 넘기지 마세요.
+작성하는 문장에는 입력 데이터의 필드명이나 영문 식별자(예: homeWins, recentWrc, homeStarterRecentEra)를 절대 그대로 쓰지 말고, 자연스러운 한국어로 풀어서 쓰세요.
 
 반드시 아래 JSON 형식으로만 응답하세요. 마크다운 코드 블록(```)이나 다른 텍스트는 포함하지 마세요.
-homeWinProb와 scorePredict는 calculated의 값을 그대로 복사하세요.
+homeWinProb에는 서버 계산값의 '홈팀 승률(%)' 숫자를, scorePredict에는 '예상 스코어(홈:원정)' 문자열을 그대로 복사하세요.
 {
-  "homeWinProb": calculated.homeWinProb 숫자,
-  "scorePredict": "calculated.scorePredict 문자열",
+  "homeWinProb": 홈팀 승률 숫자,
+  "scorePredict": "예상 스코어 문자열",
   "summary": {
     "pitcherComparison": "...",
     "battingComparison": "...",
@@ -55,6 +57,37 @@ homeWinProb와 scorePredict는 calculated의 값을 그대로 복사하세요.
   }
 }
 """
+
+# calculated 키 -> LLM에 넘길 한국어 라벨 (영문 변수명이 문장에 새는 것을 방지)
+CALCULATED_LABELS: dict[str, str] = {
+    "homeWinProb": "홈팀 승률(%)",
+    "scorePredict": "예상 스코어(홈:원정)",
+    "homeExpectedRuns": "홈팀 예상 득점",
+    "awayExpectedRuns": "원정팀 예상 득점",
+    "homeWrcPerPa": "홈팀 타선 종합 타석당 wRC",
+    "awayWrcPerPa": "원정팀 타선 종합 타석당 wRC",
+    "homeRecentWrcPerPa": "홈팀 타선 최근 10경기 타석당 wRC",
+    "awayRecentWrcPerPa": "원정팀 타선 최근 10경기 타석당 wRC",
+    "homeStarterEra": "홈팀 선발 종합 ERA",
+    "awayStarterEra": "원정팀 선발 종합 ERA",
+    "homeStarterRecentEra": "홈팀 선발 최근 10경기 ERA",
+    "awayStarterRecentEra": "원정팀 선발 최근 10경기 ERA",
+}
+
+# 응답 문장에 영문 필드명이 새어 나왔는지 검사 (wRC, ERA 같은 정상 약어는 걸리지 않음)
+_LEAKED_FIELD_PATTERN = re.compile(
+    r"\b(?:home|away)[A-Z][A-Za-z0-9]*\b"
+    r"|\brecent(?:10)?[A-Z][A-Za-z0-9]*\b"
+    r"|\b(?:scorePredict|keyPlayers?|headToHead|pitcherComparison|battingComparison)\b"
+)
+
+
+def has_leaked_field_names(summary: dict[str, Any]) -> bool:
+    """summary 문장에 영문 필드명이 그대로 노출됐는지 확인한다. True면 재시도/fallback 대상."""
+    return any(
+        isinstance(text, str) and _LEAKED_FIELD_PATTERN.search(text)
+        for text in summary.values()
+    )
 
 
 def _without_hitters(processed_stats: dict[str, Any]) -> dict[str, Any]:
@@ -67,8 +100,16 @@ def _without_hitters(processed_stats: dict[str, Any]) -> dict[str, Any]:
     return slim
 
 
+def _relabel_calculated(calculated: dict[str, Any]) -> dict[str, Any]:
+    """calculated의 영문 키를 한국어 라벨로 바꾼다. 매핑에 없는 키는 그대로 둔다."""
+    return {CALCULATED_LABELS.get(key, key): value for key, value in calculated.items()}
+
+
 def build_llm_user_prompt(processed_stats: dict[str, Any], calculated: dict[str, Any]) -> str:
-    payload = {**_without_hitters(processed_stats), "calculated": calculated}
+    payload = {
+        **_without_hitters(processed_stats),
+        "서버 계산값": _relabel_calculated(calculated),
+    }
     json_payload = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
     return f"""
 아래 경기 데이터와 서버 계산 결과를 바탕으로 분석 코멘트를 작성하세요.
