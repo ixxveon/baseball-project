@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { isAxiosError } from 'axios';
+import { getAccessToken } from '../utils/tokenStorage';
 import Pagination from '../components/Pagination';
 import PostCard from '../components/PostCard';
 import PostDetail from '../components/PostDetail';
@@ -30,6 +33,13 @@ export default function CommunityScreen(): React.JSX.Element {
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [isCommentsLoading, setIsCommentsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
+    const navigate = useNavigate();
+
+    const goToLogin = (): void => {
+        navigate('/login', { state: { from: '/community' } });
+    };
+
+    const isUnauthorized = (error: unknown): boolean => isAxiosError(error) && error.response?.status === 401;
 
     useEffect(() => {
         let cancelled = false;
@@ -134,6 +144,12 @@ export default function CommunityScreen(): React.JSX.Element {
     };
 
     const goToWrite = (): void => {
+        if (!getAccessToken()) {
+            if (window.confirm('로그인하면 글을 쓸 수 있어요. 로그인할까요?')) {
+                goToLogin();
+            }
+            return;
+        }
         setViewMode('write');
         window.history.pushState({ view: 'write' }, '');
     };
@@ -151,7 +167,12 @@ export default function CommunityScreen(): React.JSX.Element {
             setRefreshKey((prev) => prev + 1);
             window.history.back();
             window.alert('게시글이 등록되었습니다');
-        } catch {
+        } catch (error: unknown) {
+            if (isUnauthorized(error)) {
+                window.alert('로그인이 필요해요. 로그인 후 다시 시도해주세요.');
+                goToLogin();
+                return;
+            }
             window.alert('게시글 등록에 실패했어요. 잠시 후 다시 시도해주세요');
         }
     };
@@ -202,7 +223,12 @@ export default function CommunityScreen(): React.JSX.Element {
                 post.id === selectedPostId ? { ...post, commentCount: post.commentCount + 1 } : post
             )));
             return true;
-        } catch {
+        } catch (error: unknown) {
+            if (isUnauthorized(error)) {
+                window.alert('로그인이 필요해요. 로그인 후 다시 시도해주세요.');
+                goToLogin();
+                return false;
+            }
             window.alert('댓글 등록에 실패했어요. 잠시 후 다시 시도해주세요');
             return false;
         }
@@ -263,6 +289,7 @@ export default function CommunityScreen(): React.JSX.Element {
                     onDelete={() => { void handleDeletePost(); }}
                     onDeleteComment={(commentId) => { void handleDeleteComment(commentId); }}
                     isCommentsLoading={isCommentsLoading}
+                    onRequireLogin={goToLogin}
                 />
             </div>
         );

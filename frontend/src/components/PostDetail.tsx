@@ -12,6 +12,7 @@ interface PostDetailProps {
     onDelete: () => void;
     onDeleteComment: (commentId: number) => void;
     isCommentsLoading: boolean;
+    onRequireLogin: () => void;
 }
 
 const CATEGORY_LABEL: Record<PostCategory, string> = {
@@ -26,7 +27,7 @@ const CATEGORY_CLASS: Record<PostCategory, string> = {
     ETC: 'etc',
 };
 
-export default function PostDetail({ post, comments, onBack, onAddComment, onEdit, onDelete, onDeleteComment, isCommentsLoading }: PostDetailProps): React.JSX.Element {
+export default function PostDetail({ post, comments, onBack, onAddComment, onEdit, onDelete, onDeleteComment, isCommentsLoading, onRequireLogin }: PostDetailProps): React.JSX.Element {
     const [commentInput, setCommentInput] = useState<string>('');
     const currentMemberId = getCurrentMemberId();
     const isAuthor = post.authorId === currentMemberId;
@@ -85,15 +86,21 @@ export default function PostDetail({ post, comments, onBack, onAddComment, onEdi
             <div className="post-comment-section">
                 <h3 className="post-comment-title">댓글 {comments.length}</h3>
 
-                <form className="post-comment-form" onSubmit={(e) => { void handleSubmitComment(e); }}>
-                    <input
-                        type="text"
-                        value={commentInput}
-                        onChange={(e) => setCommentInput(e.target.value)}
-                        placeholder="댓글을 입력해주세요"
-                    />
-                    <button type="submit" className="post-comment-submit" disabled={isCommentsLoading}>등록</button>
-                </form>
+                {currentMemberId !== null ? (
+                    <form className="post-comment-form" onSubmit={(e) => { void handleSubmitComment(e); }}>
+                        <input
+                            type="text"
+                            value={commentInput}
+                            onChange={(e) => setCommentInput(e.target.value)}
+                            placeholder="댓글을 입력해주세요"
+                        />
+                        <button type="submit" className="post-comment-submit" disabled={isCommentsLoading}>등록</button>
+                    </form>
+                ) : (
+                    <button type="button" className="post-comment-login-btn" onClick={onRequireLogin}>
+                        로그인하고 댓글 달기
+                    </button>
+                )}
 
                 <div className="post-comment-list">
                     {isCommentsLoading ? (
