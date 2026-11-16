@@ -12,6 +12,7 @@ import OAuthCallbackPage from '../pages/OAuthCallbackPage';
 import ProfileEditPage from '../pages/ProfileEditPage';
 import ForgotPasswordPage from '../pages/ForgotPasswordPage';
 
+
 export const router = createBrowserRouter([
     {
         element: <Layout />,
