@@ -1,20 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { ResponseRanking } from '../types/ranking';
-import axiosInstance from '../api/axiosInstance'; // 👈 axiosInstance 임포트 (경로 확인 필요)
+import axiosInstance from '../api/axiosInstance';
 
 export default function RankingPage(): React.JSX.Element {
     const [rankings, setRankings] = useState<ResponseRanking[]>([]);
-    const [loading, setLoading] = useState<boolean>(true)
-    const [error, setError] = useState<string | null>(null); //에러 상태
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        // 👈 기존 fetch 대신 axiosInstance 사용
-        // baseURL이 '/api/v1'로 설정되어 있으므로 '/rankings'만 적으면 됩니다.
         axiosInstance.get('/rankings')
             .then((res) => {
-                // Axios 기본 응답인 res.data 안에 백엔드가 포장한 ApiResponse 객체가 들어있고,
-                // 그 안의 실제 데이터(data 필드)를 꺼내서 세팅합니다.
-                // (팀의 ApiResponse 구조에 따라 res.data.data가 아닌 res.data.result 등일 수 있으니 확인해 주세요!)
                 setRankings(res.data.data);
                 setLoading(false);
             })
@@ -34,9 +29,23 @@ export default function RankingPage(): React.JSX.Element {
         return 'rank-badge rank-other'; // 6위 이하
     };
 
+    // 팀 이름에 맞춰 public/images/teams 폴더의 이미지 경로를 반환하는 함수
+    const getTeamLogoPath = (teamName: string) => {
+        if (teamName.includes('LG')) return '/images/teams/lg.png';
+        if (teamName.includes('두산')) return '/images/teams/doosan.png';
+        if (teamName.includes('KIA') || teamName.includes('기아')) return '/images/teams/kia.png';
+        if (teamName.includes('삼성')) return '/images/teams/samsung.png';
+        if (teamName.includes('롯데')) return '/images/teams/lotte.png';
+        if (teamName.includes('KT') || teamName.includes('kt')) return '/images/teams/kt.png';
+        if (teamName.includes('SSG')) return '/images/teams/ssg.png';
+        if (teamName.includes('NC')) return '/images/teams/nc.png';
+        if (teamName.includes('한화')) return '/images/teams/hanwha.png';
+        if (teamName.includes('키움')) return '/images/teams/kiwoom.png';
+        return '';
+    };
+
     return (
         <div className="ranking-page-container">
-            {/* CSS 스타일 태그 부분은 기존과 완벽히 동일하므로 생략 없이 그대로 유지하시면 됩니다. */}
             <style>
                 {`
           .ranking-page-container { background-color: #F4F6F8; min-height: 100vh; padding: 40px 16px; font-family: 'Pretendard', 'Malgun Gothic', sans-serif; }
@@ -62,7 +71,8 @@ export default function RankingPage(): React.JSX.Element {
           .rank-ps { background: #4b5563; color: #fff; }
           .rank-other { background: #f3f4f6; color: #9ca3af; }
           .team-info { display: flex; align-items: center; gap: 12px; font-weight: 700; color: #1f2937; text-align: left; font-size: 15px; }
-          .team-logo { width: 36px; height: 36px; border-radius: 50%; background: #f9fafb; border: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #9ca3af; }
+          .team-logo { width: 36px; height: 36px; border-radius: 50%; background: #f9fafb; border: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+          .team-logo img { width: 24px; height: 24px; object-fit: contain; }
           .win-rate { font-weight: 800; color: #E6002D; font-size: 15px; }
           .streak-badge { display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
           .streak-win { background: #fef2f2; color: #E6002D; border: 1px solid #fee2e2; }
@@ -77,12 +87,8 @@ export default function RankingPage(): React.JSX.Element {
                             KBO 정규리그 순위 <span style={{ fontSize: '24px' }}>🔥</span>
                         </h1>
                         <p className="ranking-subtitle">
-                            2026.08.17 기준 <span style={{ margin: '0 8px' }}>|</span> 백엔드 실시간 연동 완료
+                            2026.08.17 기준
                         </p>
-                    </div>
-                    <div className="my-team-badge">
-                        <span style={{ color: '#E6002D', fontSize: '18px' }}>★</span> 내 응원팀
-                        <span className="my-team-name">LG 트윈스</span>
                     </div>
                 </div>
 
@@ -124,6 +130,7 @@ export default function RankingPage(): React.JSX.Element {
                         ) : (
                             rankings.map((team) => {
                                 const isMyTeam = team.teamName === 'LG 트윈스';
+                                const logoPath = getTeamLogoPath(team.teamName);
 
                                 return (
                                     <tr key={team.teamName} className={isMyTeam ? 'my-team-row' : ''}>
@@ -132,7 +139,13 @@ export default function RankingPage(): React.JSX.Element {
                                         </td>
                                         <td>
                                             <div className="team-info">
-                                                <div className="team-logo">로고</div>
+                                                <div className="team-logo">
+                                                    {logoPath ? (
+                                                        <img src={logoPath} alt={`${team.teamName} 로고`} />
+                                                    ) : (
+                                                        <span style={{ fontSize: '10px', color: '#9ca3af' }}>로고</span>
+                                                    )}
+                                                </div>
                                                 {team.teamName}
                                             </div>
                                         </td>
@@ -140,13 +153,12 @@ export default function RankingPage(): React.JSX.Element {
                                         <td style={{ fontWeight: 600, color: '#1f2937' }}>{team.wins}</td>
                                         <td>{team.draws}</td>
                                         <td>{team.losses}</td>
-                                        {/* 👈 winRate와 gameDiff를 소수점 자리수에 맞게 포맷팅합니다 */}
                                         <td className="win-rate">{Number(team.winRate).toFixed(3)}</td>
                                         <td style={{ fontWeight: 500 }}>{Number(team.gameDiff).toFixed(1)}</td>
                                         <td>
-                                                <span className={`streak-badge ${team.streak.includes('승') ? 'streak-win' : 'streak-lose'}`}>
-                                                    {team.streak}
-                                                </span>
+                                            <span className={`streak-badge ${team.streak.includes('승') ? 'streak-win' : 'streak-lose'}`}>
+                                                {team.streak}
+                                            </span>
                                         </td>
                                     </tr>
                                 );
