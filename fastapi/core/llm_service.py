@@ -1,17 +1,22 @@
 ﻿import json
+import logging
 
 import anthropic
 
 from core.config import settings
+from service.prompts.win_prediction_prompt import has_leaked_field_names
 from service.schemas.prediction_schema import (
     WinPredictionResultSchema,
     WinPredictionSummarySchema,
 )
 
+logger = logging.getLogger(__name__)
+
 FALLBACK_HOME_WIN_PROB = 50.0
 FALLBACK_SCORE_PREDICT = "-:-"
 FALLBACK_COMMENT = "AI 분석 서비스 연동이 일시적으로 지연되어 상세 분석을 제공할 수 없습니다."
 MAX_OUTPUT_TOKENS = 2048
+MAX_LEAK_RETRIES = 1  # 변수명 누출 감지 시 추가로 재요청하는 최대 횟수 (총 시도 = 1 + 재시도)
 
 
 class LLMGenerationError(Exception):
@@ -39,6 +44,23 @@ class LLMService:
         return self._client
 
     def generate_win_summary(self, system_prompt: str, user_prompt: str) -> WinPredictionResultSchema:
+        """LLM 응답을 받아 검증한다. 문장에 영문 필드명이 노출되면 재요청하고,
+        끝까지 해결되지 않으면 LLMGenerationError를 발생시켜 호출부가 fallback을 쓰게 한다."""
+        total_attempts = 1 + MAX_LEAK_RETRIES
+
+        for attempt in range(1, total_attempts + 1):
+            result = self._request_win_summary(system_prompt, user_prompt)
+
+            if not has_leaked_field_names(result.summary.model_dump()):
+                return result
+
+            logger.warning(
+                "LLM 응답에 영문 필드명이 노출되었습니다. (시도 %d/%d)", attempt, total_attempts
+            )
+
+        raise LLMGenerationError("LLM 응답에 영문 필드명이 반복적으로 노출되었습니다.")
+
+    def _request_win_summary(self, system_prompt: str, user_prompt: str) -> WinPredictionResultSchema:
         try:
             response = self.client.messages.create(
                 model=self.model,
