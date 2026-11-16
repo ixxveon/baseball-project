@@ -17,6 +17,9 @@ class Settings(BaseSettings):
 
     anthropic_api_key: str | None = Field(None, alias="ANTHROPIC_API_KEY")
 
+    # Spring이 발급한 액세스 토큰을 검증하는 데 쓰는 서명 키 (Spring jwt.secret과 같은 값이어야 함)
+    jwt_secret: str | None = Field(None, alias="JWT_SECRET")
+
     cors_allow_origins: str = Field("http://localhost:5173", alias="CORS_ALLOW_ORIGINS")
 
     @property

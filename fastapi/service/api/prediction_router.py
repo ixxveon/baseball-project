@@ -1,5 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Header, HTTPException, status
 
+from core.auth import member_id_from_authorization
 from service.schemas.prediction_schema import (
     ApiResponse,
     PredictionResultDataSchema,
@@ -8,7 +9,7 @@ from service.schemas.prediction_schema import (
     UpcomingGameSchema,
     WinPredictionRequest,
 )
-from service.services.prediction_service import PredictionService
+from service.services.prediction_service import LoginRequiredError, PredictionService
 
 router = APIRouter(
     prefix="/ai",
@@ -108,18 +109,31 @@ def prepare_matchup_prompt(
     "/predict",
     response_model=ApiResponse[PredictionResultDataSchema],
     summary="경기 승률 예측",
-    description="gameId에 해당하는 경기의 AI 승률 예측 결과를 반환합니다.",
+    description=(
+        "gameId에 해당하는 경기의 AI 승률 예측 결과를 반환합니다. "
+        "오늘 저장된 분석은 누구나 조회할 수 있고, 새 분석 생성(LLM 호출)은 로그인한 요청만 가능합니다."
+    ),
     responses={
         400: _error_example("잘못된 요청 (예: 존재하지 않는 경기)", "경기를 찾을 수 없습니다."),
+        401: _error_example(
+            "저장된 분석이 없는데 비로그인 요청인 경우",
+            "로그인하면 AI 분석을 볼 수 있습니다.",
+        ),
         **COMMON_ERRORS,
     },
 )
 def predict_win_rate(
         payload: WinPredictionRequest,
+        authorization: str | None = Header(default=None),
 ):
-    result = prediction_service.predict(
-        game_id=payload.gameId,
-    )
+    is_logged_in = member_id_from_authorization(authorization) is not None
+    try:
+        result = prediction_service.predict(
+            game_id=payload.gameId,
+            allow_generate=is_logged_in,
+        )
+    except LoginRequiredError as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e)) from e
 
     return ApiResponse[PredictionResultDataSchema](
         success=True,

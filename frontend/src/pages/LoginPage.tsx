@@ -16,7 +16,12 @@ const INITIAL_FORM: FormState = { email: '', password: '' };
 export default function LoginPage(): React.JSX.Element {
     const navigate = useNavigate();
     const location = useLocation();
-    const signupSuccess = Boolean((location.state as { signupSuccess?: boolean } | null)?.signupSuccess);
+    const locationState = location.state as { signupSuccess?: boolean; from?: string } | null;
+    const signupSuccess = Boolean(locationState?.signupSuccess);
+    // 다른 화면에서 로그인을 요청받아 왔다면 로그인 후 그 화면으로 돌려보낸다 (외부 주소 방지를 위해 '/'로 시작하는 경로만 허용)
+    const redirectPath = locationState?.from?.startsWith('/') && !locationState.from.startsWith('//')
+        ? locationState.from
+        : '/';
 
     const [form, setForm] = useState<FormState>(INITIAL_FORM);
     const [submitError, setSubmitError] = useState<string>('');
@@ -41,7 +46,7 @@ export default function LoginPage(): React.JSX.Element {
         try {
             const { accessToken } = await login(form);
             saveAccessToken(accessToken);
-            navigate('/', { replace: true });
+            navigate(redirectPath, { replace: true });
         } catch (error: unknown) {
             if (error instanceof AxiosError && error.response) {
                 const responseData = error.response.data as { message?: string };
