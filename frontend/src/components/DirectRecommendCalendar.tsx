@@ -42,7 +42,7 @@ export const DirectRecommendCalendar: React.FC = () => {
     const fetchCalendarData = async () => {
         setLoading(true);
         try {
-            const response = await axiosInstance.get('/api/v1/calendar/recommendations', {
+            const response = await axiosInstance.get('/calendar/recommendations', {
                 params: {
                     teamName: selectedTeam,
                     yearMonth: currentYearMonth,
