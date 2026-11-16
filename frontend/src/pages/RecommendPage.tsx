@@ -1,5 +1,6 @@
 import React from 'react';
 import { GRADE_COLORS, RecommendationGrade } from '../constants/grade';
+import DirectRecommendCalendar from '../components/DirectRecommendCalendar';
 
 export interface RecommendedGame {
     id: number;
@@ -42,7 +43,8 @@ export const RecommendPage: React.FC<RecommendPageProps> = ({ games = [] }) => {
             </div>
 
             {/* 캘린더 반응형 그리드 */}
-            <div className="calendar-grid">
+            <div>
+                <DirectRecommendCalendar />
             </div>
         </div>
     );
