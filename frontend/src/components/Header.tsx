@@ -120,29 +120,8 @@ export default function Header(): React.JSX.Element {
                     })}
                 </nav>
 
-                {/* 우측 알림 및 로그인 */}
+                {/* 우측 로그인 */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexShrink: 0 }}>
-                    <div style={{ position: 'relative', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                        <span style={{ fontSize: '18px' }}>🔔</span>
-                        <span style={{
-                            position: 'absolute',
-                            top: '-4px',
-                            right: '-6px',
-                            backgroundColor: '#e11d48',
-                            color: '#ffffff',
-                            fontSize: '10px',
-                            fontWeight: 'bold',
-                            width: '16px',
-                            height: '16px',
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        }}>
-                            3
-                        </span>
-                    </div>
-
                     {isLoggedIn ? (
                         <>
                             <Link
