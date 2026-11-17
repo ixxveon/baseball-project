@@ -1471,6 +1471,18 @@ button {
     cursor: pointer;
 }
 
+.post-comment-login-btn {
+    width: 100%;
+    padding: 12px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
 .post-comment-list {
     display: flex;
     flex-direction: column;
