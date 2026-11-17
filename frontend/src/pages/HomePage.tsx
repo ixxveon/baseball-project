@@ -8,17 +8,20 @@ import FavoriteTeamSelector from '../components/FavoriteTeamSelector.tsx';
 import { DEFAULT_FAVORITE_TEAM } from '../constants/teams';
 import type { TeamName } from '../constants/teams';
 import { useTargetGame } from '../hooks/useTargetGame';
+import { useMyInfo } from '../hooks/useMyInfo';
 
 export default function HomePage(): React.JSX.Element {
     const [favoriteTeam, setFavoriteTeam] = useState<TeamName>(DEFAULT_FAVORITE_TEAM);
     const { favoriteTeamId } = useTargetGame(favoriteTeam);
+    const myInfo = useMyInfo();
+    const greeting = myInfo ? `${myInfo.nickname}님, 오늘 경기 확인해 보세요` : '오늘 경기 확인해 보세요';
 
     return (
         <div className="home-container">
             <div className="welcome-section">
                 <div className="welcome-text">
-                    <h1>안녕하세요, 민형님! 👋</h1>
-                    <p>{favoriteTeam}의 승리를 위닝PICK이 함께 예측합니다!</p>
+                    <h1>{greeting}</h1>
+                    <p>{favoriteTeam} 경기를 위닝PICK이 분석해 드려요</p>
                 </div>
 
                 <div className="header-notice-wrapper">
