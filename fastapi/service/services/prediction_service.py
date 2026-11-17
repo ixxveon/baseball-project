@@ -11,6 +11,9 @@ from core.weather_service import WeatherService
 from core.win_probability import WinEstimate, estimate_win
 from service.preprocessor.postgres_repository import PostgresPredictionRepository
 from service.prompts.win_prediction_prompt import (
+    WEATHER_STATUS_ERROR,
+    WEATHER_STATUS_NOT_READY,
+    WEATHER_STATUS_OK,
     WIN_PREDICTION_SYSTEM_PROMPT,
     build_llm_user_prompt,
 )
@@ -98,7 +101,7 @@ class PredictionService:
             ) if p is not None
         ]
 
-        weather = self._fetch_weather(raw_stats)
+        weather, weather_status = self._fetch_weather(raw_stats)
 
         matchup_payload = PreprocessedMatchupSchema(
             gameId=game_id,
@@ -116,7 +119,11 @@ class PredictionService:
             away_pitcher=raw_stats["away_pitcher"],
         )
 
-        user_prompt = build_llm_user_prompt(matchup_payload.model_dump(), estimate.as_prompt_dict())
+        user_prompt = build_llm_user_prompt(
+            matchup_payload.model_dump(),
+            estimate.as_prompt_dict(),
+            weather_status,
+        )
 
         prompt_data = PreparePromptDataSchema(
             systemPrompt=WIN_PREDICTION_SYSTEM_PROMPT,
@@ -251,7 +258,12 @@ class PredictionService:
         best = max(hitters, key=score)
         return KeyPlayerSchema(name=best["name"], side=side, recentWrc=score(best))
 
-    def _fetch_weather(self, raw_stats: dict[str, Any]) -> WeatherSchema | None:
+    def _fetch_weather(self, raw_stats: dict[str, Any]) -> tuple[WeatherSchema | None, str]:
+        """(날씨, 상태)를 반환한다.
+        - 정상 조회: (WeatherSchema, "ok")
+        - 조회는 정상이나 예보 없음: (None, "not_ready")
+        - 키 누락/네트워크 오류 등 조회 실패: (None, "error")
+        """
         try:
             forecast = self.weather_service.get_forecast(
                 lat=raw_stats["stadium_latitude"],
@@ -260,14 +272,15 @@ class PredictionService:
             )
         except Exception:
             logger.exception("날씨 정보 조회 실패")
-            return None
+            return None, WEATHER_STATUS_ERROR
 
         if forecast is None:
-            return None
+            return None, WEATHER_STATUS_NOT_READY
 
-        return WeatherSchema(
+        weather = WeatherSchema(
             temperature=forecast["temperature"],
             humidity=forecast["humidity"],
             condition=forecast["condition_label"],
             isRain=forecast["is_rain"],
         )
+        return weather, WEATHER_STATUS_OK

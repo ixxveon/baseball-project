@@ -38,7 +38,12 @@ class WeatherService:
 
     @property
     def api_key(self) -> str:
-        return self._api_key_override or settings.require_openweather_api_key()
+        if self._api_key_override:
+            return self._api_key_override
+        try:
+            return settings.require_openweather_api_key()
+        except Exception as e:  # 키 누락 등 설정 오류도 '조회 실패'로 통일
+            raise WeatherFetchError(f"OpenWeather API 키를 가져올 수 없습니다: {e}") from e
 
     def get_forecast(self, lat: float, lon: float, target_date: date, target_hour: int = 18) -> dict | None:
         params = {
