@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import AnalysisScreen from './AnalysisScreen';
 import TeamBox from './TeamBox.tsx';
 import { useTargetGame } from '../hooks/useTargetGame';
+import { useLoginRedirect } from '../hooks/useLoginRedirect';
+import { getAccessToken } from '../utils/tokenStorage';
 
 interface RecommendedGamesProps {
     favoriteTeam: string;
@@ -12,6 +14,7 @@ export default function RecommendedGames({
                                          }: RecommendedGamesProps): React.JSX.Element {
     const { targetGame, loading, isToday, error } = useTargetGame(favoriteTeam);
     const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+    const goToLogin = useLoginRedirect();
 
     if (loading) {
         return <div className="recommended-card">불러오는 중...</div>;
@@ -66,7 +69,14 @@ export default function RecommendedGames({
 
             <button
                 type="button"
-                onClick={() => setSelectedGameId(String(targetGame.gameId))}
+                onClick={() => {
+                    // 상세 분석은 로그인 사용자 전용이라, 비로그인이면 로그인 화면으로 보낸다
+                    if (!getAccessToken()) {
+                        goToLogin();
+                        return;
+                    }
+                    setSelectedGameId(String(targetGame.gameId));
+                }}
                 className="analysis-button"
             >
                 <span>경기 분석 자세히 보기</span>

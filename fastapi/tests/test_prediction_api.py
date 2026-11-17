@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 from main import app
 from service.api import prediction_router
 from service.schemas.prediction_schema import RecentRecordSchema
+from service.services.prediction_service import LoginRequiredError
 
 # 실제 라우터 등록 경로에 맞게 수정하세요 (api_router 안에서 prediction_router가 붙는 위치 기준)
 PREFIX = "/api/v1/ai"
@@ -68,7 +69,7 @@ def test_success_response_has_no_status(monkeypatch):
 # ---------- 에러 응답 ----------
 
 def test_value_error_returns_400(monkeypatch):
-    def raise_value_error(game_id):
+    def raise_value_error(game_id, allow_generate=True):
         raise ValueError("경기를 찾을 수 없습니다.")
 
     monkeypatch.setattr(prediction_router.prediction_service, "predict", raise_value_error)
@@ -95,7 +96,7 @@ def test_unknown_path_returns_404_in_same_format():
 
 
 def test_unhandled_exception_returns_500(monkeypatch):
-    def boom(game_id):
+    def boom(game_id, allow_generate=True):
         raise RuntimeError("unexpected")
 
     monkeypatch.setattr(prediction_router.prediction_service, "predict", boom)
@@ -104,6 +105,58 @@ def test_unhandled_exception_returns_500(monkeypatch):
 
     assert res.status_code == 500
     assert_error_format(res.json())
+
+
+# ---------- 비로그인 제한 ----------
+
+def test_guest_without_saved_analysis_returns_401(monkeypatch):
+    calls = []
+
+    def fake_predict(game_id, allow_generate=True):
+        calls.append(allow_generate)
+        raise LoginRequiredError("로그인하면 AI 분석을 볼 수 있습니다.")
+
+    monkeypatch.setattr(prediction_router.prediction_service, "predict", fake_predict)
+
+    res = client.post(f"{PREFIX}/predict", json={"gameId": 1})
+
+    assert res.status_code == 401
+    assert_error_format(res.json())
+    assert calls == [False]
+
+
+def test_invalid_token_is_treated_as_guest(monkeypatch):
+    calls = []
+
+    def fake_predict(game_id, allow_generate=True):
+        calls.append(allow_generate)
+        raise LoginRequiredError("로그인하면 AI 분석을 볼 수 있습니다.")
+
+    monkeypatch.setattr(prediction_router.prediction_service, "predict", fake_predict)
+
+    res = client.post(
+        f"{PREFIX}/predict",
+        json={"gameId": 1},
+        headers={"Authorization": "Bearer not.a.token"},
+    )
+
+    assert res.status_code == 401
+    assert calls == [False]
+
+
+def test_logged_in_request_can_generate(monkeypatch):
+    calls = []
+
+    def fake_predict(game_id, allow_generate=True):
+        calls.append(allow_generate)
+        raise ValueError("stop")
+
+    monkeypatch.setattr(prediction_router.prediction_service, "predict", fake_predict)
+    monkeypatch.setattr(prediction_router, "member_id_from_authorization", lambda header: 1)
+
+    client.post(f"{PREFIX}/predict", json={"gameId": 1}, headers={"Authorization": "Bearer x"})
+
+    assert calls == [True]
 
 
 # ---------- 숨김 API는 호출 가능해야 함 ----------

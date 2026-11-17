@@ -32,6 +32,10 @@ from service.schemas.prediction_schema import (
 logger = logging.getLogger(__name__)
 
 
+class LoginRequiredError(Exception):
+    """저장된 분석이 없어 새로 생성해야 하는데 비로그인 요청인 경우."""
+
+
 class PredictionRepository(Protocol):
     def get_matchup_stats(self, game_id: int) -> dict[str, Any]:
         ...
@@ -121,7 +125,11 @@ class PredictionService:
         )
         return prompt_data, estimate
 
-    def predict(self, game_id: int) -> PredictionResultDataSchema:
+    def predict(self, game_id: int, allow_generate: bool = True) -> PredictionResultDataSchema:
+        # 비로그인은 이미 저장된 분석만 볼 수 있다. 새 분석(LLM 호출)이 필요하면 전처리 전에 바로 막는다.
+        if not allow_generate and self.repository.get_cached_prediction(game_id) is None:
+            raise LoginRequiredError("로그인하면 AI 분석을 볼 수 있습니다.")
+
         prompt_data, estimate = self._prepare(game_id)
         calculated = {
             "homeWinProb": estimate.home_win_prob,
