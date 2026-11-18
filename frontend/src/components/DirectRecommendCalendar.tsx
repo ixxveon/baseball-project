@@ -234,7 +234,7 @@ export const DirectRecommendCalendar: React.FC = () => {
             >
                 <div>
                     <h2 style={{ fontSize: '22px', fontWeight: 900, margin: 0, color: '#0f172a' }}>
-                        🏟️ AI 직관 추천 캘린더
+                         AI 직관 추천 캘린더
                     </h2>
                     <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>
                         팀 승률과 날씨 보정치가 반영된 종합 추천 지수입니다.
@@ -372,13 +372,13 @@ export const DirectRecommendCalendar: React.FC = () => {
                         {selectedGame.summary ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px', color: '#334155' }}>
                                 <div style={{ padding: '14px', backgroundColor: '#f8fafc', borderRadius: '14px', border: '1px solid #f1f5f9' }}>
-                                    <span style={{ fontWeight: 'bold', color: '#059669' }}>⚾ 선발 투수:</span> {selectedGame.summary.pitcherComparison}
+                                    <span style={{ fontWeight: 'bold', color: '#059669' }}>선발 투수:</span> {selectedGame.summary.pitcherComparison}
                                 </div>
                                 <div style={{ padding: '14px', backgroundColor: '#f8fafc', borderRadius: '14px', border: '1px solid #f1f5f9' }}>
-                                    <span style={{ fontWeight: 'bold', color: '#059669' }}>🏏 타선 분석:</span> {selectedGame.summary.battingComparison}
+                                    <span style={{ fontWeight: 'bold', color: '#059669' }}>타선 분석:</span> {selectedGame.summary.battingComparison}
                                 </div>
                                 <div style={{ padding: '14px', backgroundColor: '#f8fafc', borderRadius: '14px', border: '1px solid #f1f5f9' }}>
-                                    <span style={{ fontWeight: 'bold', color: '#d97706' }}>🌤️ 날씨 요약:</span> {selectedGame.summary.weatherComment}
+                                    <span style={{ fontWeight: 'bold', color: '#d97706' }}>날씨 요약:</span> {selectedGame.summary.weatherComment}
                                 </div>
                             </div>
                         ) : (

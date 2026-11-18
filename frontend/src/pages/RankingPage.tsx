@@ -84,7 +84,7 @@ export default function RankingPage(): React.JSX.Element {
                 <div className="ranking-header">
                     <div>
                         <h1 className="ranking-title">
-                            KBO 정규리그 순위 <span style={{ fontSize: '24px' }}>🔥</span>
+                            KBO 정규리그 순위
                         </h1>
                         <p className="ranking-subtitle">
                             2026.08.17 기준
