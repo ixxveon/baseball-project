@@ -7,6 +7,14 @@ export default function RankingPage(): React.JSX.Element {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
+    const getTodayString = () => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}.${month}.${day} 기준`;
+    };
+
     useEffect(() => {
         axiosInstance.get('/rankings')
             .then((res) => {
@@ -87,7 +95,7 @@ export default function RankingPage(): React.JSX.Element {
                             KBO 정규리그 순위
                         </h1>
                         <p className="ranking-subtitle">
-                            2026.08.17 기준
+                            {getTodayString()}
                         </p>
                     </div>
                 </div>
