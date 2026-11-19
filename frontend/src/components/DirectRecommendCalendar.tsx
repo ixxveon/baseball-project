@@ -234,7 +234,7 @@ export const DirectRecommendCalendar: React.FC = () => {
             >
                 <div>
                     <h2 style={{ fontSize: '22px', fontWeight: 900, margin: 0, color: '#0f172a' }}>
-                         AI 직관 추천 캘린더
+                        AI 직관 추천 캘린더
                     </h2>
                     <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>
                         팀 승률과 날씨 보정치가 반영된 종합 추천 지수입니다.
