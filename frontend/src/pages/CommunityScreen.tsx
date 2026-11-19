@@ -105,6 +105,15 @@ export default function CommunityScreen(): React.JSX.Element {
         };
     }, [selectedPostId]);
 
+    // 상세 화면에서 새로고침하면 화면은 목록으로 초기화되지만 브라우저 히스토리에는 이전 상세 상태가 남는다.
+    // 그 상태가 남아 있으면 이후 뒤로가기 때 엉뚱한 글이 열리므로, 화면이 처음 뜰 때 비워서 목록에서 시작한다.
+    useEffect(() => {
+        const state = window.history.state as { view?: ViewMode } | null;
+        if (state?.view) {
+            window.history.replaceState(null, '');
+        }
+    }, []);
+
     // 게시글 클릭/글쓰기 진입마다 브라우저 히스토리를 쌓아서, 뒤로가기를 누르면
     // 커뮤니티 진입 전 페이지(마이페이지 등)로 바로 튕기지 않고 이전 화면(목록/상세)으로 돌아오게 한다.
     useEffect(() => {
