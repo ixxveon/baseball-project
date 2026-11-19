@@ -7,6 +7,16 @@ export default function RankingPage(): React.JSX.Element {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
+    const getTodayString = (): string => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}.${month}.${day} 기준`;
+    };
+    void getTodayString;
+
+
     useEffect(() => {
         axiosInstance.get('/rankings')
             .then((res) => {
@@ -20,7 +30,7 @@ export default function RankingPage(): React.JSX.Element {
             });
     }, []);
 
-    // 1~5위 진출권 강조 색상 함수
+
     const getRankBadgeClass = (rank: number) => {
         if (rank === 1) return 'rank-badge rank-1';
         if (rank === 2) return 'rank-badge rank-2';
@@ -29,7 +39,7 @@ export default function RankingPage(): React.JSX.Element {
         return 'rank-badge rank-other'; // 6위 이하
     };
 
-    // 팀 이름에 맞춰 public/images/teams 폴더의 이미지 경로를 반환하는 함수
+
     const getTeamLogoPath = (teamName: string) => {
         if (teamName.includes('LG')) return '/images/teams/lg.png';
         if (teamName.includes('두산')) return '/images/teams/doosan.png';
@@ -84,10 +94,10 @@ export default function RankingPage(): React.JSX.Element {
                 <div className="ranking-header">
                     <div>
                         <h1 className="ranking-title">
-                            KBO 정규리그 순위 <span style={{ fontSize: '24px' }}>🔥</span>
+                            KBO 정규리그 순위
                         </h1>
                         <p className="ranking-subtitle">
-                            2026.08.17 기준
+                            정규시즌 최종 순위
                         </p>
                     </div>
                 </div>
