@@ -114,13 +114,16 @@ export default function ForgotPasswordPage(): React.JSX.Element {
                                 type="button"
                                 className="auth-check-btn"
                                 onClick={() => { void emailVerification.confirmCode(form.email); }}
-                                disabled={emailVerifyStatus === 'verified'}
+                                disabled={emailVerifyStatus === 'verified' || emailVerification.isExpired}
                             >
                                 확인
                             </button>
                         </div>
-                        {emailVerifyStatus === 'sent' && (
-                            <span className="auth-success">인증번호를 발송했어요</span>
+                        {emailVerifyStatus === 'sent' && !emailVerification.isExpired && (
+                            <span className="auth-success">인증번호를 발송했어요 ({emailVerification.remainingLabel})</span>
+                        )}
+                        {emailVerification.isExpired && (
+                            <span className="auth-error">인증번호가 만료됐어요, 다시 발송해주세요</span>
                         )}
                         {emailVerifyStatus === 'verified' && (
                             <span className="auth-success">이메일 인증이 완료됐어요</span>
