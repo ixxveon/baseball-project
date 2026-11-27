@@ -4,21 +4,21 @@ import jakarta.annotation.PostConstruct;
 import kr.co.winningpick.domain.ranking.entity.Ranking;
 import kr.co.winningpick.domain.ranking.repository.RankingRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class RankingDataInit {
 
     private final RankingRepository rankingRepository;
 
-    // 서버가 켜질 때 이 @PostConstruct 안의 코드가 자동으로 딱 한 번 실행됩니다!
     @PostConstruct
     @Transactional
     public void init() {
-        // 기존 테이블이 비어있지 않으면 통과하는 로직은 그대로 유지
 
         if (rankingRepository.count() > 0) {
             return;
@@ -31,7 +31,7 @@ public class RankingDataInit {
 
         } catch (DataIntegrityViolationException e) {
             // 👈 추가: 다른 서버가 먼저 데이터를 넣어서 중복 에러가 났을 때 무시하고 정상 구동되도록 처리
-            System.out.println("이미 다른 서버에서 랭킹 데이터가 초기화되었습니다.");
+            log.info("이미 다른 서버에서 랭킹 데이터가 초기화되었습니다.");
 
         }
     }
